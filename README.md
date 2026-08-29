@@ -7,7 +7,7 @@ BitcoinII is a BitcoinII full-node implementation derived from BitcoinII Core,
 with a focus on database performance, storage efficiency, node configurability,
 and selected forward-looking performance improvements.
 
-BitcoinII v31.1.1 is based on BitcoinII Core v31.1 and remains compatible with
+BitcoinII v31.1. is based on Bitcoin Core v31.1 and remains compatible with
 the BitcoinII network and BitcoinII consensus rules.
 
 This initial BitcoinII release is provided as source code. Pre-built release
@@ -75,8 +75,8 @@ Official source release points are identified with version tags such as:
 
     v31.1.1
 
-BitcoinII is derived from BitcoinII Core and continues to incorporate relevant
-upstream BitcoinII Core development while maintaining the BitcoinII-specific
+BitcoinII is derived from Bitcoin Core and continues to incorporate relevant
+upstream Bitcoin Core development while maintaining the BitcoinII-specific
 storage, database, performance, policy, and application changes.
 
 The contribution workflow is described in
@@ -86,7 +86,7 @@ The contribution workflow is described in
 Testing
 -------
 
-BitcoinII inherits BitcoinII Core's extensive unit, functional, fuzz, and
+BitcoinII inherits Bitcoin Core's extensive unit, functional, fuzz, and
 integration testing infrastructure and adds or modifies tests where required
 for BitcoinII-specific functionality.
 
@@ -101,22 +101,22 @@ Further information about unit tests is available in
 Functional and integration tests are located under [test/](test/) and can be
 run using the functional test runner from the configured build tree.
 
-BitcoinII modifies security-critical BitcoinII software. Changes should be
+BitcoinII modifies security-critical Bitcoin software. Changes should be
 reviewed and tested carefully, particularly changes affecting validation,
 database handling, transaction policy, block storage, or wallet behavior.
 
-Upstream BitcoinII Core
+Upstream Bitcoin Core
 ---------------------
 
-BitcoinII is derived from the BitcoinII Core project:
+BitcoinII is derived from the Bitcoin Core project:
 
 https://bitcoincore.org
 
-BitcoinII Core source code is available at:
+Bitcoin Core source code is available at:
 
 https://github.com/bitcoin/bitcoin
 
-BitcoinII retains substantial BitcoinII Core code, documentation, testing
+BitcoinII retains substantial Bitcoin Core code, documentation, testing
 infrastructure, and copyright attribution.
 
 License
@@ -139,12 +139,3 @@ Issues and source-development reports may be submitted through:
 
 https://github.com/Bitcoin-II/BitcoinII-Core/issues
 
-Donations
----------
-
-If you have found BitcoinII to be useful to yourself, your organization, or
-to the broader BitcoinII ecosystem, please consider assisting in furthering the
-development and maintenance of BitcoinII by helping the developer stay in a
-steady supply of coffee.
-
-BC2: 1A1gc5mi9N4Dth7QVCiffF2Cuy1yXAadbp
