@@ -59,11 +59,9 @@ The primary BitcoinII configuration file is:
 
     bitcoinII.conf
 
-BitcoinII retains the familiar BitcoinII Core configuration model and
+BitcoinII retains the familiar Bitcoin Core configuration model and
 command-line option format while adding BitcoinII-specific functionality.
 
-Database cache memory may be configured with the standard `dbcache`
-option.
 
 Development
 -----------
@@ -119,14 +117,59 @@ https://github.com/bitcoin/bitcoin
 BitcoinII retains substantial Bitcoin Core code, documentation, testing
 infrastructure, and copyright attribution.
 
-License
+## MIT License
 -------
 
-BitcoinII is released under the terms of the MIT license.
+Large portions of BitcoinII is released under the terms of the MIT license, as inhereted from upstream Bitcoin Core.
 
 See [COPYING](COPYING) for the full license text or:
 
 https://opensource.org/license/MIT
+
+## License pertaining to the "ShockWave" Difficulty Adjustment Algorithm:
+
+### ShockWave Difficulty Adjustment Algorithm
+
+**Exception:** Original source code and implementation material comprising the **ShockWave Difficulty Adjustment Algorithm** is **not distributed under the MIT license**.
+
+Portions of the ShockWave implementation derived from Bitcoin Core, Dash/Darkcoin, or other pre-existing MIT-licensed software remain subject to their respective MIT license terms. The restrictions below apply only to original ShockWave material for which KvantaMechanic & Second Chance Digital, LLC. holds the applicable copyright.
+
+### ShockWave Proprietary Source-Review License
+
+Copyright (c) 2026 KvantaMechanic & Second Chance Digital, LLC
+All rights reserved.
+
+Except for portions independently subject to the MIT license as described above, the original ShockWave source code and implementation contained in BitcoinII Core are proprietary software.
+
+The ShockWave source is made publicly available solely for:
+
+* security review;
+* technical and consensus audit;
+* interoperability analysis;
+* academic or technical evaluation; and
+* testing of the BitcoinII implementation.
+
+Permission is granted to view the ShockWave source code and to make temporary copies strictly as necessary to inspect, compile, execute, and test it for the review and evaluation purposes listed above.
+
+**NO LICENSE IS GRANTED** to incorporate, deploy, reuse, redistribute, or exploit the proprietary ShockWave implementation, in whole or in substantial part, in another blockchain, cryptocurrency, distributed-ledger system, software product, service, protocol, or other implementation.
+
+Without prior express written permission from KvantaMechanic & Second Chance Digital, LLC. you may not:
+
+* incorporate proprietary ShockWave source code, or any substantial portion of it, into another project;
+* copy, adapt, modify, translate, port, or create derivative works from the proprietary ShockWave implementation except as strictly necessary for permitted review and testing;
+* redistribute, republish, sublicense, sell, license, or commercially exploit the proprietary ShockWave implementation;
+* deploy the proprietary ShockWave implementation, or a derivative of it, on another blockchain, cryptocurrency, distributed-ledger network, software product, service, or protocol;
+* use the proprietary ShockWave implementation as the basis for another production difficulty-adjustment implementation; or
+* remove, obscure, or alter this copyright or license notice.
+
+The limited permissions granted for review, audit, compilation, execution, and testing do not constitute an open-source license and grant no rights except those expressly stated.
+
+Nothing in this notice restricts rights independently granted under the MIT license with respect to Bitcoin Core, Dash/Darkcoin, or other pre-existing MIT-licensed code. The proprietary restrictions above apply only to original ShockWave material for which KvantaMechanic & Second Chance Digital, LLC. holds the applicable copyright.
+
+Any use of proprietary ShockWave material outside the expressly permitted review and evaluation purposes requires prior express written authorization from KvantaMechanic & Second Chance Digital, LLC.
+
+THE PROPRIETARY SHOCKWAVE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM, OUT OF, OR IN CONNECTION WITH THE PROPRIETARY SHOCKWAVE SOFTWARE OR ITS USE.
+
 
 Source Repository
 -----------------
