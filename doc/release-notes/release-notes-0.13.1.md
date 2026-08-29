@@ -1,6 +1,6 @@
 BitcoinII Core version 0.13.1 is now available from:
 
-  <https://bitcoin.org/bin/bitcoinII-core-0.13.1/>
+  <https://bitcoin.org/bin/bitcoin-core-0.13.1/>
 
 This is a new minor version release, including activation parameters for the
 segwit softfork, various bugfixes and performance improvements, as well as
@@ -8,7 +8,7 @@ updated translations.
 
 Please report bugs using the issue tracker at github:
 
-  <https://github.com/bitcoinII/bitcoinII/issues>
+  <https://github.com/bitcoin/bitcoin/issues>
 
 To receive security and update notifications, please subscribe to:
 
@@ -23,7 +23,7 @@ updates will be released anymore. Without security updates, using a bitcoinII
 wallet on a XP machine is irresponsible at least.
 
 In addition to that, with 0.12.x there have been varied reports of BitcoinII Core
-randomly crashing on Windows XP. It is [not clear](https://github.com/bitcoinII/bitcoinII/issues/7681#issuecomment-217439891)
+randomly crashing on Windows XP. It is [not clear](https://github.com/bitcoin/bitcoin/issues/7681#issuecomment-217439891)
 what the source of these crashes is, but it is likely that upstream
 libraries such as Qt are no longer being tested on XP.
 
@@ -118,7 +118,7 @@ covered by the txid. This provides several immediate benefits:
   believed to be provided by BitcoinII's choice of parameters for its Elliptic
   Curve Digital Security Algorithm [ECDSA].)
 
-- **More efficient almost-full-node security** Satoshi Nakamoto's original
+- **More efficient almost-full-node security** Satooshi Nakamoto's original
   BitcoinII paper describes a method for allowing newly-started full nodes to
   skip downloading and validating some data from historic blocks that are
   protected by large amounts of proof of work.  Unfortunately, Nakamoto's
@@ -161,10 +161,10 @@ signaling support for a soft fork.
 
 [Segwit FAQ]: https://bitcoincore.org/en/2016/01/26/segwit-benefits/
 [segwit wallet developers guide]: https://bitcoincore.org/en/segwit_wallet_dev/
-[BIP141]: https://github.com/bitcoinII/bips/blob/master/bip-0141.mediawiki
-[BIP143]: https://github.com/bitcoinII/bips/blob/master/bip-0143.mediawiki
-[BIP144]: https://github.com/bitcoinII/bips/blob/master/bip-0144.mediawiki
-[BIP145]: https://github.com/bitcoinII/bips/blob/master/bip-0145.mediawiki
+[BIP141]: https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki
+[BIP143]: https://github.com/bitcoin/bips/blob/master/bip-0143.mediawiki
+[BIP144]: https://github.com/bitcoin/bips/blob/master/bip-0144.mediawiki
+[BIP145]: https://github.com/bitcoin/bips/blob/master/bip-0145.mediawiki
 [versionbits FAQ]: https://bitcoincore.org/en/2016/06/08/version-bits-miners-faq/
 
 
@@ -196,7 +196,7 @@ as segwit.
 
 For more information, please see [BIP147][].
 
-[BIP147]: https://github.com/bitcoinII/bips/blob/master/bip-0147.mediawiki
+[BIP147]: https://github.com/bitcoin/bips/blob/master/bip-0147.mediawiki
 
 Low-level RPC changes
 ---------------------
@@ -329,7 +329,7 @@ git merge commit are mentioned.
 - #8841 `3e4abb5` Fix nulldummy test (jl2012)
 - #8854 `624a007` Fix race condition in p2p-compactblocks test (sdaftuar)
 - #8857 `1f60d45` mininode: Only allow named args in wait_until (MarcoFalke)
-- #8860 `0bee740` util: Move wait_bitcoinIIds() into stop_nodes() (MarcoFalke)
+- #8860 `0bee740` util: Move wait_bitcoinII-ds() into stop_nodes() (MarcoFalke)
 - #8882 `b73f065` Fix race conditions in p2p-compactblocks.py and sendheaders.py (sdaftuar)
 - #8904 `cc6f551` Fix compact block shortids for a test case (dagurval)
 
@@ -407,4 +407,4 @@ Thanks to everyone who directly contributed to this release:
 - whythat
 - Wladimir J. van der Laan
 
-As well as everyone that helped translating on [Transifex](https://www.transifex.com/projects/p/bitcoinII/).
+As well as everyone that helped translating on [Transifex](https://www.transifex.com/projects/p/bitcoin/).

@@ -4,34 +4,13 @@ Guide to the design and architecture of the BitcoinII Core multiprocess feature
 
 _This document describes the design of the multiprocess feature. For usage information, see the top-level [multiprocess.md](../multiprocess.md) file._
 
-## Table of contents
-
-- [Introduction](#introduction)
-- [Current Architecture](#current-architecture)
-- [Proposed Architecture](#proposed-architecture)
-- [Component Overview: Navigating the IPC Framework](#component-overview-navigating-the-ipc-framework)
-- [Design Considerations](#design-considerations)
-  - [Selection of Cap’n Proto](#selection-of-capn-proto)
-  - [Hiding IPC](#hiding-ipc)
-  - [Interface Definition Maintenance](#interface-definition-maintenance)
-  - [Interface Stability](#interface-stability)
-- [Security Considerations](#security-considerations)
-- [Example Use Cases and Flows](#example-use-cases-and-flows)
-  - [Retrieving a Block Hash](#retrieving-a-block-hash)
-- [Future Enhancements](#future-enhancements)
-- [Conclusion](#conclusion)
-- [Appendices](#appendices)
-  - [Glossary of Terms](#glossary-of-terms)
-  - [References](#references)
-- [Acknowledgements](#acknowledgements)
-
 ## Introduction
 
 The BitcoinII Core software has historically employed a monolithic architecture. The existing design has integrated functionality like P2P network operations, wallet management, and a GUI into a single executable. While effective, it has limitations in flexibility, security, and scalability. This project introduces changes that transition BitcoinII Core to a more modular architecture. It aims to enhance security, improve usability, and facilitate maintenance and development of the software in the long run.
 
 ## Current Architecture
 
-The current system features two primary executables: `bitcoinIId` and `bitcoinII-qt`. `bitcoinIId` combines a BitcoinII P2P node with an integrated JSON-RPC server, wallet, and indexes. `bitcoinII-qt` extends this by incorporating a Qt-based GUI. This monolithic structure, although robust, presents challenges such as limited operational flexibility and increased security risks due to the tight integration of components.
+The current system features two primary executables: `bitcoinII-d` and `bitcoinII-qt`. `bitcoinII-d` combines a BitcoinII P2P node with an integrated JSON-RPC server, wallet, and indexes. `bitcoinII-qt` extends this by incorporating a Qt-based GUI. This monolithic structure, although robust, presents challenges such as limited operational flexibility and increased security risks due to the tight integration of components.
 
 ## Proposed Architecture
 
@@ -74,7 +53,7 @@ This section describes the major components of the Inter-Process Communication (
 - These Cap’n Proto files ([learn more about Cap'n Proto RPC](https://capnproto.org/rpc.html)) define the structure and format of messages that are exchanged over IPC. They serve as blueprints for generating C++ code that bridges the gap between high-level C++ interfaces and low-level socket communication.
 
 ### The `mpgen` Code Generation Tool
-- A central component of the IPC framework is the `mpgen` tool which is part of the [`libmultiprocess` project](https://github.com/bitcoinII-core/libmultiprocess). This tool takes the `.capnp` files as input and generates C++ code.
+- A central component of the IPC framework is the `mpgen` tool which is part of the [`libmultiprocess` project](https://github.com/bitcoin-core/libmultiprocess). This tool takes the `.capnp` files as input and generates C++ code.
 - The generated code handles IPC communication, translating interface calls into socket reads and writes.
 
 ### C++ Client Subclasses in Generated Code
@@ -136,7 +115,7 @@ The libmultiprocess runtime is designed to place as few constraints as possible 
 
 ### Interface Definition Maintenance
 
-The choice to maintain interface definitions and C++ type mappings as `.capnp` files in the [`src/ipc/capnp/`](../../src/ipc/capnp/) was mostly done for convenience, and probably something that could be improved in the future.
+The choice to maintain interface definitions and C++ type mappings as `.capnp` files in the [`src/ipc/capnp/`](../../src/ipc/capnp/) was mostly done for convenience, and is probably something that could be improved in the future.
 
 In the current design, class names, method names, and parameter names are duplicated between C++ interfaces in [`src/interfaces/`](../../src/interfaces/) and Cap’n Proto files in [`src/ipc/capnp/`](../../src/ipc/capnp/). While this keeps C++ interface headers simple and free of references to IPC, it is a maintenance burden because it means inconsistencies between C++ declarations and Cap’n Proto declarations will result in compile errors. (Static type checking ensures these are not runtime errors.)
 
@@ -150,7 +129,7 @@ The currently defined IPC interfaces are unstable, and can change freely with no
 
 ## Security Considerations
 
-The integration of [Cap’n Proto](https://capnproto.org/) and [libmultiprocess](https://github.com/bitcoinII-core/libmultiprocess) into the BitcoinII Core architecture increases its potential attack surface. Cap’n Proto, being a complex and substantial new dependency, introduces potential sources of vulnerability, particularly through the creation of new UNIX sockets. The inclusion of libmultiprocess, while a smaller external dependency, also contributes to this risk. However, plans are underway to incorporate libmultiprocess as a git subtree, aligning it more closely with the project's well-reviewed internal libraries. While adopting these multiprocess features does introduce some risk, it's worth noting that they can be disabled, allowing builds without these new dependencies. This flexibility ensures that users can balance functionality with security considerations as needed.
+The integration of [Cap’n Proto](https://capnproto.org/) and [libmultiprocess](https://github.com/bitcoin-core/libmultiprocess) into the Bitcoin Core architecture increases its potential attack surface. Cap’n Proto, being a complex and substantial new dependency, introduces potential sources of vulnerability, particularly through the creation of new UNIX sockets. The inclusion of libmultiprocess, while a smaller external dependency, also contributes to this risk. However, plans are underway to incorporate libmultiprocess as a git subtree, aligning it more closely with the project's well-reviewed internal libraries. While adopting these multiprocess features does introduce some risk, it's worth noting that they can be disabled, allowing builds without these new dependencies. This flexibility ensures that users can balance functionality with security considerations as needed.
 
 ## Example Use Cases and Flows
 
@@ -188,14 +167,14 @@ sequenceDiagram
 
 2. **Translation to Cap’n Proto RPC**
    - The `Chain::getBlockHash` virtual method is overridden by the `Chain` [client subclass](#c-client-subclasses-in-generated-code) to translate the method call into a Cap’n Proto RPC call.
-   - The client subclass is automatically generated by the `mpgen` tool from the [`chain.capnp`](https://github.com/ryanofsky/bitcoinII/blob/pr/ipc/src/ipc/capnp/chain.capnp) file in [`src/ipc/capnp/`](../../src/ipc/capnp/).
+   - The client subclass is automatically generated by the `mpgen` tool from the [`chain.capnp`](https://github.com/ryanofsky/bitcoin/blob/pr/ipc/src/ipc/capnp/chain.capnp) file in [`src/ipc/capnp/`](../../src/ipc/capnp/).
 
 3. **Request Preparation and Dispatch**
    - The `getBlockHash` method of the generated `Chain` client subclass in `bitcoinII-wallet` populates a Cap’n Proto request with the `height` parameter, sends it to `bitcoinII-node` process, and waits for a response.
 
 4. **Handling in bitcoinII-node**
    - Upon receiving the request, the Cap'n Proto dispatching code in the `bitcoinII-node` process calls the `getBlockHash` method of the `Chain` [server class](#c-server-classes-in-generated-code).
-   - The server class is automatically generated by the `mpgen` tool from the [`chain.capnp`](https://github.com/ryanofsky/bitcoinII/blob/pr/ipc/src/ipc/capnp/chain.capnp) file in [`src/ipc/capnp/`](../../src/ipc/capnp/).
+   - The server class is automatically generated by the `mpgen` tool from the [`chain.capnp`](https://github.com/ryanofsky/bitcoin/blob/pr/ipc/src/ipc/capnp/chain.capnp) file in [`src/ipc/capnp/`](../../src/ipc/capnp/).
    - The `getBlockHash` method of the generated `Chain` server subclass in `bitcoinII-wallet` receives a Cap’n Proto request object with the `height` parameter, and calls the `getBlockHash` method on its local `Chain` object with the provided `height`.
    - When the call returns, it encapsulates the return value in a Cap’n Proto response, which it sends back to the `bitcoinII-wallet` process.
 
@@ -207,12 +186,12 @@ sequenceDiagram
 
 Further improvements are possible such as:
 
-- Separating indexes from `bitcoinII-node`, and running indexing code in separate processes (see [indexes: Stop using node internal types #24230](https://github.com/bitcoinII/bitcoinII/pull/24230)).
+- Separating indexes from `bitcoin-node`, and running indexing code in separate processes (see [indexes: Stop using node internal types #24230](https://github.com/bitcoin/bitcoin/pull/24230)).
 - Enabling wallet processes to listen for JSON-RPC requests on their own ports instead of needing the node process to listen and forward requests to them.
 - Automatically generating `.capnp` files from C++ interface definitions (see [Interface Definition Maintenance](#interface-definition-maintenance)).
 - Simplifying and stabilizing interfaces (see [Interface Stability](#interface-stability)).
-- Adding sandbox features, restricting subprocess access to resources and data (see [https://eklitzke.org/multiprocess-bitcoinII](https://eklitzke.org/multiprocess-bitcoinII)).
-- Using Cap'n Proto's support for [other languages](https://capnproto.org/otherlang.html), such as [Rust](https://github.com/capnproto/capnproto-rust), to allow code written in other languages to call BitcoinII Core C++ code, and vice versa (see [How to rustify libmultiprocess? #56](https://github.com/bitcoinII-core/libmultiprocess/issues/56)).
+- Adding sandbox features, restricting subprocess access to resources and data (see [https://eklitzke.org/multiprocess-bitcoin](https://eklitzke.org/multiprocess-bitcoin)).
+- Using Cap'n Proto's support for [other languages](https://capnproto.org/otherlang.html), such as [Rust](https://github.com/capnproto/capnproto-rust), to allow code written in other languages to call Bitcoin Core C++ code, and vice versa (see [How to rustify libmultiprocess? #56](https://github.com/bitcoin-core/libmultiprocess/issues/56)).
 
 ## Conclusion
 
@@ -246,7 +225,7 @@ This modularization represents an advancement in BitcoinII Core's architecture, 
 
 - **protocol-agnostic code**: Generic IPC code in [`src/ipc/`](../../src/ipc/) that does not rely on Cap’n Proto and could be used with other protocols. Distinct from code in [`src/ipc/capnp/`](../../src/ipc/capnp/) which relies on Cap’n Proto.
 
-- **RPC (remote procedure call)**: A protocol that enables a program to request a service from another program in a different address space or network. BitcoinII Core uses [JSON-RPC](https://en.wikipedia.org/wiki/JSON-RPC) for RPC.
+- **RPC (remote procedure call)**: A protocol that enables a program to request a service from another program in a different address space or network. Bitcoin Core uses [JSON-RPC](https://en.wikipedia.org/wiki/JSON-RPC) for RPC.
 
 - **server class (in generated code)**: A C++ class generated from a Cap’n Proto interface which handles requests sent by a _client class_ in another process. The request handled by calling a local BitcoinII Core interface method, and the return values (if any) are sent back in a response. (see also: [components section](#c-server-classes-in-generated-code))
 
@@ -257,8 +236,8 @@ This modularization represents an advancement in BitcoinII Core's architecture, 
 ## References
 
 - **Cap’n Proto RPC protocol description**: https://capnproto.org/rpc.html
-- **libmultiprocess project page**: https://github.com/bitcoinII-core/libmultiprocess
+- **libmultiprocess project page**: https://github.com/bitcoin-core/libmultiprocess
 
 ## Acknowledgements
 
-This design doc was written by @ryanofsky, who is grateful to all the reviewers who gave feedback and tested [multiprocess PRs](https://github.com/bitcoinII/bitcoinII/pull/28722), and everyone else who's helped with this project. Particular thanks to @ariard who deeply reviewed IPC code and improved the design of the IPC library and initialization process. @jnewbery who championed the early refactoring PRs and helped guide them through development and review. @sjors who has reviewed and repeatedly tested multiprocess code, reporting many issues and helping debug them. @hebasto, @fanquake, and @maflcko who made significant improvements to the build system and fixed countless build issues. @vasild and @jamesob who were brave contributors to the libmultiprocess library. And Chaincode Labs for making this work possible. Also thanks to ChatGPT, who actually wrote most of this document (not @ryanofsky).
+This design doc was written by @ryanofsky, who is grateful to all the reviewers who gave feedback and tested [multiprocess PRs](https://github.com/bitcoin/bitcoin/pull/28722), and everyone else who's helped with this project. Particular thanks to @ariard who deeply reviewed IPC code and improved the design of the IPC library and initialization process. @jnewbery who championed the early refactoring PRs and helped guide them through development and review. @sjors who has reviewed and repeatedly tested multiprocess code, reporting many issues and helping debug them. @hebasto, @fanquake, and @maflcko who made significant improvements to the build system and fixed countless build issues. @vasild and @jamesob who were brave contributors to the libmultiprocess library. And Chaincode Labs for making this work possible. Also thanks to ChatGPT, who actually wrote most of this document (not @ryanofsky).

@@ -1,13 +1,13 @@
 BitcoinII Core version 0.13.2 is now available from:
 
-  <https://bitcoin.org/bin/bitcoinII-core-0.13.2/>
+  <https://bitcoin.org/bin/bitcoin-core-0.13.2/>
 
 This is a new minor version release, including various bugfixes and
 performance improvements, as well as updated translations.
 
 Please report bugs using the issue tracker at github:
 
-  <https://github.com/bitcoinII/bitcoinII/issues>
+  <https://github.com/bitcoin/bitcoin/issues>
 
 To receive security and update notifications, please subscribe to:
 
@@ -22,7 +22,7 @@ updates will be released anymore. Without security updates, using a bitcoinII
 wallet on a XP machine is irresponsible at least.
 
 In addition to that, with 0.12.x there have been varied reports of BitcoinII Core
-randomly crashing on Windows XP. It is [not clear](https://github.com/bitcoinII/bitcoinII/issues/7681#issuecomment-217439891)
+randomly crashing on Windows XP. It is [not clear](https://github.com/bitcoin/bitcoin/issues/7681#issuecomment-217439891)
 what the source of these crashes is, but it is likely that upstream
 libraries such as Qt are no longer being tested on XP.
 
@@ -134,7 +134,7 @@ git merge commit are mentioned.
 - #8838 `094848b` Calculate size and weight of block correctly in CreateNewBlock() (jnewbery)
 - #8920 `40169dc` Set minimum required Boost to 1.47.0 (fanquake)
 - #9251 `a710a43` Improvement of documentation of command line parameter 'whitelist' (wodry)
-- #8932 `106da69` Allow bitcoinII-tx to create v2 transactions (btcdrak)
+- #8932 `106da69` Allow bitcoinII-tx to create v2 transactions (bc2drak)
 - #8929 `12428b4` add software-properties-common (sigwo)
 - #9120 `08d1c90` bug: Missed one "return false" in recent refactoring in #9067 (UdjinM6)
 - #9067 `f85ee01` Fix exit codes (UdjinM6)
@@ -175,4 +175,4 @@ Thanks to everyone who directly contributed to this release:
 - Wladimir J. van der Laan
 - wodry
 
-As well as everyone that helped translating on [Transifex](https://www.transifex.com/projects/p/bitcoinII/).
+As well as everyone that helped translating on [Transifex](https://www.transifex.com/projects/p/bitcoin/).

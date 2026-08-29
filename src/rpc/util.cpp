@@ -1,11 +1,8 @@
-// Copyright (c) 2017-2022 The BitcoinII Core developers
+// Copyright (c) 2017-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include <bitcoinII-build-config.h> // IWYU pragma: keep
-
 #include <chain.h>
-#include <clientversion.h>
 #include <common/args.h>
 #include <common/messages.h>
 #include <common/types.h>
@@ -49,7 +46,7 @@ const std::string EXAMPLE_ADDRESS[2] = {"bc1q09vm5lfy0j5reeulh4x5752q25uqqvz34hu
 std::string GetAllOutputTypes()
 {
     std::vector<std::string> ret;
-    using U = std::underlying_type<TxoutType>::type;
+    using U = std::underlying_type_t<TxoutType>;
     for (U i = (U)TxoutType::NONSTANDARD; i <= (U)TxoutType::WITNESS_UNKNOWN; ++i) {
         ret.emplace_back(GetTxnOutputType(static_cast<TxoutType>(i)));
     }
@@ -74,7 +71,7 @@ void RPCTypeCheckObj(const UniValue& o,
     {
         for (const std::string& k : o.getKeys())
         {
-            if (typesExpected.count(k) == 0)
+            if (!typesExpected.contains(k))
             {
                 std::string err = strprintf("Unexpected key %s", k);
                 throw JSONRPCError(RPC_TYPE_ERROR, err);
@@ -204,7 +201,7 @@ std::string HelpExampleCliNamed(const std::string& methodname, const RPCArgList&
 std::string HelpExampleRpc(const std::string& methodname, const std::string& args)
 {
     return "> curl --user myusername --data-binary '{\"jsonrpc\": \"2.0\", \"id\": \"curltest\", "
-        "\"method\": \"" + methodname + "\", \"params\": [" + args + "]}' -H 'content-type: application/json' http://127.0.0.1:8333/\n";
+        "\"method\": \"" + methodname + "\", \"params\": [" + args + "]}' -H 'content-type: application/json' http://127.0.0.1:8332/\n";
 }
 
 std::string HelpExampleRpcNamed(const std::string& methodname, const RPCArgList& args)
@@ -215,7 +212,7 @@ std::string HelpExampleRpcNamed(const std::string& methodname, const RPCArgList&
     }
 
     return "> curl --user myusername --data-binary '{\"jsonrpc\": \"2.0\", \"id\": \"curltest\", "
-           "\"method\": \"" + methodname + "\", \"params\": " + params.write() + "}' -H 'content-type: application/json' http://127.0.0.1:8333/\n";
+           "\"method\": \"" + methodname + "\", \"params\": " + params.write() + "}' -H 'content-type: application/json' http://127.0.0.1:8332/\n";
 }
 
 // Converts a hex string to a public key if possible
@@ -230,27 +227,6 @@ CPubKey HexToPubKey(const std::string& hex_in)
     CPubKey vchPubKey(ParseHex(hex_in));
     if (!vchPubKey.IsFullyValid()) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Pubkey \"" + hex_in + "\" must be cryptographically valid.");
-    }
-    return vchPubKey;
-}
-
-// Retrieves a public key for an address from the given FillableSigningProvider
-CPubKey AddrToPubKey(const FillableSigningProvider& keystore, const std::string& addr_in)
-{
-    CTxDestination dest = DecodeDestination(addr_in);
-    if (!IsValidDestination(dest)) {
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid address: " + addr_in);
-    }
-    CKeyID key = GetKeyForDestination(keystore, dest);
-    if (key.IsNull()) {
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, strprintf("'%s' does not refer to a key", addr_in));
-    }
-    CPubKey vchPubKey;
-    if (!keystore.GetPubKey(key, vchPubKey)) {
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, strprintf("no full public key for address %s", addr_in));
-    }
-    if (!vchPubKey.IsFullyValid()) {
-       throw JSONRPCError(RPC_INTERNAL_ERROR, "Wallet contains an invalid public key");
     }
     return vchPubKey;
 }
@@ -378,10 +354,10 @@ UniValue DescribeAddress(const CTxDestination& dest)
  *
  * @pre The sighash argument should be string or null.
 */
-int ParseSighashString(const UniValue& sighash)
+std::optional<int> ParseSighashString(const UniValue& sighash)
 {
     if (sighash.isNull()) {
-        return SIGHASH_DEFAULT;
+        return std::nullopt;
     }
     const auto result{SighashFromStr(sighash.get_str())};
     if (!result) {
@@ -666,7 +642,7 @@ UniValue RPCHelpMan::HandleRequest(const JSONRPCRequest& request) const
      * the user is asking for help information, and throw help when appropriate.
      */
     if (request.mode == JSONRPCRequest::GET_HELP || !IsValidNumArgs(request.params.size())) {
-        throw std::runtime_error(ToString());
+        throw HelpResult{ToString()};
     }
     UniValue arg_mismatch{UniValue::VOBJ};
     for (size_t i{0}; i < m_args.size(); ++i) {
@@ -699,10 +675,8 @@ UniValue RPCHelpMan::HandleRequest(const JSONRPCRequest& request) const
                 mismatch.size() == 1 ? mismatch[0].write(4) :
                 mismatch.write(4)};
             throw std::runtime_error{
-                strprintf("Internal bug detected: RPC call \"%s\" returned incorrect type:\n%s\n%s %s\nPlease report this issue here: %s\n",
-                          m_name, explain,
-                          CLIENT_NAME, FormatFullVersion(),
-                          CLIENT_BUGREPORT)};
+                STR_INTERNAL_BUG(strprintf("RPC call \"%s\" returned incorrect type:\n%s", m_name, explain)),
+            };
         }
     }
     return ret;
@@ -745,14 +719,16 @@ static void CheckRequiredOrDefault(const RPCArg& param)
 TMPL_INST(nullptr, const UniValue*, maybe_arg;);
 TMPL_INST(nullptr, std::optional<double>, maybe_arg ? std::optional{maybe_arg->get_real()} : std::nullopt;);
 TMPL_INST(nullptr, std::optional<bool>, maybe_arg ? std::optional{maybe_arg->get_bool()} : std::nullopt;);
-TMPL_INST(nullptr, const std::string*, maybe_arg ? &maybe_arg->get_str() : nullptr;);
+TMPL_INST(nullptr, std::optional<int64_t>, maybe_arg ? std::optional{maybe_arg->getInt<int64_t>()} : std::nullopt;);
+TMPL_INST(nullptr, std::optional<std::string_view>, maybe_arg ? std::optional<std::string_view>{maybe_arg->get_str()} : std::nullopt;);
 
 // Required arg or optional arg with default value.
 TMPL_INST(CheckRequiredOrDefault, const UniValue&, *CHECK_NONFATAL(maybe_arg););
 TMPL_INST(CheckRequiredOrDefault, bool, CHECK_NONFATAL(maybe_arg)->get_bool(););
 TMPL_INST(CheckRequiredOrDefault, int, CHECK_NONFATAL(maybe_arg)->getInt<int>(););
 TMPL_INST(CheckRequiredOrDefault, uint64_t, CHECK_NONFATAL(maybe_arg)->getInt<uint64_t>(););
-TMPL_INST(CheckRequiredOrDefault, const std::string&, CHECK_NONFATAL(maybe_arg)->get_str(););
+TMPL_INST(CheckRequiredOrDefault, uint32_t, CHECK_NONFATAL(maybe_arg)->getInt<uint32_t>(););
+TMPL_INST(CheckRequiredOrDefault, std::string_view, CHECK_NONFATAL(maybe_arg)->get_str(););
 
 bool RPCHelpMan::IsValidNumArgs(size_t num_args) const
 {
@@ -814,6 +790,7 @@ std::string RPCHelpMan::ToString() const
     if (was_optional) ret += " )";
 
     // Description
+    CHECK_NONFATAL(!m_description.starts_with('\n'));  // Historically \n was required, but reject it for new code.
     ret += "\n\n" + TrimString(m_description) + "\n";
 
     // Arguments
@@ -1195,7 +1172,7 @@ UniValue RPCResult::MatchesType(const UniValue& result) const
         std::map<std::string, UniValue> result_obj;
         result.getObjMap(result_obj);
         for (const auto& result_entry : result_obj) {
-            if (doc_keys.find(result_entry.first) == doc_keys.end()) {
+            if (!doc_keys.contains(result_entry.first)) {
                 errors.pushKV(result_entry.first, "key returned that was not in doc");
             }
         }

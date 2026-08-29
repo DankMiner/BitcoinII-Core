@@ -2,7 +2,7 @@
 
 **Updated for NetBSD [10.1](https://netbsd.org/releases/formal-10/NetBSD-10.1.html)**
 
-This guide describes how to build bitcoinIId, command-line utilities, and GUI on NetBSD.
+This guide describes how to build bitcoinII-d, command-line utilities, and GUI on NetBSD.
 
 ## Preparation
 
@@ -12,7 +12,7 @@ Install the required dependencies the usual way you [install software on NetBSD]
 The example commands below use `pkgin`.
 
 ```bash
-pkgin install git cmake pkg-config boost-headers libevent
+pkgin install git cmake pkg-config boost libevent
 ```
 
 NetBSD currently ships with an older version of `gcc` than is needed to build. You should upgrade your `gcc` and then pass this new version to the configure script.
@@ -31,6 +31,22 @@ cmake -B build
     ...
 ```
 
+SQLite is required for the wallet:
+
+```bash
+pkgin install sqlite3
+```
+
+To build BitcoinII Core without the wallet, use `-DENABLE_WALLET=OFF`.
+
+Cap'n Proto is needed for IPC functionality (see [multiprocess.md](multiprocess.md)):
+
+```bash
+pkgin install capnproto
+```
+
+Compile with `-DENABLE_IPC=OFF` if you do not need IPC functionality.
+
 See [dependencies.md](dependencies.md) for a complete overview.
 
 ### 2. Clone BitcoinII Repo
@@ -38,39 +54,19 @@ See [dependencies.md](dependencies.md) for a complete overview.
 Clone the BitcoinII Core repository to a directory. All build scripts and commands will run from this directory.
 
 ```bash
-git clone https://github.com/bitcoinII/bitcoinII.git
+git clone https://github.com/bitcoin/bitcoin.git
 ```
 
 ### 3. Install Optional Dependencies
 
-#### Wallet Dependencies
-
-It is not necessary to build wallet functionality to run bitcoinIId or the GUI.
-
-###### Descriptor Wallet Support
-
-`sqlite3` is required to enable support for [descriptor wallets](https://github.com/bitcoinII/bitcoinII/blob/master/doc/descriptors.md).
-
-```bash
-pkgin install sqlite3
-```
-
-###### Legacy Wallet Support
-
-`db4` is required to enable support for legacy wallets.
-
-```bash
-pkgin install db4
-```
-
 #### GUI Dependencies
-###### Qt5
+###### Qt6
 
 BitcoinII Core includes a GUI built with the cross-platform Qt Framework. To compile the GUI, we need to install
 the necessary parts of Qt, the libqrencode and pass `-DBUILD_GUI=ON`. Skip if you don't intend to use the GUI.
 
 ```bash
-pkgin install qt5-qtbase qt5-qttools
+pkgin install qt6-qtbase qt6-qttools
 ```
 
 ###### libqrencode
@@ -86,9 +82,9 @@ Otherwise, if you don't need QR encoding support, use the `-DWITH_QRENCODE=OFF` 
 #### Notifications
 ###### ZeroMQ
 
-BitcoinII Core can provide notifications via ZeroMQ. If the package is installed, support will be compiled in.
+BitcoinII Core can provide notifications via ZeroMQ. To compile ZMQ support, install the following dependency and pass `-DWITH_ZMQ=ON` when configuring.
 ```bash
-pkgin zeromq
+pkgin install zeromq
 ```
 
 #### Test Suite Dependencies
@@ -97,7 +93,7 @@ There is an included test suite that is useful for testing code changes when dev
 To run the test suite (recommended), you will need to have Python 3 installed:
 
 ```bash
-pkgin install python310 py310-zmq
+pkgin install python313 py313-zmq
 ```
 
 ## Building BitcoinII Core
@@ -118,6 +114,6 @@ Run `cmake -B build -LH` to see the full list of available options.
 Build and run the tests:
 
 ```bash
-cmake --build build     # Use "-j N" for N parallel jobs.
-ctest --test-dir build  # Use "-j N" for N parallel tests. Some tests are disabled if Python 3 is not available.
+cmake --build build     # Append "-j N" for N parallel jobs.
+ctest --test-dir build  # Append "-j N" for N parallel tests.
 ```

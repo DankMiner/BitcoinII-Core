@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2017-2021 The BitcoinII Core developers
+# Copyright (c) 2017-present The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Tests NODE_NETWORK_LIMITED.
@@ -40,7 +40,7 @@ class P2PIgnoreInv(P2PInterface):
     def send_getdata_for_block(self, blockhash):
         getdata_request = msg_getdata()
         getdata_request.inv.append(CInv(MSG_BLOCK, int(blockhash, 16)))
-        self.send_message(getdata_request)
+        self.send_without_ping(getdata_request)
 
 class NodeNetworkLimitedTest(BitcoinIITestFramework):
     def set_test_params(self):

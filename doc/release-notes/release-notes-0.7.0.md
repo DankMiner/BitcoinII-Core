@@ -1,16 +1,16 @@
 BitcoinII version 0.7.0 is now available for download at:
-  http://sourceforge.net/projects/bitcoinII/files/BitcoinII/bitcoinII-0.7.0/
+  http://sourceforge.net/projects/bitcoin/files/Bitcoin/bitcoin-0.7.0/
 
-We recommend that everybody running prior versions of bitcoinIId/BitcoinII-Qt
+We recommend that everybody running prior versions of bitcoinII-d/BitcoinII-Qt
 upgrade to this release, except for users running Mac OSX 10.5.
 
 Please report bugs using the issue tracker at github:
-  https://github.com/bitcoinII/bitcoinII/issues
+  https://github.com/bitcoin/bitcoin/issues
 
 Project source code is hosted at github; you can get
 source-only tarballs/zipballs directly from there:
-  https://github.com/bitcoinII/bitcoinII/tarball/v0.7.0  # .tar.gz
-  https://github.com/bitcoinII/bitcoinII/zipball/v0.7.0  # .zip
+  https://github.com/bitcoin/bitcoin/tarball/v0.7.0  # .tar.gz
+  https://github.com/bitcoin/bitcoin/zipball/v0.7.0  # .zip
 
 Ubuntu Linux users can use the "Personal Package Archive" (PPA)
 maintained by Matt Corallo to automatically keep 
@@ -30,7 +30,7 @@ Code:
 /Applications/BitcoinII-Qt
 (on Mac) or
 Code:
-bitcoinIId/bitcoinII-qt
+bitcoinII-d/bitcoinII-qt
 (on Linux).
 
 If you were running on Linux with a version that might have been compiled
@@ -131,7 +131,7 @@ Internal codebase
 Miscellaneous
 
 * Reopen debug.log upon SIGHUP
-* Bash programmable completion for bitcoinIId(1)
+* Bash programmable completion for bitcoinII-d(1)
 * On supported OS's, each thread is given a useful name
 
 

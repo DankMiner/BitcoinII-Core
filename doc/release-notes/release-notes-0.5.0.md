@@ -1,13 +1,13 @@
 BitcoinII version 0.5.0 is now available for download at:
-http://sourceforge.net/projects/bitcoinII/files/BitcoinII/bitcoinII-0.5.0/
+http://sourceforge.net/projects/bitcoin/files/Bitcoin/bitcoin-0.5.0/
 
 The major change for this release is a completely new graphical interface that uses the Qt user interface toolkit.
 
 This release include German, Spanish, Spanish-Castilian, Norwegian and Dutch translations. More translations are welcome; join the project at Transifex if you can help:
-https://www.transifex.net/projects/p/bitcoinII/
+https://www.transifex.net/projects/p/bitcoin/
 
 Please report bugs using the issue tracker at github:
-https://github.com/bitcoinII/bitcoinII/issues
+https://github.com/bitcoin/bitcoin/issues
 
 For Ubuntu users, there is a new ppa maintained by Matt Corallo which you can add to your system so that it will automatically keep bitcoinII up-to-date.  Just type "sudo apt-add-repository ppa:bitcoinII/bitcoinII" in your terminal, then install the bitcoinII-qt package.
 
@@ -17,7 +17,7 @@ The wallet encryption feature introduced in BitcoinII version 0.4.0 did not suff
 managed to get a copy of your encrypted wallet.dat file might be able to recover some or all of the unencrypted keys and steal the
 associated coins.
 
-If you have a previously encrypted wallet.dat, the first time you run bitcoinII-qt or bitcoinIId the wallet will be rewritten, BitcoinII will
+If you have a previously encrypted wallet.dat, the first time you run bitcoinII-qt or bitcoinII-d the wallet will be rewritten, BitcoinII will
 shut down, and you will be prompted to restart it to run with the new, properly encrypted file.
 
 If you had a previously encrypted wallet.dat that might have been copied or stolen (for example, you backed it up to a public
@@ -32,7 +32,7 @@ new private keys are properly backed up you should:
 
 2. Run it again, then ask it for a new bitcoinII address.
 BitcoinII-Qt: Address Book, then New Address...
-bitcoinIId: run the 'walletpassphrase' RPC command to unlock the wallet,  then run the 'getnewaddress' RPC command.
+bitcoinII-d: run the 'walletpassphrase' RPC command to unlock the wallet,  then run the 'getnewaddress' RPC command.
 
 3. If your encrypted wallet.dat may have been copied or stolen, send  all of your bitcoinIIs to the new bitcoinII address.
 

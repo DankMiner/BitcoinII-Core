@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2022 The BitcoinII Core developers
+// Copyright (c) 2011-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -41,7 +41,9 @@ SplashScreen::SplashScreen(const NetworkStyle* networkStyle)
     // define text to place
     QString titleText       = CLIENT_NAME;
     QString versionText     = QString("Version %1").arg(QString::fromStdString(FormatFullVersion()));
-    QString copyrightText   = QString::fromUtf8(CopyrightHolders(strprintf("\xc2\xA9 %u-%u ", 2009, COPYRIGHT_YEAR)).c_str());
+    QString copyrightText = QString::fromUtf8(
+        (strprintf("\xc2\xA9 %u The BitcoinII developers\n", COPYRIGHT_YEAR) +
+         strprintf("\xc2\xA9 %u-%u The Bitcoin Core developers", 2009, COPYRIGHT_YEAR)).c_str());
     const QString& titleAddText    = networkStyle->getTitleAddText();
 
     QString font            = QApplication::font().toString();
@@ -64,7 +66,7 @@ SplashScreen::SplashScreen(const NetworkStyle* networkStyle)
     pixPaint.fillRect(rGradient, gradient);
 
     // draw the bitcoinII icon, expected size of PNG: 1024x1024
-    QRect rectIcon(QPoint(-150,-122), QSize(430,430));
+    QRect rectIcon(QPoint(-50,-50), QSize(300,300));
 
     const QSize requiredSize(1024,1024);
     QPixmap icon(networkStyle->getAppIcon().pixmap(requiredSize));
@@ -180,8 +182,12 @@ static void ShowProgress(SplashScreen *splash, const std::string &title, int nPr
 void SplashScreen::subscribeToCoreSignals()
 {
     // Connect signals to client
-    m_handler_init_message = m_node->handleInitMessage(std::bind(InitMessage, this, std::placeholders::_1));
-    m_handler_show_progress = m_node->handleShowProgress(std::bind(ShowProgress, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    m_handler_init_message = m_node->handleInitMessage([this](const std::string& message) {
+        InitMessage(this, message);
+    });
+    m_handler_show_progress = m_node->handleShowProgress([this](const std::string& title, int nProgress, bool resume_possible) {
+        ShowProgress(this, title, nProgress, resume_possible);
+    });
     m_handler_init_wallet = m_node->handleInitWallet([this]() { handleLoadWallet(); });
 }
 
@@ -190,7 +196,9 @@ void SplashScreen::handleLoadWallet()
 #ifdef ENABLE_WALLET
     if (!WalletModel::isWalletEnabled()) return;
     m_handler_load_wallet = m_node->walletLoader().handleLoadWallet([this](std::unique_ptr<interfaces::Wallet> wallet) {
-        m_connected_wallet_handlers.emplace_back(wallet->handleShowProgress(std::bind(ShowProgress, this, std::placeholders::_1, std::placeholders::_2, false)));
+        m_connected_wallet_handlers.emplace_back(wallet->handleShowProgress([this](const std::string& title, int nProgress) {
+            ShowProgress(this, title, nProgress, /*resume_possible=*/false);
+        }));
         m_connected_wallets.emplace_back(std::move(wallet));
     });
 #endif

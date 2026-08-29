@@ -1,13 +1,13 @@
 BitcoinII Core version 0.19.0.1 is now available from:
 
-  <https://bitcoincore.org/bin/bitcoinII-core-0.19.0.1/>
+  <https://bitcoincore.org/bin/bitcoin-core-0.19.0.1/>
 
 This release includes new features, various bug fixes and performance
 improvements, as well as updated translations.
 
 Please report bugs using the issue tracker at GitHub:
 
-  <https://github.com/bitcoinII/bitcoinII/issues>
+  <https://github.com/bitcoin/bitcoin/issues>
 
 To receive security and update notifications, please subscribe to:
 
@@ -19,7 +19,7 @@ How to Upgrade
 If you are running an older version, shut it down. Wait until it has completely
 shut down (which might take a few minutes for older versions), then run the
 installer (on Windows) or just copy over `/Applications/BitcoinII-Qt` (on Mac)
-or `bitcoinIId`/`bitcoinII-qt` (on Linux).
+or `bitcoinII-d`/`bitcoinII-qt` (on Linux).
 
 Upgrading directly from a version of BitcoinII Core that has reached its EOL is
 possible, but might take some time if the datadir needs to be migrated.  Old
@@ -50,7 +50,7 @@ Notable changes
 New user documentation
 ----------------------
 
-- [Reduce memory](https://github.com/bitcoinII/bitcoinII/blob/master/doc/reduce-memory.md)
+- [Reduce memory](https://github.com/bitcoin/bitcoin/blob/master/doc/reduce-memory.md)
   suggests configuration tweaks for running BitcoinII Core on systems with
   limited memory. (#16339)
 
@@ -90,7 +90,7 @@ Updated settings
   provide peers connecting using the indicated interfaces or IP
   addresses.  If no permissions are specified with an address or CIDR
   network, the implicit default permissions are the same as previous
-  releases.  See the `bitcoinIId -help` output for these two options for
+  releases.  See the `bitcoinII-d -help` output for these two options for
   details about the available permissions. (#16248)
 
 - Users setting custom `dbcache` values can increase their setting slightly
@@ -355,7 +355,7 @@ Wallet
   BC2), the RPC commands `walletcreatefundedpsbt` and
   `fundrawtransaction` will now fail instead of rounding down the fee.
   Be aware that the `feeRate` argument is specified in BC2 per 1,000
-  vbytes, not satoshi per vbyte. (#16257)
+  vbytes, not satooshi per vbyte. (#16257)
 
 - A new wallet flag `avoid_reuse` has been added (default off). When
   enabled, a wallet will distinguish between used and unused addresses,
@@ -569,7 +569,7 @@ Build system changes
 - #16291 Stop translating PACKAGE_NAME (MarcoFalke)
 - #16380 Remove unused bits from the service flags enum (MarcoFalke)
 - #16379 Fix autostart filenames on Linux for testnet/regtest (hebasto)
-- #16366 init: Use InitError for all errors in bitcoinIId/qt (MarcoFalke)
+- #16366 init: Use InitError for all errors in bitcoinII-d/qt (MarcoFalke)
 - #16436 Do not create payment server if -disablewallet option provided (hebasto)
 - #16514 Remove unused RPCConsole::tabFocus (promag)
 - #16497 Generate bech32 addresses by default (take 2, fixup) (MarcoFalke)
@@ -630,7 +630,7 @@ Build system changes
 - #16235 Cleaned up and consolidated msbuild files (no code changes) (sipsorcery)
 - #16246 MSVC: Fix error in debug mode (Fix #16245) (NicolasDorier)
 - #16183 xtrans: Configure flags cleanup (dongcarl)
-- #16258 [MSVC]: Create the config.ini as part of bitcoinIId build (NicolasDorier)
+- #16258 [MSVC]: Create the config.ini as part of bitcoinII-d build (NicolasDorier)
 - #16271 remove -Wall from rapidcheck build flags (fanquake)
 - #16309 [MSVC] allow user level project customization (NicolasDorier)
 - #16308 [MSVC] Copy build output to src/ automatically after build (NicolasDorier)
@@ -851,7 +851,7 @@ Build system changes
 - #16556 Fix systemd service file configuration directory setup (setpill)
 - #15615 Add log output during initial header sync (jonasschnelli)
 - #16774 Avoid unnecessary "Synchronizing blockheaders" log messages (jonasschnelli)
-- #16489 log: harmonize bitcoinIId logging (jonatack)
+- #16489 log: harmonize bitcoinII-d logging (jonatack)
 - #16577 util: Cbufferedfile fixes and unit test (LarryRuane)
 - #16984 util: Make thread names shorter (hebasto)
 - #17038 Don't rename main thread at process level (laanwj)
@@ -873,7 +873,7 @@ Build system changes
 - #15611 Add Gitian key for droark (droark)
 - #15626 Update ACK description in CONTRIBUTING.md (jonatack)
 - #15603 Add more tips to productivity.md (gwillen)
-- #15683 Comment for seemingly duplicate LIBBITCOIN_SERVER (Bushstar)
+- #15683 Comment for seemingly duplicate LIBBITCOINII_SERVER (Bushstar)
 - #15685 rpc-mining: Clarify error messages (MarcoFalke)
 - #15760 Clarify sendrawtransaction::maxfeerate==0 help (MarcoFalke)
 - #15659 fix findFork comment (r8921039)
@@ -945,7 +945,7 @@ Build system changes
 - #16885 Update tx-size-small comment with relevant CVE disclosure (instagibbs)
 - #16900 Fix doxygen comment for SignTransaction in rpc/rawtransaction_util (MarcoFalke)
 - #16914 Update homebrew instruction for doxygen (Sjors)
-- #16912 Remove Doxygen intro from src/bitcoinIId.cpp (ch4ot1c)
+- #16912 Remove Doxygen intro from src/bitcoinII-d.cpp (ch4ot1c)
 - #16960 replace outdated OpenSSL comment in test README (fanquake)
 - #16968 Remove MSVC update step from translation process (laanwj)
 - #16953 Improve test READMEs (fjahr)
@@ -1086,4 +1086,4 @@ Thanks to everyone who directly contributed to this release:
 - Wladimir J. van der Laan
 - zenosage
 
-As well as everyone that helped translating on [Transifex](https://www.transifex.com/bitcoinII/bitcoinII/).
+As well as everyone that helped translating on [Transifex](https://www.transifex.com/bitcoin/bitcoin/).

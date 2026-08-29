@@ -1,11 +1,11 @@
 BitcoinII-Qt version 0.8.4 is now available from:
-  http://sourceforge.net/projects/bitcoinII/files/BitcoinII/bitcoinII-0.8.4/
+  http://sourceforge.net/projects/bitcoin/files/Bitcoin/bitcoin-0.8.4/
 
 This is a maintenance release to fix a critical bug and three
 security issues; we urge all users to upgrade.
 
 Please report bugs using the issue tracker at github:
-  https://github.com/bitcoinII/bitcoinII/issues
+  https://github.com/bitcoin/bitcoin/issues
 
 
 How to Upgrade
@@ -14,7 +14,7 @@ How to Upgrade
 If you are running an older version, shut it down. Wait
 until it has completely shut down (which might take a few minutes for older
 versions), then run the installer (on Windows) or just copy over
-/Applications/BitcoinII-Qt (on Mac) or bitcoinIId/bitcoinII-qt (on Linux).
+/Applications/BitcoinII-Qt (on Mac) or bitcoinII-d/bitcoinII-qt (on Linux).
 
 If you are upgrading from version 0.7.2 or earlier, the first time you
 run 0.8.4 your blockchain files will be re-indexed, which will take
@@ -29,12 +29,12 @@ Security issues
 
 An attacker could send a series of messages that resulted in
 an integer division-by-zero error in the Bloom Filter handling
-code, causing the BitcoinII-Qt or bitcoinIId process to crash.
+code, causing the BitcoinII-Qt or bitcoinII-d process to crash.
 Bloom filters were introduced with version 0.8, so versions 0.8.0
 through 0.8.3 are vulnerable to this critical denial-of-service attack.
 
 A constant-time algorithm is now used to check RPC password
-guess attempts; fixes https://github.com/bitcoinII/bitcoinII/issues/2838
+guess attempts; fixes https://github.com/bitcoin/bitcoin/issues/2838
 (CVE-2013-4165)
 
 Implement a better fix for the fill-memory-with-orphan-transactions

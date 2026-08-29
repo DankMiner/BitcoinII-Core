@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
-# Copyright (c) 2018-2022 The BitcoinII Core developers
+# Copyright (c) 2018-present The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test transaction time during old block rescanning
 """
 
-import concurrent.futures
 import time
 
-from test_framework.authproxy import JSONRPCException
 from test_framework.blocktools import COINBASE_MATURITY
 from test_framework.test_framework import BitcoinIITestFramework
 from test_framework.util import (
@@ -16,15 +14,9 @@ from test_framework.util import (
     assert_raises_rpc_error,
     set_node_times,
 )
-from test_framework.wallet_util import (
-    get_generate_key,
-)
 
 
 class TransactionTimeRescanTest(BitcoinIITestFramework):
-    def add_options(self, parser):
-        self.add_wallet_options(parser)
-
     def set_test_params(self):
         self.setup_clean_chain = False
         self.num_nodes = 3
@@ -58,22 +50,30 @@ class TransactionTimeRescanTest(BitcoinIITestFramework):
 
         # prepare the user wallet with 3 watch only addresses
         wo1 = usernode.getnewaddress()
+        wo1_desc = usernode.getaddressinfo(wo1)["desc"]
         wo2 = usernode.getnewaddress()
+        wo2_desc = usernode.getaddressinfo(wo2)["desc"]
         wo3 = usernode.getnewaddress()
+        wo3_desc = usernode.getaddressinfo(wo3)["desc"]
 
         usernode.createwallet(wallet_name='wo', disable_private_keys=True)
         wo_wallet = usernode.get_wallet_rpc('wo')
 
-        wo_wallet.importaddress(wo1)
-        wo_wallet.importaddress(wo2)
-        wo_wallet.importaddress(wo3)
+        import_res = wo_wallet.importdescriptors(
+            [
+                {"desc": wo1_desc, "timestamp": "now"},
+                {"desc": wo2_desc, "timestamp": "now"},
+                {"desc": wo3_desc, "timestamp": "now"},
+            ]
+        )
+        assert_equal(all([r["success"] for r in import_res]), True)
 
         self.log.info('Start transactions')
 
         # check blockcount
         assert_equal(minernode.getblockcount(), 200)
 
-        # generate some btc to create transactions and check blockcount
+        # generate some bc2 to create transactions and check blockcount
         initial_mine = COINBASE_MATURITY + 1
         self.generatetoaddress(minernode, initial_mine, m1)
         assert_equal(minernode.getblockcount(), initial_mine + 200)
@@ -81,8 +81,8 @@ class TransactionTimeRescanTest(BitcoinIITestFramework):
         # synchronize nodes and time
         self.sync_all()
         set_node_times(self.nodes, cur_time + ten_days)
-        # send 10 btc to user's first watch-only address
-        self.log.info('Send 10 btc to user')
+        # send 10 bc2 to user's first watch-only address
+        self.log.info('Send 10 bc2 to user')
         miner_wallet.sendtoaddress(wo1, 10)
 
         # generate blocks and check blockcount
@@ -92,8 +92,8 @@ class TransactionTimeRescanTest(BitcoinIITestFramework):
         # synchronize nodes and time
         self.sync_all()
         set_node_times(self.nodes, cur_time + ten_days + ten_days)
-        # send 5 btc to our second watch-only address
-        self.log.info('Send 5 btc to user')
+        # send 5 bc2 to our second watch-only address
+        self.log.info('Send 5 bc2 to user')
         miner_wallet.sendtoaddress(wo2, 5)
 
         # generate blocks and check blockcount
@@ -103,8 +103,8 @@ class TransactionTimeRescanTest(BitcoinIITestFramework):
         # synchronize nodes and time
         self.sync_all()
         set_node_times(self.nodes, cur_time + ten_days + ten_days + ten_days)
-        # send 1 btc to our third watch-only address
-        self.log.info('Send 1 btc to user')
+        # send 1 bc2 to our third watch-only address
+        self.log.info('Send 1 bc2 to user')
         miner_wallet.sendtoaddress(wo3, 1)
 
         # generate more blocks and check blockcount
@@ -132,17 +132,24 @@ class TransactionTimeRescanTest(BitcoinIITestFramework):
         restorenode.createwallet(wallet_name='wo', disable_private_keys=True)
         restorewo_wallet = restorenode.get_wallet_rpc('wo')
 
-        # for descriptor wallets, the test framework maps the importaddress RPC to the
-        # importdescriptors RPC (with argument 'timestamp'='now'), which always rescans
+        # importdescriptors with "timestamp": "now" always rescans
         # blocks of the past 2 hours, based on the current MTP timestamp; in order to avoid
         # importing the last address (wo3), we advance the time further and generate 10 blocks
-        if self.options.descriptors:
-            set_node_times(self.nodes, cur_time + ten_days + ten_days + ten_days + ten_days)
-            self.generatetoaddress(minernode, 10, m1)
+        set_node_times(self.nodes, cur_time + ten_days + ten_days + ten_days + ten_days)
+        self.generatetoaddress(minernode, 10, m1)
 
-        restorewo_wallet.importaddress(wo1, rescan=False)
-        restorewo_wallet.importaddress(wo2, rescan=False)
-        restorewo_wallet.importaddress(wo3, rescan=False)
+        import_res = restorewo_wallet.importdescriptors(
+            [
+                {"desc": wo1_desc, "timestamp": "now"},
+                {"desc": wo2_desc, "timestamp": "now"},
+                {"desc": wo3_desc, "timestamp": "now"},
+            ]
+        )
+        assert_equal(all([r["success"] for r in import_res]), True)
+
+        self.log.info('Testing abortrescan when no rescan is in progress')
+        assert_equal(restorewo_wallet.getwalletinfo()['scanning'], False)
+        assert_equal(restorewo_wallet.abortrescan(), False)
 
         # check user has 0 balance and no transactions
         assert_equal(restorewo_wallet.getbalance(), 0)
@@ -181,46 +188,6 @@ class TransactionTimeRescanTest(BitcoinIITestFramework):
         enc_wallet = usernode.get_wallet_rpc("enc_wallet")
         assert_raises_rpc_error(-13, "Error: Please enter the wallet passphrase with walletpassphrase first.", enc_wallet.rescanblockchain)
 
-        if not self.options.descriptors:
-            self.log.info("Test rescanning an encrypted wallet")
-            hd_seed = get_generate_key().privkey
-
-            usernode.createwallet(wallet_name="temp_wallet", blank=True, descriptors=False)
-            temp_wallet = usernode.get_wallet_rpc("temp_wallet")
-            temp_wallet.sethdseed(seed=hd_seed)
-
-            for i in range(399):
-                temp_wallet.getnewaddress()
-
-            self.generatetoaddress(usernode, COINBASE_MATURITY + 1, temp_wallet.getnewaddress())
-            self.generatetoaddress(usernode, COINBASE_MATURITY + 1, temp_wallet.getnewaddress())
-
-            minernode.createwallet("encrypted_wallet", blank=True, passphrase="passphrase", descriptors=False)
-            encrypted_wallet = minernode.get_wallet_rpc("encrypted_wallet")
-
-            encrypted_wallet.walletpassphrase("passphrase", 99999)
-            encrypted_wallet.sethdseed(seed=hd_seed)
-
-            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as thread:
-                with minernode.assert_debug_log(expected_msgs=["Rescan started from block 0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206... (slow variant inspecting all blocks)"], timeout=5):
-                    rescanning = thread.submit(encrypted_wallet.rescanblockchain)
-
-                # set the passphrase timeout to 1 to test that the wallet remains unlocked during the rescan
-                minernode.cli("-rpcwallet=encrypted_wallet").walletpassphrase("passphrase", 1)
-
-                try:
-                    minernode.cli("-rpcwallet=encrypted_wallet").walletlock()
-                except JSONRPCException as e:
-                    assert e.error["code"] == -4 and "Error: the wallet is currently being used to rescan the blockchain for related transactions. Please call `abortrescan` before locking the wallet." in e.error["message"]
-
-                try:
-                    minernode.cli("-rpcwallet=encrypted_wallet").walletpassphrasechange("passphrase", "newpassphrase")
-                except JSONRPCException as e:
-                    assert e.error["code"] == -4 and "Error: the wallet is currently being used to rescan the blockchain for related transactions. Please call `abortrescan` before changing the passphrase." in e.error["message"]
-
-                assert_equal(rescanning.result(), {"start_height": 0, "stop_height": 803})
-
-            assert_equal(encrypted_wallet.getbalance(), temp_wallet.getbalance())
 
 if __name__ == '__main__':
     TransactionTimeRescanTest(__file__).main()

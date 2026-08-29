@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright (c) 2015-2021 The BitcoinII Core developers
+# Copyright (c) 2015-present The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -21,7 +21,7 @@ while getopts "?hr" opt; do
       echo "-r      Check that subtree commit is present in repository."
       echo "        To do this check, fetch the subtreed remote first. Example:"
       echo ""
-      echo "            git fetch https://github.com/bitcoinII-core/secp256k1.git"
+      echo "            git fetch https://github.com/bitcoin-core/secp256k1.git"
       echo "            test/lint/git-subtree-check.sh -r src/secp256k1"
       exit 1
     ;;
@@ -79,6 +79,32 @@ find_latest_squash()
 # find latest subtree update
 latest_squash="$(find_latest_squash "$DIR")"
 if [ -z "$latest_squash" ]; then
+    # A history-squashed repository snapshot has no git-subtree metadata.
+    # If this directory was already present in the root commit, use that
+    # root tree as the provenance baseline and ensure it has not been
+    # modified since the snapshot.
+    root_commit="$(git rev-list --max-parents=0 "$COMMIT" | head -n 1)"
+
+    if [ -n "$root_commit" ] && git cat-file -e "$root_commit:$DIR" 2>/dev/null; then
+        tree_root="$(git rev-parse "$root_commit:$DIR")"
+
+        if ! tree_actual="$(git rev-parse "$COMMIT:$DIR" 2>/dev/null)"; then
+            echo "FAIL: subtree directory $DIR not found in $COMMIT" >&2
+            exit 1
+        fi
+
+        echo "$DIR has no subtree merge history; using root snapshot $root_commit as baseline"
+
+        if [ "$tree_actual" != "$tree_root" ]; then
+            git diff "$tree_root" "$tree_actual" >&2
+            echo "FAIL: subtree directory was touched after root snapshot" >&2
+            exit 1
+        fi
+
+        echo "GOOD"
+        exit 0
+    fi
+
     echo "ERROR: $DIR is not a subtree" >&2
     exit 2
 fi

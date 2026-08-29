@@ -1,13 +1,13 @@
 BitcoinII Core version 0.14.2 is now available from:
 
-  <https://bitcoin.org/bin/bitcoinII-core-0.14.2/>
+  <https://bitcoin.org/bin/bitcoin-core-0.14.2/>
 
 This is a new minor version release, including various bugfixes and
 performance improvements, as well as updated translations.
 
 Please report bugs using the issue tracker at github:
 
-  <https://github.com/bitcoinII/bitcoinII/issues>
+  <https://github.com/bitcoin/bitcoin/issues>
 
 To receive security and update notifications, please subscribe to:
 
@@ -98,5 +98,5 @@ Thanks to everyone who directly contributed to this release:
 - Shigeya Suzuki
 - Wladimir J. van der Laan
 
-As well as everyone that helped translating on [Transifex](https://www.transifex.com/projects/p/bitcoinII/).
+As well as everyone that helped translating on [Transifex](https://www.transifex.com/projects/p/bitcoin/).
 

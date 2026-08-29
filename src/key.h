@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2022 The BitcoinII Core developers
+// Copyright (c) 2009-present The Bitcoin Core developers
 // Copyright (c) 2017 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
@@ -7,6 +7,7 @@
 #ifndef BITCOINII_KEY_H
 #define BITCOINII_KEY_H
 
+#include <musig.h>
 #include <pubkey.h>
 #include <serialize.h>
 #include <support/allocators/secure.h>
@@ -170,7 +171,7 @@ public:
      *                              (this is used for key path spending, with specific
      *                              Merkle root of the script tree).
      */
-    bool SignSchnorr(const uint256& hash, Span<unsigned char> sig, const uint256* merkle_root, const uint256& aux) const;
+    bool SignSchnorr(const uint256& hash, std::span<unsigned char> sig, const uint256* merkle_root, const uint256& aux) const;
 
     //! Derive BIP32 child key.
     [[nodiscard]] bool Derive(CKey& keyChild, ChainCode &ccChild, unsigned int nChild, const ChainCode& cc) const;
@@ -192,7 +193,7 @@ public:
      *  resulting encoding will be indistinguishable from uniform to any adversary who does not
      *  know the private key (because the private key itself is always used as entropy as well).
      */
-    EllSwiftPubKey EllSwiftCreate(Span<const std::byte> entropy) const;
+    EllSwiftPubKey EllSwiftCreate(std::span<const std::byte> entropy) const;
 
     /** Compute a BIP324-style ECDH shared secret.
      *
@@ -220,6 +221,9 @@ public:
      *                               Merkle root of the script tree).
      */
     KeyPair ComputeKeyPair(const uint256* merkle_root) const;
+
+    std::vector<uint8_t> CreateMuSig2Nonce(MuSig2SecNonce& secnonce, const uint256& sighash, const CPubKey& aggregate_pubkey, const std::vector<CPubKey>& pubkeys);
+    std::optional<uint256> CreateMuSig2PartialSig(const uint256& hash, const CPubKey& aggregate_pubkey, const std::vector<CPubKey>& pubkeys, const std::map<CPubKey, std::vector<uint8_t>>& pubnonces, MuSig2SecNonce& secnonce, const std::vector<std::pair<uint256, bool>>& tweaks);
 };
 
 CKey GenerateRandomKey(bool compressed = true) noexcept;
@@ -250,7 +254,7 @@ struct CExtKey {
     void Decode(const unsigned char code[BIP32_EXTKEY_SIZE]);
     [[nodiscard]] bool Derive(CExtKey& out, unsigned int nChild) const;
     CExtPubKey Neuter() const;
-    void SetSeed(Span<const std::byte> seed);
+    void SetSeed(std::span<const std::byte> seed);
 };
 
 /** KeyPair
@@ -286,7 +290,7 @@ public:
     KeyPair(const KeyPair& other) { *this = other; }
 
     friend KeyPair CKey::ComputeKeyPair(const uint256* merkle_root) const;
-    [[nodiscard]] bool SignSchnorr(const uint256& hash, Span<unsigned char> sig, const uint256& aux) const;
+    [[nodiscard]] bool SignSchnorr(const uint256& hash, std::span<unsigned char> sig, const uint256& aux) const;
 
     //! Check whether this keypair is valid.
     bool IsValid() const { return !!m_keypair; }

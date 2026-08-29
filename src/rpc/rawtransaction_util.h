@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2022 The BitcoinII Core developers
+// Copyright (c) 2017-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -7,6 +7,8 @@
 
 #include <addresstype.h>
 #include <consensus/amount.h>
+#include <rpc/util.h>
+#include <cstdint>
 #include <map>
 #include <string>
 #include <optional>
@@ -28,7 +30,7 @@ class SigningProvider;
  * @param  hashType      The signature hash type
  * @param result         JSON object where signed transaction results accumulate
  */
-void SignTransaction(CMutableTransaction& mtx, const SigningProvider* keystore, const std::map<COutPoint, Coin>& coins, const UniValue& hashType, UniValue& result);
+void SignTransaction(CMutableTransaction& mtx, const SigningProvider* keystore, const std::map<COutPoint, Coin>& coins, const UniValue& hashType, UniValue& result, uint32_t sighash_fork_id = 0);
 void SignTransactionResultToJSON(CMutableTransaction& mtx, bool complete, const std::map<COutPoint, Coin>& coins, const std::map<int, bilingual_str>& input_errors, UniValue& result);
 
 /**
@@ -53,6 +55,9 @@ std::vector<std::pair<CTxDestination, CAmount>> ParseOutputs(const UniValue& out
 void AddOutputs(CMutableTransaction& rawTx, const UniValue& outputs_in);
 
 /** Create a transaction from univalue parameters */
-CMutableTransaction ConstructTransaction(const UniValue& inputs_in, const UniValue& outputs_in, const UniValue& locktime, std::optional<bool> rbf);
+CMutableTransaction ConstructTransaction(const UniValue& inputs_in, const UniValue& outputs_in, const UniValue& locktime, std::optional<bool> rbf, uint32_t version);
+
+/** Explain the UniValue "decoded" transaction object, may include extra fields if processed by wallet **/
+std::vector<RPCResult> DecodeTxDoc(const std::string& txid_field_doc, bool wallet);
 
 #endif // BITCOINII_RPC_RAWTRANSACTION_UTIL_H

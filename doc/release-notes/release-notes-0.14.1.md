@@ -1,13 +1,13 @@
 BitcoinII Core version 0.14.1 is now available from:
 
-  <https://bitcoin.org/bin/bitcoinII-core-0.14.1/>
+  <https://bitcoin.org/bin/bitcoin-core-0.14.1/>
 
 This is a new minor version release, including various bugfixes and
 performance improvements, as well as updated translations.
 
 Please report bugs using the issue tracker at github:
 
-  <https://github.com/bitcoinII/bitcoinII/issues>
+  <https://github.com/bitcoin/bitcoin/issues>
 
 To receive security and update notifications, please subscribe to:
 
@@ -75,7 +75,7 @@ this parameter.
 
 Additional information relating to running on low-memory systems can be found
 here:
-[reducing-bitcoinIId-memory-usage.md](https://gist.github.com/laanwj/efe29c7661ce9b6620a7).
+[reducing-bitcoind-memory-usage.md](https://gist.github.com/laanwj/efe29c7661ce9b6620a7).
 
 0.14.1 Change log
 =================
@@ -139,5 +139,5 @@ Thanks to everyone who directly contributed to this release:
 - Suhas Daftuar
 - Wladimir J. van der Laan
 
-As well as everyone that helped translating on [Transifex](https://www.transifex.com/projects/p/bitcoinII/).
+As well as everyone that helped translating on [Transifex](https://www.transifex.com/projects/p/bitcoin/).
 

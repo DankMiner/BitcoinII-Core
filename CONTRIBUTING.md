@@ -30,13 +30,13 @@ BitcoinII Core and how to run the unit tests, functional tests, and fuzz tests.
 
 There are many open issues of varying difficulty waiting to be fixed.
 If you're looking for somewhere to start contributing, check out the
-[good first issue](https://github.com/bitcoinII/bitcoinII/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22)
+[good first issue](https://github.com/bitcoin/bitcoin/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22)
 list or changes that are
-[up for grabs](https://github.com/bitcoinII/bitcoinII/issues?utf8=%E2%9C%93&q=label%3A%22Up+for+grabs%22).
+[up for grabs](https://github.com/bitcoin/bitcoin/issues?utf8=%E2%9C%93&q=label%3A%22Up+for+grabs%22).
 Some of them might no longer be applicable. So if you are interested, but
 unsure, you might want to leave a comment on the issue first.
 
-You may also participate in the [BitcoinII Core PR Review Club](https://bitcoinIIcore.reviews/).
+You may also participate in the [Bitcoin Core PR Review Club](https://bitcoincore.reviews/).
 
 ### Good First Issue Label
 
@@ -56,19 +56,19 @@ Communication Channels
 
 Most communication about BitcoinII Core development happens on IRC, in the
 `#bitcoinII-core-dev` channel on Libera Chat. The easiest way to participate on IRC is
-with the web client, [web.libera.chat](https://web.libera.chat/#bitcoinII-core-dev). Chat
+with the web client, [web.libera.chat](https://web.libera.chat/#bitcoin-core-dev). Chat
 history logs can be found
-on [https://www.erisian.com.au/bitcoinII-core-dev/](https://www.erisian.com.au/bitcoinII-core-dev/)
-and [https://gnusha.org/bitcoinII-core-dev/](https://gnusha.org/bitcoinII-core-dev/).
+on [https://www.erisian.com.au/bitcoin-core-dev/](https://www.erisian.com.au/bitcoin-core-dev/)
+and [https://gnusha.org/bitcoin-core-dev/](https://gnusha.org/bitcoin-core-dev/).
 
 Discussion about codebase improvements happens in GitHub issues and pull
 requests.
 
 The developer
-[mailing list](https://groups.google.com/g/bitcoinIIdev)
+[mailing list](https://groups.google.com/g/bitcoindev)
 should be used to discuss complicated or controversial consensus or P2P protocol changes before working on
 a patch set.
-Archives can be found on [https://gnusha.org/pi/bitcoinIIdev/](https://gnusha.org/pi/bitcoinIIdev/).
+Archives can be found on [https://gnusha.org/pi/bitcoindev/](https://gnusha.org/pi/bitcoindev/).
 
 
 Contributor Workflow
@@ -78,14 +78,21 @@ The codebase is maintained using the "contributor workflow" where everyone
 without exception contributes patch proposals using "pull requests" (PRs). This
 facilitates social contribution, easy testing and peer review.
 
+Pull request authors must fully and confidently understand their own changes
+and must have tested them. Contributors should mention which tests cover their
+changes, or include the manual steps they used to confirm the change.
+Contributors are expected to be prepared to clearly motivate and explain their
+changes. If there is doubt, the pull request may be closed.
+Please refer to the [peer review](#peer-review) section below for more details.
+
 To contribute a patch, the workflow is as follows:
 
-  1. Fork repository ([only for the first time](https://docs.github.com/en/get-started/quickstart/fork-a-repo))
+  1. Fork repository ([only for the first time](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo))
   1. Create topic branch
   1. Commit patches
 
-For GUI-related issues or pull requests, the https://github.com/bitcoinII-core/gui repository should be used.
-For all other issues and pull requests, the https://github.com/bitcoinII/bitcoinII node repository should be used.
+For GUI-related issues or pull requests, the https://github.com/bitcoin-core/gui repository should be used.
+For all other issues and pull requests, the https://github.com/bitcoin/bitcoin node repository should be used.
 
 The master branch for all monotree repositories is identical.
 
@@ -115,13 +122,14 @@ fixes or code moves with actual code changes.
 
 Make sure each individual commit is hygienic: that it builds successfully on its
 own without warnings, errors, regressions, or test failures.
+This means tests must be updated in the same commit that changes the behavior.
 
 Commit messages should be verbose by default consisting of a short subject line
 (50 chars max), a blank line and detailed explanatory text as separate
 paragraph(s), unless the title alone is self-explanatory (like "Correct typo
 in init.cpp") in which case a single title line is sufficient. Commit messages should be
 helpful to people reading your code in the future, so explain the reasoning for
-your decisions. Further explanation [here](https://chris.beams.io/posts/git-commit/).
+your decisions. Further explanation [here](https://cbea.ms/git-commit/).
 
 If a particular commit references another issue, please add the reference. For
 example: `refs #1234` or `fixes #4321`. Using the `fixes` or `closes` keywords
@@ -176,13 +184,13 @@ subsequent comment to the PR.
 ### Translation changes
 
 Note that translations should not be submitted as pull requests. Please see
-[Translation Process](https://github.com/bitcoinII/bitcoinII/blob/master/doc/translation_process.md)
+[Translation Process](/doc/translation_process.md)
 for more information on helping with translations.
 
 ### Work in Progress Changes and Requests for Comments
 
 If a pull request is not to be considered for merging (yet), please
-prefix the title with [WIP] or use [Tasks Lists](https://docs.github.com/en/github/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#task-lists)
+prefix the title with [WIP] or use [Tasks Lists](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#task-lists)
 in the body of the pull request to indicate tasks are pending.
 
 ### Address Feedback
@@ -232,7 +240,7 @@ pull request to pull request.
 
 When a pull request conflicts with the target branch, you may be asked to rebase it on top of the current target branch.
 
-    git fetch https://github.com/bitcoinII/bitcoinII  # Fetch the latest upstream commit
+    git fetch https://github.com/bitcoin/bitcoin  # Fetch the latest upstream commit
     git rebase FETCH_HEAD  # Rebuild commits on top of the new base
 
 This project aims to have a clean git history, where code changes are only made in non-merge commits. This simplifies
@@ -337,6 +345,11 @@ reviewers that the changes warrant the review effort, and if reviewers are
 "Concept NACK'ing" the PR, the author may need to present arguments and/or do
 research backing their suggested changes.
 
+Moreover, if there is reasonable doubt that the pull request author does not
+fully understand the changes they are submitting themselves, or if it becomes
+clear that they have not tested the changes on a basic level themselves, the
+pull request may be closed immediately.
+
 #### Conceptual Review
 
 A review can be a conceptual review, where the reviewer leaves a comment
@@ -401,7 +414,7 @@ about:
   - It may be because your code is too complex for all but a few people, and those people
     may not have realized your pull request even exists. A great way to find people who
     are qualified and care about the code you are touching is the
-    [Git Blame feature](https://docs.github.com/en/github/managing-files-in-a-repository/managing-files-on-github/tracking-changes-in-a-file). Simply
+    [Git Blame feature](https://docs.github.com/en/repositories/working-with-files/using-files/viewing-and-understanding-files). Simply
     look up who last modified the code you are changing and see if you can find
     them and give them a nudge. Don't be incessant about the nudging, though.
   - Finally, if all else fails, ask on IRC or elsewhere for someone to give your pull request
@@ -429,10 +442,10 @@ Rebased-From: <commit hash of the original commit>
 ```
 
 Have a look at [an example backport PR](
-https://github.com/bitcoinII/bitcoinII/pull/16189).
+https://github.com/bitcoin/bitcoin/pull/16189).
 
 Also see the [backport.py script](
-https://github.com/bitcoinII-core/bitcoinII-maintainer-tools#backport).
+https://github.com/bitcoin-core/bitcoin-maintainer-tools#backport).
 
 Copyright
 ---------

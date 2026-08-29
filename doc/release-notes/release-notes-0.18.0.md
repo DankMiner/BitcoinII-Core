@@ -1,13 +1,13 @@
 BitcoinII Core version 0.18.0 is now available from:
 
-  <https://bitcoincore.org/bin/bitcoinII-core-0.18.0/>
+  <https://bitcoincore.org/bin/bitcoin-core-0.18.0/>
 
 This is a new major version release, including new features, various bug
 fixes and performance improvements, as well as updated translations.
 
 Please report bugs using the issue tracker at GitHub:
 
-  <https://github.com/bitcoinII/bitcoinII/issues>
+  <https://github.com/bitcoin/bitcoin/issues>
 
 To receive security and update notifications, please subscribe to:
 
@@ -19,7 +19,7 @@ How to Upgrade
 If you are running an older version, shut it down. Wait until it has
 completely shut down (which might take a few minutes for older
 versions), then run the installer (on Windows) or just copy over
-`/Applications/BitcoinII-Qt` (on Mac) or `bitcoinIId`/`bitcoinII-qt` (on
+`/Applications/BitcoinII-Qt` (on Mac) or `bitcoinII-d`/`bitcoinII-qt` (on
 Linux).
 
 The first time you run version 0.15.0 or newer, your chainstate database
@@ -52,11 +52,11 @@ pre-compiled distribution also provides binaries for the RISC-V
 platform.
 
 If you are using the `systemd` unit configuration file located at
-`contrib/init/bitcoinIId.service`, it has been changed to use
-`/var/lib/bitcoinIId` as the data directory instead of
+`contrib/init/bitcoinII-d.service`, it has been changed to use
+`/var/lib/bitcoinII-d` as the data directory instead of
 `~bitcoinII/.bitcoinII`. When switching over to the new configuration file,
-please make sure that the filesystem on which `/var/lib/bitcoinIId` will
-exist has enough space (check using `df -h /var/lib/bitcoinIId`), and
+please make sure that the filesystem on which `/var/lib/bitcoinII-d` will
+exist has enough space (check using `df -h /var/lib/bitcoinII-d`), and
 optionally copy over your existing data directory. See the [systemd init
 file section](#systemd-init-file) for more details.
 
@@ -95,7 +95,7 @@ Configuration option changes
   messages that ZMQ will queue in memory (the "high water mark") before
   dropping additional messages.  The default value is 1,000, the same as
   was used for previous releases.  See the [ZMQ
-  documentation](https://github.com/bitcoinII/bitcoinII/blob/master/doc/zmq.md#usage)
+  documentation](https://github.com/bitcoin/bitcoin/blob/master/doc/zmq.md#usage)
   for details.
 
 - The `rpcallowip` option can no longer be used to automatically listen
@@ -119,15 +119,15 @@ Configuration option changes
   disconnect/ban behavior will not cause a node that is whitelisting
   another to be dropped by peers.  Users can still explicitly enable
   this behavior with the command line option (and may want to consider
-  [contacting](https://bitcoincore.org/en/contact/) the BitcoinII Core
+  [contacting](https://bitcoincore.org/en/contact/) the Bitcoin Core
   project to let us know about their use-case, as this feature could be
   deprecated in the future).
 
 systemd init file
 -----------------
 
-The systemd init file (`contrib/init/bitcoinIId.service`) has been changed
-to use `/var/lib/bitcoinIId` as the data directory instead of
+The systemd init file (`contrib/init/bitcoinII-d.service`) has been changed
+to use `/var/lib/bitcoinII-d` as the data directory instead of
 `~bitcoinII/.bitcoinII`. This change makes BitcoinII Core more consistent with
 other services, and makes the systemd init config more consistent with
 existing Upstart and OpenRC configs.
@@ -147,24 +147,24 @@ take precedence over the options specified in
 Documentation
 -------------
 
-- A new short [document](https://github.com/bitcoinII/bitcoinII/blob/master/doc/JSON-RPC-interface.md)
+- A new short [document](https://github.com/bitcoin/bitcoin/blob/master/doc/JSON-RPC-interface.md)
   about the JSON-RPC interface describes cases where the results of an
   RPC might contain inconsistencies between data sourced from different
   subsystems, such as wallet state and mempool state.  A note is added
-  to the [REST interface documentation](https://github.com/bitcoinII/bitcoinII/blob/master/doc/REST-interface.md)
+  to the [REST interface documentation](https://github.com/bitcoin/bitcoin/blob/master/doc/REST-interface.md)
   indicating that the same rules apply.
 
 - Further information is added to the [JSON-RPC
-  documentation](https://github.com/bitcoinII/bitcoinII/blob/master/doc/JSON-RPC-interface.md)
+  documentation](https://github.com/bitcoin/bitcoin/blob/master/doc/JSON-RPC-interface.md)
   about how to secure this interface.
 
-- A new [document](https://github.com/bitcoinII/bitcoinII/blob/master/doc/bitcoinII-conf.md)
+- A new [document](https://github.com/bitcoin/bitcoin/blob/master/doc/bitcoin-conf.md)
   about the `bitcoinII.conf` file describes how to use it to configure
   BitcoinII Core.
 
 - A new document introduces BitcoinII Core's BIP174 [Partially-Signed
   BitcoinII Transactions
-  (PSBT)](https://github.com/bitcoinII/bitcoinII/blob/master/doc/psbt.md)
+  (PSBT)](https://github.com/bitcoin/bitcoin/blob/master/doc/psbt.md)
   interface, which is used to allow multiple programs to collaboratively
   work to create, sign, and broadcast new transactions.  This is useful
   for offline (cold storage) wallets, multisig wallets, coinjoin
@@ -172,7 +172,7 @@ Documentation
   to interact to generate a complete transaction.
 
 - The [output script
-  descriptor](https://github.com/bitcoinII/bitcoinII/blob/master/doc/descriptors.md)
+  descriptor](https://github.com/bitcoin/bitcoin/blob/master/doc/descriptors.md)
   documentation has been updated with information about new features in
   this still-developing language for describing the output scripts that
   a wallet or other program wants to receive notifications for, such as
@@ -193,7 +193,7 @@ Build system changes
 
 - The minimum required version of Qt (when building the GUI) has been
   increased from 5.2 to 5.5.1 (the [depends
-  system](https://github.com/bitcoinII/bitcoinII/blob/master/depends/README.md)
+  system](https://github.com/bitcoin/bitcoin/blob/master/depends/README.md)
   provides 5.9.7)
 
 New RPCs
@@ -211,7 +211,7 @@ New RPCs
   they've been running.
 
 - `deriveaddresses` returns one or more addresses corresponding to an
-  [output descriptor](https://github.com/bitcoinII/bitcoinII/blob/master/doc/descriptors.md).
+  [output descriptor](https://github.com/bitcoin/bitcoin/blob/master/doc/descriptors.md).
 
 - `getdescriptorinfo` accepts a descriptor and returns information about
   it, including its computed checksum.
@@ -320,7 +320,7 @@ in the Low-level Changes section below.
   origin information imported through `importmulti` will have their key
   origin information stored in the wallet for use with creating PSBTs.
   More information about descriptors can be found
-  [here](https://github.com/bitcoinII/bitcoinII/blob/master/doc/descriptors.md).
+  [here](https://github.com/bitcoin/bitcoin/blob/master/doc/descriptors.md).
 
 - `listunspent` has been modified so that it also returns
   `witnessScript`, the witness script in the case of a P2WSH or
@@ -343,7 +343,7 @@ Deprecated or removed RPCs
 - The 'account' API is removed after being deprecated in v0.17.  The
   'label' API was introduced in v0.17 as a replacement for accounts.
   See the [release notes from
-  v0.17](https://github.com/bitcoinII/bitcoinII/blob/master/doc/release-notes/release-notes-0.17.0.md#label-and-account-apis-for-wallet)
+  v0.17](https://github.com/bitcoin/bitcoin/blob/master/doc/release-notes/release-notes-0.17.0.md#label-and-account-apis-for-wallet)
   for a full description of the changes from the 'account' API to the
   'label' API.
 
@@ -359,7 +359,7 @@ Deprecated or removed RPCs
   require or use the wallet component. Calling `generatetoaddress` with
   an address returned by the `getnewaddress` RPC gives the same
   functionality as the old `generate` RPC.  To continue using `generate`
-  in this version, restart bitcoinIId with the `-deprecatedrpc=generate`
+  in this version, restart bitcoinII-d with the `-deprecatedrpc=generate`
   configuration option.
 
 - Be reminded that parts of the `validateaddress` command have been
@@ -517,7 +517,7 @@ Wallet
 - A sub-project of BitcoinII Core now provides Hardware Wallet Interaction
   (HWI) scripts that allow command-line users to use several popular
   hardware key management devices with BitcoinII Core.  See their [project
-  page](https://github.com/bitcoinII-core/HWI#readme) for details.
+  page](https://github.com/bitcoin-core/HWI#readme) for details.
 
 Security
 --------
@@ -709,7 +709,7 @@ Changes for particular platforms
 - #13248 Make proxy icon from statusbar clickable (mess110)
 - #12818 TransactionView: highlight replacement tx after fee bump (Sjors)
 - #13529 Use new Qt5 connect syntax (promag)
-- #14162 Also log and print messages or questions like bitcoinIId (MarcoFalke)
+- #14162 Also log and print messages or questions like bitcoinII-d (MarcoFalke)
 - #14385 Avoid system harfbuzz and bz2 (theuni)
 - #14450 Fix QCompleter popup regression (hebasto)
 - #14177 Set C locale for amountWidget (hebasto)
@@ -1221,4 +1221,4 @@ Thanks to everyone who directly contributed to this release:
 - Wladimir J. van der Laan
 - Zain Iqbal Allarakhia
 
-As well as everyone that helped translating on [Transifex](https://www.transifex.com/projects/p/bitcoinII/).
+As well as everyone that helped translating on [Transifex](https://www.transifex.com/projects/p/bitcoin/).

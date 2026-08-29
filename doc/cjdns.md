@@ -100,7 +100,7 @@ number of CJDNS addresses known to your node.
 In general, a node can be run with both an onion service and CJDNS (or any/all
 of IPv4/IPv6/onion/I2P/CJDNS), which can provide a potential fallback if one of
 the networks has issues. There are a number of ways to configure this; see
-[doc/tor.md](https://github.com/bitcoinII/bitcoinII/blob/master/doc/tor.md) for
+[doc/tor.md](/doc/tor.md) for
 details.
 
 ## CJDNS-related information in BitcoinII Core
@@ -113,3 +113,5 @@ To see which CJDNS peers your node is connected to, use `bitcoinII-cli -netinfo 
 or the `getpeerinfo` RPC (i.e. `bitcoinII-cli getpeerinfo`).
 
 You can use the `getnodeaddresses` RPC to fetch a number of CJDNS peers known to your node; run `bitcoinII-cli help getnodeaddresses` for details.
+
+`bitcoinII rpc` can also be substituted for `bitcoinII-cli`.

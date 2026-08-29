@@ -1,5 +1,5 @@
 // Copyright (c) 2010 Satoshi Nakamoto
-// Copyright (c) 2009-2021 The BitcoinII Core developers
+// Copyright (c) 2009-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -9,7 +9,7 @@
 #include <tinyformat.h>
 #include <util/chaintype.h>
 
-#include <assert.h>
+#include <cassert>
 
 void SetupChainParamsBaseOptions(ArgsManager& argsman)
 {
@@ -34,7 +34,7 @@ const CBaseChainParams& BaseParams()
 }
 
 /**
- * Port numbers for incoming Tor connections (8339, 18339, 38339, 48339, 18449) have
+ * Port numbers for incoming Tor connections (8334, 18334, 38334, 48334, 18445) have
  * been chosen arbitrarily to keep ranges of used ports tight.
  */
 std::unique_ptr<CBaseChainParams> CreateBaseChainParams(const ChainType chain)
@@ -53,6 +53,7 @@ std::unique_ptr<CBaseChainParams> CreateBaseChainParams(const ChainType chain)
     }
     assert(false);
 }
+
 
 void SelectBaseParams(const ChainType chain)
 {

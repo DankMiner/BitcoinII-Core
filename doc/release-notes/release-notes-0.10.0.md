@@ -7,7 +7,7 @@ bug fixes.
 
 Please report bugs using the issue tracker at github:
 
-  https://github.com/bitcoinII/bitcoinII/issues
+  https://github.com/bitcoin/bitcoin/issues
 
 Upgrading and downgrading
 =========================
@@ -18,7 +18,7 @@ How to Upgrade
 If you are running an older version, shut it down. Wait until it has completely
 shut down (which might take a few minutes for older versions), then run the
 installer (on Windows) or just copy over /Applications/BitcoinII-Qt (on Mac) or
-bitcoinIId/bitcoinII-qt (on Linux).
+bitcoinII-d/bitcoinII-qt (on Linux).
 
 Downgrading warning
 ---------------------
@@ -79,7 +79,7 @@ This release automatically estimates how high a transaction fee (or how
 high a priority) transactions require to be confirmed quickly. The default
 settings will create transactions that confirm quickly; see the new
 'txconfirmtarget' setting to control the tradeoff between fees and
-confirmation times. Fees are added by default unless the 'sendfreetransactions' 
+confirmation times. Fees are added by default unless the 'sendfreetransactions'
 setting is enabled.
 
 Prior releases used hard-coded fees (and priorities), and would
@@ -93,7 +93,7 @@ New command line options for transaction fee changes:
 - `-txconfirmtarget=n` : create transactions that have enough fees (or priority)
 so they are likely to begin confirmation within n blocks (default: 1). This setting
 is over-ridden by the -paytxfee option.
-- `-sendfreetransactions` : Send transactions as zero-fee transactions if possible 
+- `-sendfreetransactions` : Send transactions as zero-fee transactions if possible
 (default: 0)
 
 New RPC commands for fee estimation:
@@ -226,15 +226,15 @@ Starting from 0.10.0, the BitcoinII Core distribution includes a consensus libra
 
 The purpose of this library is to make the verification functionality that is
 critical to BitcoinII's consensus available to other applications, e.g. to language
-bindings such as [python-bitcoinIIlib](https://pypi.python.org/pypi/python-bitcoinIIlib) or
+bindings such as [python-bitcoinlib](https://pypi.python.org/pypi/python-bitcoinlib) or
 alternative node implementations.
 
 This library is called `libbitcoinIIconsensus.so` (or, `.dll` for Windows).
-Its interface is defined in the C header [bitcoinIIconsensus.h](https://github.com/bitcoinII/bitcoinII/blob/0.10/src/script/bitcoinIIconsensus.h).
+Its interface is defined in the C header [bitcoinconsensus.h](https://github.com/bitcoin/bitcoin/blob/0.10/src/script/bitcoinconsensus.h).
 
 In its initial version the API includes two functions:
 
-- `bitcoinIIconsensus_verify_script` verifies a script. It returns whether the indicated input of the provided serialized transaction 
+- `bitcoinIIconsensus_verify_script` verifies a script. It returns whether the indicated input of the provided serialized transaction
 correctly spends the passed scriptPubKey under additional constraints indicated by flags
 - `bitcoinIIconsensus_version` returns the API version, currently at an experimental `0`
 
@@ -255,8 +255,8 @@ most miners include them in blocks they mined.
 bitcoinII-tx
 ----------
 
-It has been observed that many of the RPC functions offered by bitcoinIId are
-"pure functions", and operate independently of the bitcoinIId wallet. This
+It has been observed that many of the RPC functions offered by bitcoinII-d are
+"pure functions", and operate independently of the bitcoinII-d wallet. This
 included many of the RPC "raw transaction" API functions, such as
 createrawtransaction.
 
@@ -306,8 +306,8 @@ if this is 1.
 - `-datacarriersize=n` : Maximum size, in bytes, we consider acceptable for
 "data carrier" outputs.
 
-The relay policy has changed to more properly implement the desired behavior of not 
-relaying free (or very low fee) transactions unless they have a priority above the 
+The relay policy has changed to more properly implement the desired behavior of not
+relaying free (or very low fee) transactions unless they have a priority above the
 AllowFreeThreshold(), in which case they are relayed subject to the rate limiter.
 
 BIP 66: strict DER encoding for signatures
@@ -340,7 +340,7 @@ RPC:
 - `f923c07` Support IPv6 lookup in bitcoinII-cli even when IPv6 only bound on localhost
 - `b641c9c` Fix addnode "onetry": Connect with OpenNetworkConnection
 - `171ca77` estimatefee / estimatepriority RPC methods
-- `b750cf1` Remove cli functionality from bitcoinIId
+- `b750cf1` Remove cli functionality from bitcoinII-d
 - `f6984e8` Add "chain" to getmininginfo, improve help in getblockchaininfo
 - `99ddc6c` Add nLocalServices info to RPC getinfo
 - `cf0c47b` Remove getwork() RPC call
@@ -499,7 +499,7 @@ Build system:
 - `a7d1f03` build: fix dynamic boost check when --with-boost= is used
 - `d5fd094` build: fix qt test build when libprotobuf is in a non-standard path
 - `2cf5f16` Add libbitcoinIIconsensus library
-- `914868a` build: add a deterministic dmg signer 
+- `914868a` build: add a deterministic dmg signer
 - `2d375fe` depends: bump openssl to 1.0.1k
 - `b7a4ecc` Build: Only check for boost when building code that requires it
 
@@ -510,11 +510,11 @@ Wallet:
 - `d5087d1` Use script matching rather than destination matching for watch-only
 - `d88af56` Fee fixes
 - `a35b55b` Dont run full check every time we decrypt wallet
-- `3a7c348` Fix make_change to not create half-satoshis
+- `3a7c348` Fix make_change to not create half-satooshis
 - `f606bb9` fix a possible memory leak in CWalletDB::Recover
 - `870da77` fix possible memory leaks in CWallet::EncryptWallet
 - `ccca27a` Watch-only fixes
-- `9b1627d` [Wallet] Reduce minTxFee for transaction creation to 1000 satoshis
+- `9b1627d` [Wallet] Reduce minTxFee for transaction creation to 1000 satooshis
 - `a53fd41` Deterministic signing
 - `15ad0b5` Apply AreSane() checks to the fees from the network
 - `11855c1` Enforce minRelayTxFee on wallet created tx and add a maxtxfee option
@@ -598,7 +598,7 @@ Tests:
 - `2b62e17` Clearly separate PUSHDATA and numeric argument MINIMALDATA tests
 - `16d78bd` Add valid invert of invalid every numeric opcode tests
 - `f635269` tests: enable alertnotify test for Windows
-- `7a41614` tests: allow rpc-tests to get filenames for bitcoinIId and bitcoinII-cli from the environment
+- `7a41614` tests: allow rpc-tests to get filenames for bitcoinII-d and bitcoinII-cli from the environment
 - `5122ea7` tests: fix forknotify.py on windows
 - `fa7f8cd` tests: remove old pull-tester scripts
 - `7667850` tests: replace the old (unused since Travis) tests with new rpc test scripts
@@ -635,7 +635,7 @@ Miscellaneous:
 - `cd01a5e` Enable paranoid corruption checks in LevelDB >= 1.16
 - `9365937` Add comment about never updating nTimeOffset past 199 samples
 - `403c1bf` contrib: remove getwork-based pyminer (as getwork API call has been removed)
-- `0c3e101` contrib: Added systemd .service file in order to help distributions integrate bitcoinIId
+- `0c3e101` contrib: Added systemd .service file in order to help distributions integrate bitcoinII-d
 - `0a0878d` doc: Add new DNSseed policy
 - `2887bff` Update coding style and add .clang-format
 - `5cbda4f` Changed LevelDB cursors to use scoped pointers to ensure destruction when going out of scope
@@ -758,5 +758,5 @@ Thanks to everyone who contributed to this release:
 - Yoichi Hirai
 - Zak Wilcox
 
-As well as everyone that helped translating on [Transifex](https://www.transifex.com/projects/p/bitcoinII/).
+As well as everyone that helped translating on [Transifex](https://www.transifex.com/projects/p/bitcoin/).
 

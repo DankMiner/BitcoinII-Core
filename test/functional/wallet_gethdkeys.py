@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2023 The BitcoinII Core developers
+# Copyright (c) 2023-present The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test wallet gethdkeys RPC."""
@@ -9,14 +9,12 @@ from test_framework.test_framework import BitcoinIITestFramework
 from test_framework.util import (
     assert_equal,
     assert_raises_rpc_error,
+    assert_not_equal,
 )
 from test_framework.wallet_util import WalletUnlock
 
 
 class WalletGetHDKeyTest(BitcoinIITestFramework):
-    def add_options(self, parser):
-        self.add_wallet_options(parser, descriptors=True, legacy=False)
-
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 1
@@ -59,7 +57,7 @@ class WalletGetHDKeyTest(BitcoinIITestFramework):
         # New key is active, should be able to get only that one and its descriptors
         xpub_info = wallet.gethdkeys(active_only=True)
         assert_equal(len(xpub_info), 1)
-        assert xpub_info[0]["xpub"] != xpub
+        assert_not_equal(xpub_info[0]["xpub"], xpub)
         assert "xprv" not in xpub_info[0]
         assert_equal(xpub_info[0]["has_private"], True)
 
@@ -67,7 +65,7 @@ class WalletGetHDKeyTest(BitcoinIITestFramework):
         assert_raises_rpc_error(-13, "Error: Please enter the wallet passphrase with walletpassphrase first", wallet.gethdkeys, private=True)
         with WalletUnlock(wallet, "pass"):
             xpub_info = wallet.gethdkeys(active_only=True, private=True)[0]
-            assert xpub_info["xprv"] != xprv
+            assert_not_equal(xpub_info["xprv"], xprv)
             for desc in wallet.listdescriptors(True)["descriptors"]:
                 if desc["active"]:
                     # After encrypting, HD key was rotated and should appear in all active descriptors

@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2022 The BitcoinII Core developers
+// Copyright (c) 2009-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -15,6 +15,8 @@
 #include <script/signingprovider.h>
 #include <uint256.h>
 
+#include <cstdint>
+
 class CKey;
 class CKeyID;
 class CScript;
@@ -23,6 +25,7 @@ class SigningProvider;
 
 struct bilingual_str;
 struct CMutableTransaction;
+struct SignatureData;
 
 /** Interface for signature creators. */
 class BaseSignatureCreator {
@@ -33,6 +36,9 @@ public:
     /** Create a singular (non-script) signature. */
     virtual bool CreateSig(const SigningProvider& provider, std::vector<unsigned char>& vchSig, const CKeyID& keyid, const CScript& scriptCode, SigVersion sigversion) const =0;
     virtual bool CreateSchnorrSig(const SigningProvider& provider, std::vector<unsigned char>& sig, const XOnlyPubKey& pubkey, const uint256* leaf_hash, const uint256* merkle_root, SigVersion sigversion) const =0;
+    virtual std::vector<uint8_t> CreateMuSig2Nonce(const SigningProvider& provider, const CPubKey& aggregate_pubkey, const CPubKey& script_pubkey, const CPubKey& part_pubkey, const uint256* leaf_hash, const uint256* merkle_root, SigVersion sigversion, const SignatureData& sigdata) const =0;
+    virtual bool CreateMuSig2PartialSig(const SigningProvider& provider, uint256& partial_sig, const CPubKey& aggregate_pubkey, const CPubKey& script_pubkey, const CPubKey& part_pubkey, const uint256* leaf_hash, const std::vector<std::pair<uint256, bool>>& tweaks, SigVersion sigversion, const SignatureData& sigdata) const =0;
+    virtual bool CreateMuSig2AggregateSig(const std::vector<CPubKey>& participants, std::vector<uint8_t>& sig, const CPubKey& aggregate_pubkey, const CPubKey& script_pubkey, const uint256* leaf_hash, const std::vector<std::pair<uint256, bool>>& tweaks, SigVersion sigversion, const SignatureData& sigdata) const =0;
 };
 
 /** A signature creator for transactions. */
@@ -42,15 +48,21 @@ class MutableTransactionSignatureCreator : public BaseSignatureCreator
     unsigned int nIn;
     int nHashType;
     CAmount amount;
+    const uint32_t m_sighash_fork_id;
     const MutableTransactionSignatureChecker checker;
     const PrecomputedTransactionData* m_txdata;
 
+    std::optional<uint256> ComputeSchnorrSignatureHash(const uint256* leaf_hash, SigVersion sigversion) const;
+
 public:
-    MutableTransactionSignatureCreator(const CMutableTransaction& tx LIFETIMEBOUND, unsigned int input_idx, const CAmount& amount, int hash_type);
-    MutableTransactionSignatureCreator(const CMutableTransaction& tx LIFETIMEBOUND, unsigned int input_idx, const CAmount& amount, const PrecomputedTransactionData* txdata, int hash_type);
+    MutableTransactionSignatureCreator(const CMutableTransaction& tx LIFETIMEBOUND, unsigned int input_idx, const CAmount& amount, int hash_type, uint32_t sighash_fork_id = 0);
+    MutableTransactionSignatureCreator(const CMutableTransaction& tx LIFETIMEBOUND, unsigned int input_idx, const CAmount& amount, const PrecomputedTransactionData* txdata, int hash_type, uint32_t sighash_fork_id = 0);
     const BaseSignatureChecker& Checker() const override { return checker; }
     bool CreateSig(const SigningProvider& provider, std::vector<unsigned char>& vchSig, const CKeyID& keyid, const CScript& scriptCode, SigVersion sigversion) const override;
     bool CreateSchnorrSig(const SigningProvider& provider, std::vector<unsigned char>& sig, const XOnlyPubKey& pubkey, const uint256* leaf_hash, const uint256* merkle_root, SigVersion sigversion) const override;
+    std::vector<uint8_t> CreateMuSig2Nonce(const SigningProvider& provider, const CPubKey& aggregate_pubkey, const CPubKey& script_pubkey, const CPubKey& part_pubkey, const uint256* leaf_hash, const uint256* merkle_root, SigVersion sigversion, const SignatureData& sigdata) const override;
+    bool CreateMuSig2PartialSig(const SigningProvider& provider, uint256& partial_sig, const CPubKey& aggregate_pubkey, const CPubKey& script_pubkey, const CPubKey& part_pubkey, const uint256* leaf_hash, const std::vector<std::pair<uint256, bool>>& tweaks, SigVersion sigversion, const SignatureData& sigdata) const override;
+    bool CreateMuSig2AggregateSig(const std::vector<CPubKey>& participants, std::vector<uint8_t>& sig, const CPubKey& aggregate_pubkey, const CPubKey& script_pubkey, const uint256* leaf_hash, const std::vector<std::pair<uint256, bool>>& tweaks, SigVersion sigversion, const SignatureData& sigdata) const override;
 };
 
 /** A signature checker that accepts all signatures */
@@ -78,7 +90,7 @@ struct SignatureData {
     std::map<CKeyID, std::pair<CPubKey, KeyOriginInfo>> misc_pubkeys;
     std::vector<unsigned char> taproot_key_path_sig; /// Schnorr signature for key path spending
     std::map<std::pair<XOnlyPubKey, uint256>, std::vector<unsigned char>> taproot_script_sigs; ///< (Partial) schnorr signatures, indexed by XOnlyPubKey and leaf_hash.
-    std::map<XOnlyPubKey, std::pair<std::set<uint256>, KeyOriginInfo>> taproot_misc_pubkeys; ///< Miscellaneous Taproot pubkeys involved in this input along with their leaf script hashes and key origin data. Also includes the Taproot internal key (may have no leaf script hashes).
+    std::map<XOnlyPubKey, std::pair<std::set<uint256>, KeyOriginInfo>> taproot_misc_pubkeys; ///< Miscellaneous Taproot pubkeys involved in this input along with their leaf script hashes and key origin data. Also includes the Taproot internal and output keys (may have no leaf script hashes).
     std::map<CKeyID, XOnlyPubKey> tap_pubkeys; ///< Misc Taproot pubkeys involved in this input, by hash. (Equivalent of misc_pubkeys but for Taproot.)
     std::vector<CKeyID> missing_pubkeys; ///< KeyIDs of pubkeys which could not be found
     std::vector<CKeyID> missing_sigs; ///< KeyIDs of pubkeys for signatures which could not be found
@@ -88,6 +100,12 @@ struct SignatureData {
     std::map<std::vector<uint8_t>, std::vector<uint8_t>> hash256_preimages; ///< Mapping from a HASH256 hash to its preimage provided to solve a Script
     std::map<std::vector<uint8_t>, std::vector<uint8_t>> ripemd160_preimages; ///< Mapping from a RIPEMD160 hash to its preimage provided to solve a Script
     std::map<std::vector<uint8_t>, std::vector<uint8_t>> hash160_preimages; ///< Mapping from a HASH160 hash to its preimage provided to solve a Script
+    //! Map MuSig2 aggregate pubkeys to its participants
+    std::map<CPubKey, std::vector<CPubKey>> musig2_pubkeys;
+    //! Mapping from pair of MuSig2 aggregate pubkey, and tapleaf hash to map of MuSig2 participant pubkeys to MuSig2 public nonce
+    std::map<std::pair<CPubKey, uint256>, std::map<CPubKey, std::vector<uint8_t>>> musig2_pubnonces;
+    //! Mapping from pair of MuSig2 aggregate pubkey, and tapleaf hash to map of MuSig2 participant pubkeys to MuSig2 partial signature
+    std::map<std::pair<CPubKey, uint256>, std::map<CPubKey, uint256>> musig2_partial_sigs;
 
     SignatureData() = default;
     explicit SignatureData(const CScript& script) : scriptSig(script) {}
@@ -98,13 +116,13 @@ struct SignatureData {
 bool ProduceSignature(const SigningProvider& provider, const BaseSignatureCreator& creator, const CScript& scriptPubKey, SignatureData& sigdata);
 
 /** Extract signature data from a transaction input, and insert it. */
-SignatureData DataFromTransaction(const CMutableTransaction& tx, unsigned int nIn, const CTxOut& txout);
+SignatureData DataFromTransaction(const CMutableTransaction& tx, unsigned int nIn, const CTxOut& txout, uint32_t sighash_fork_id = 0);
 void UpdateInput(CTxIn& input, const SignatureData& data);
 
 /** Check whether a scriptPubKey is known to be segwit. */
 bool IsSegWitOutput(const SigningProvider& provider, const CScript& script);
 
 /** Sign the CMutableTransaction */
-bool SignTransaction(CMutableTransaction& mtx, const SigningProvider* provider, const std::map<COutPoint, Coin>& coins, int sighash, std::map<int, bilingual_str>& input_errors);
+bool SignTransaction(CMutableTransaction& mtx, const SigningProvider* provider, const std::map<COutPoint, Coin>& coins, int sighash, std::map<int, bilingual_str>& input_errors, uint32_t sighash_fork_id = 0);
 
 #endif // BITCOINII_SCRIPT_SIGN_H

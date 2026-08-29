@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2018-2021 The BitcoinII Core developers
+# Copyright (c) 2018-present The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Verify that starting bitcoinII with -h works as expected."""
@@ -50,7 +50,7 @@ class HelpTest(BitcoinIITestFramework):
         self.log.info(f"Version text received: {output[0:60]} (...)")
 
         # Test that arguments not in the help results in an error
-        self.log.info("Start bitcoinIId with -fakearg to make sure it does not start")
+        self.log.info("Start bitcoinII-d with -fakearg to make sure it does not start")
         self.nodes[0].start(extra_args=['-fakearg'])
         # Node should exit immediately and output an error to stderr
         _, output = self.get_node_output(ret_code_expected=1)

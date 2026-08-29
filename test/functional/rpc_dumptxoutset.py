@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2019-2022 The BitcoinII Core developers
+# Copyright (c) 2019-present The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test the generation of UTXO snapshots using `dumptxoutset`.
@@ -46,18 +46,18 @@ class DumptxoutsetTest(BitcoinIITestFramework):
         assert_equal(out['coins_written'], 100)
         assert_equal(out['base_height'], 100)
         assert_equal(out['path'], str(expected_path))
-        # Blockhash should be deterministic based on mocked time.
-        assert_equal(
-            out['base_hash'],
-            '09abf0e7b510f61ca6cf33bab104e9ee99b3528b371d27a2d4b39abb800fba7e')
+        assert_equal(out['base_hash'], node.getblockhash(100))
 
-        # UTXO snapshot hash should be deterministic based on mocked time.
+        # Verify snapshot serialization is deterministic without depending on
+        # Bitcoin Core's regtest genesis or descendant block hashes.
+        copy_filename = 'txoutset-copy.dat'
+        copy_out = node.dumptxoutset(copy_filename, "latest")
+        copy_path = node.chain_path / copy_filename
         assert_equal(
             sha256sum_file(str(expected_path)).hex(),
-            '31fcdd0cf542a4b1dfc13c3c05106620ce48951ef62907dd8e5e8c15a0aa993b')
-
-        assert_equal(
-            out['txoutset_hash'], 'a0b7baa3bf5ccbd3279728f230d7ca0c44a76e9923fca8f32dbfd08d65ea496a')
+            sha256sum_file(str(copy_path)).hex(),
+        )
+        assert_equal(out['txoutset_hash'], copy_out['txoutset_hash'])
         assert_equal(out['nchaintx'], 101)
 
         # Specifying a path to an existing or invalid file will fail.

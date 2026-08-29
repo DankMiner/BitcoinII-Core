@@ -41,7 +41,7 @@ Core configuration options:
 In a typical situation, this suffices:
 
 ```
-bitcoinIId -i2psam=127.0.0.1:7656
+bitcoinII-d -i2psam=127.0.0.1:7656
 ```
 
 ## Additional configuration options related to I2P
@@ -65,7 +65,7 @@ to allow multiple networks, e.g. onlynet=onion, onlynet=i2p.
 I2P support was added to BitcoinII Core in version 22.0 and there may be fewer I2P
 peers than Tor or IP ones. Therefore, using I2P alone without other networks may
 make a node more susceptible to [Sybil
-attacks](https://en.bitcoinII.it/wiki/Weaknesses#Sybil_attack). You can use
+attacks](https://en.bitcoin.it/wiki/Weaknesses#Sybil_attack). You can use
 `bitcoinII-cli -addrinfo` to see the number of I2P addresses known to your node.
 
 Another consideration with `onlynet=i2p` is that the initial blocks download
@@ -113,7 +113,7 @@ You can use the `getnodeaddresses` RPC to fetch a number of I2P peers known to y
 
 ## Compatibility
 
-BitcoinII Core uses the [SAM v3.1](https://geti2p.net/en/docs/api/samv3) protocol
+Bitcoin Core uses the [SAM v3.1](https://geti2p.net/en/docs/api/samv3) protocol
 to connect to the I2P network. Any I2P router that supports it can be used.
 
 ## Ports in I2P and BitcoinII Core
@@ -166,3 +166,13 @@ In most cases, the default router settings should work fine.
 
 Please see the "General Guidance for Developers" section in https://geti2p.net/en/docs/api/samv3
 if you are developing a downstream application that may be bundling I2P with BitcoinII.
+
+## Privacy recommendations
+
+- Operating a node that listens on multiple networks (e.g. IPv4 and I2P) can help
+  strengthen the BitcoinII network, as nodes in this configuration (i.e. bridge nodes) increase
+  the cost and complexity of launching eclipse and partition attacks. However, under certain
+  conditions, an adversary that can connect to your node on multiple networks may be
+  able to correlate those identities by observing shared runtime characteristics. It
+  is not recommended to expose your node over multiple networks if you require
+  unlinkability across those identities.

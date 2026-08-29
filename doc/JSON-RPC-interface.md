@@ -1,6 +1,6 @@
 # JSON-RPC Interface
 
-The headless daemon `bitcoinIId` has the JSON-RPC API enabled by default, the GUI
+The headless daemon `bitcoinII-d` has the JSON-RPC API enabled by default, the GUI
 `bitcoinII-qt` has it disabled by default. This can be changed with the `-server`
 option. In the GUI it is possible to execute RPC methods in the Debug Console
 Dialog.
@@ -32,11 +32,11 @@ requests when multiple wallets are in use.
 ### Examples
 
 ```sh
-# Get block count from the / endpoint when rpcuser=alice and rpcport=38338
-$ curl --user alice --data-binary '{"jsonrpc": "2.0", "id": "0", "method": "getblockcount", "params": []}' -H 'content-type: application/json' localhost:38338/
+# Get block count from the / endpoint when rpcuser=alice and rpcport=38332
+$ curl --user alice --data-binary '{"jsonrpc": "2.0", "id": "0", "method": "getblockcount", "params": []}' -H 'content-type: application/json' localhost:38332/
 
-# Get balance from the /wallet/walletname endpoint when rpcuser=alice, rpcport=38338 and rpcwallet=desc-wallet
-$ curl --user alice --data-binary '{"jsonrpc": "2.0", "id": "0", "method": "getbalance", "params": []}' -H 'content-type: application/json' localhost:38338/wallet/desc-wallet
+# Get balance from the /wallet/walletname endpoint when rpcuser=alice, rpcport=38332 and rpcwallet=desc-wallet
+$ curl --user alice --data-binary '{"jsonrpc": "2.0", "id": "0", "method": "getbalance", "params": []}' -H 'content-type: application/json' localhost:38332/wallet/desc-wallet
 
 ```
 
@@ -61,6 +61,8 @@ bitcoinII-cli -named createwallet wallet_name=mywallet load_on_startup=true
 # "params": {"args": ["mywallet"], "load_on_startup": true}
 bitcoinII-cli -named createwallet mywallet load_on_startup=true
 ```
+
+`bitcoinII rpc` can also be substituted for `bitcoinII-cli -named`, and is a newer alternative.
 
 ## Versioning
 
@@ -135,14 +137,14 @@ RPC interface will be abused.
   withstand arbitrary Internet traffic, so changing the above settings
   to expose it to the Internet (even using something like a Tor onion
   service) could expose you to unconsidered vulnerabilities.  See
-  `bitcoinIId -help` for more information about these settings and other
+  `bitcoinII-d -help` for more information about these settings and other
   settings described in this document.
 
     Related, if you use BitcoinII Core inside a Docker container, you may
     need to expose the RPC port to the host system.  The default way to
     do this in Docker also exposes the port to the public Internet.
     Instead, expose it only on the host system's localhost, for example:
-    `-p 127.0.0.1:8333:8333`
+    `-p 127.0.0.1:8332:8332`
 
 - **Secure authentication:** By default, when no `rpcpassword` is specified, BitcoinII Core generates unique
   login credentials each time it restarts and puts them into a file

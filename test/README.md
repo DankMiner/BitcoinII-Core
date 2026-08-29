@@ -1,4 +1,4 @@
-This directory contains integration tests that test bitcoinIId and its
+This directory contains integration tests that test bitcoinII-d and its
 utilities in their entirety. It does not contain unit tests, which
 can be found in [/src/test](/src/test), [/src/wallet/test](/src/wallet/test),
 etc.
@@ -8,12 +8,11 @@ This directory contains the following sets of tests:
 - [fuzz](/test/fuzz) A runner to execute all fuzz targets from
   [/src/test/fuzz](/src/test/fuzz).
 - [functional](/test/functional) which test the functionality of
-bitcoinIId and bitcoinII-qt by interacting with them through the RPC and P2P
+bitcoinII-d and bitcoinII-qt by interacting with them through the RPC and P2P
 interfaces.
-- [util](/test/util) which tests the utilities (bitcoinII-util, bitcoinII-tx, ...).
 - [lint](/test/lint/) which perform various static analysis checks.
 
-The util tests are run as part of `ctest` invocation. The fuzz tests, functional
+The fuzz tests, functional
 tests and lint scripts can be run as explained in the sections below.
 
 # Running tests locally
@@ -35,7 +34,25 @@ The ZMQ functional test requires a python ZMQ library. To install it:
 - on Unix, run `sudo apt-get install python3-zmq`
 - on mac OS, run `pip3 install pyzmq`
 
+The IPC functional test requires a python IPC library. `pip3 install pycapnp` may work, but if not, install it from source:
 
+```sh
+git clone -b v2.2.1 https://github.com/capnproto/pycapnp
+pip3 install ./pycapnp
+```
+
+If that does not work, try adding `-C force-bundled-libcapnp=True` to the `pip` command.
+Depending on the system, it may be necessary to install and run in a venv:
+
+```sh
+python -m venv venv
+git clone -b v2.2.1 https://github.com/capnproto/pycapnp
+venv/bin/pip3 install ./pycapnp -C force-bundled-libcapnp=True
+venv/bin/python3 build/test/functional/interface_ipc.py
+```
+
+The functional tests assume Python UTF-8 Mode, which is the default on most
+systems.
 On Windows the `PYTHONUTF8` environment variable must be set to 1:
 
 ```cmd
@@ -100,7 +117,7 @@ build/test/functional/test_runner.py --extended
 In order to run backwards compatibility tests, first run:
 
 ```
-test/get_previous_releases.py -b
+test/get_previous_releases.py
 ```
 
 to download the necessary previous release binaries.
@@ -166,29 +183,29 @@ umount /Volumes/ramdisk
 
 ##### Resource contention
 
-The P2P and RPC ports used by the bitcoinIId nodes-under-test are chosen to make
-conflicts with other processes unlikely. However, if there is another bitcoinIId
+The P2P and RPC ports used by the bitcoinII-d nodes-under-test are chosen to make
+conflicts with other processes unlikely. However, if there is another bitcoinII-d
 process running on the system (perhaps from a previous test which hasn't successfully
-killed all its bitcoinIId nodes), then there may be a port conflict which will
+killed all its bitcoinII-d nodes), then there may be a port conflict which will
 cause the test to fail. It is recommended that you run the tests on a system
-where no other bitcoinIId processes are running.
+where no other bitcoinII-d processes are running.
 
 On linux, the test framework will warn if there is another
-bitcoinIId process running when the tests are started.
+bitcoinII-d process running when the tests are started.
 
-If there are zombie bitcoinIId processes after test failure, you can kill them
+If there are zombie bitcoinII-d processes after test failure, you can kill them
 by running the following commands. **Note that these commands will kill all
-bitcoinIId processes running on the system, so should not be used if any non-test
-bitcoinIId processes are being run.**
+bitcoinII-d processes running on the system, so should not be used if any non-test
+bitcoinII-d processes are being run.**
 
 ```bash
-killall bitcoinIId
+killall bitcoinII-d
 ```
 
 or
 
 ```bash
-pkill -9 bitcoinIId
+pkill -9 bitcoinII-d
 ```
 
 
@@ -199,11 +216,11 @@ functional test is run and is stored in build/test/cache. This speeds up
 test startup times since new blockchains don't need to be generated for
 each test. However, the cache may get into a bad state, in which case
 tests will fail. If this happens, remove the cache directory (and make
-sure bitcoinIId processes are stopped as above):
+sure bitcoinII-d processes are stopped as above):
 
 ```bash
 rm -rf build/test/cache
-killall bitcoinIId
+killall bitcoinII-d
 ```
 
 ##### Test logging
@@ -218,7 +235,7 @@ levels using the logger included in the test_framework, e.g.
 - when run directly, *all* logs are written to `test_framework.log` and INFO
   level and above are output to the console.
 - when run by [our CI (Continuous Integration)](/ci/README.md), no logs are output to the console. However, if a test
-  fails, the `test_framework.log` and bitcoinIId `debug.log`s will all be dumped
+  fails, the `test_framework.log` and bitcoinII-d `debug.log`s will all be dumped
   to the console to help troubleshooting.
 
 These log files can be located under the test data directory (which is always
@@ -233,7 +250,7 @@ e.g. `self.nodes[0]`.
 To change the level of logs output to the console, use the `-l` command line
 argument.
 
-`test_framework.log` and bitcoinIId `debug.log`s can be combined into a single
+`test_framework.log` and bitcoinII-d `debug.log`s can be combined into a single
 aggregate log by running the `combine_logs.py` script. The output can be plain
 text, colorized text or html. For example:
 
@@ -260,9 +277,9 @@ import pdb; pdb.set_trace()
 ```
 
 anywhere in the test. You will then be able to inspect variables, as well as
-call methods that interact with the bitcoinIId nodes-under-test.
+call methods that interact with the bitcoinII-d nodes-under-test.
 
-If further introspection of the bitcoinIId instances themselves becomes
+If further introspection of the bitcoinII-d instances themselves becomes
 necessary, this can be accomplished by first setting a pdb breakpoint
 at an appropriate location, running the test to that point, then using
 `gdb` (or `lldb` on macOS) to attach to the process and debug.
@@ -285,13 +302,13 @@ test run:
 Use the path to find the pid file in the temp folder:
 
 ```bash
-cat /tmp/user/1000/testo9vsdjo3/node1/regtest/bitcoinIId.pid
+cat /tmp/user/1000/testo9vsdjo3/node1/regtest/bitcoinII-d.pid
 ```
 
 Then you can use the pid to start `gdb`:
 
 ```bash
-gdb /home/example/bitcoinIId <pid>
+gdb /home/example/bitcoinII-d <pid>
 ```
 
 Note: gdb attach step may require ptrace_scope to be modified, or `sudo` preceding the `gdb`.
@@ -320,11 +337,6 @@ perf report -i /path/to/datadir/send-big-msgs.perf.data.xxxx --stdio | c++filt |
 
 For ways to generate more granular profiles, see the README in
 [test/functional](/test/functional).
-
-### Util tests
-
-Util tests can be run locally by running `build/test/util/test_runner.py`.
-Use the `-v` option for verbose output.
 
 ### Lint tests
 

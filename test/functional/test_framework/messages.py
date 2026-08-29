@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Copyright (c) 2010 ArtForz -- public domain half-a-node
 # Copyright (c) 2012 Jeff Garzik
-# Copyright (c) 2010-2022 The BitcoinII Core developers
+# Copyright (c) 2010-present The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """BitcoinII test framework primitive and message structures
@@ -29,7 +29,10 @@ import time
 import unittest
 
 from test_framework.crypto.siphash import siphash256
-from test_framework.util import assert_equal
+from test_framework.util import (
+    assert_equal,
+    assert_not_equal,
+)
 
 MAX_LOCATOR_SZ = 101
 MAX_BLOCK_WEIGHT = 4000000
@@ -38,10 +41,11 @@ MINIMUM_BLOCK_RESERVED_WEIGHT = 2000
 MAX_BLOOM_FILTER_SIZE = 36000
 MAX_BLOOM_HASH_FUNCS = 50
 
-COIN = 100000000  # 1 btc in satoshis
+COIN = 100000000  # 1 bc2 in satooshis
 MAX_MONEY = 21000000 * COIN
 
 MAX_BIP125_RBF_SEQUENCE = 0xfffffffd  # Sequence number that is rbf-opt-in (BIP 125) and csv-opt-out (BIP 68)
+MAX_SEQUENCE_NONFINAL = 0xfffffffe  # Sequence number that is csv-opt-out (BIP 68)
 SEQUENCE_FINAL = 0xffffffff  # Sequence number that disables nLockTime if set for every input of a tx
 
 MAX_PROTOCOL_MESSAGE_LENGTH = 4000000  # Maximum length of incoming protocol messages
@@ -71,17 +75,23 @@ WITNESS_SCALE_FACTOR = 4
 
 DEFAULT_ANCESTOR_LIMIT = 25    # default max number of in-mempool ancestors
 DEFAULT_DESCENDANT_LIMIT = 25  # default max number of in-mempool descendants
+DEFAULT_CLUSTER_LIMIT = 64     # default max number of transactions in a cluster
 
-# Default setting for -datacarriersize. 80 bytes of data, +1 for OP_RETURN, +2 for the pushdata opcodes.
-MAX_OP_RETURN_RELAY = 83
+
+# Upstream BitcoinII Core OP_RETURN relay reference size.
+MAX_OP_RETURN_RELAY = 100_000
+
 
 DEFAULT_MEMPOOL_EXPIRY_HOURS = 336  # hours
 
+TX_MIN_STANDARD_VERSION = 1
+TX_MAX_STANDARD_VERSION = 3
+
 MAGIC_BYTES = {
-    "mainnet": b"\xf9\xbe\xb4\xd9",   # mainnet
-    "testnet3": b"\x0b\x11\x09\x07",  # testnet3
-    "regtest": b"\xfa\xbf\xb5\xda",   # regtest
-    "signet": b"\x0a\x03\xcf\x40",    # signet
+    "mainnet": b"\x42\x49\x49\x21",
+    "testnet4": b"\x1c\x16\x3f\x28",
+    "regtest": b"\xfb\xbb\xb6\xdb",
+    "signet": b"\x0a\x03\xcf\x40",
 }
 
 def sha256(s):
@@ -118,6 +128,26 @@ def deser_compact_size(f):
     elif nit == 255:
         nit = int.from_bytes(f.read(8), "little")
     return nit
+
+
+def ser_varint(l):
+    r = b""
+    while True:
+        r = bytes([(l & 0x7f) | (0x80 if len(r) > 0 else 0x00)]) + r
+        if l <= 0x7f:
+            return r
+        l = (l >> 7) - 1
+
+
+def deser_varint(f):
+    n = 0
+    while True:
+        dat = f.read(1)[0]
+        n = (n << 7) | (dat & 0x7f)
+        if (dat & 0x80) > 0:
+            n += 1
+        else:
+            return n
 
 
 def deser_string(f):
@@ -207,6 +237,11 @@ def ser_string_vector(l):
     return r
 
 
+def deser_block_spent_outputs(f):
+    nit = deser_compact_size(f)
+    return [deser_vector(f, CTxOut) for _ in range(nit)]
+
+
 def from_hex(obj, hex_string):
     """Deserialize from a hex string representation (e.g. from RPC)
 
@@ -220,6 +255,23 @@ def from_hex(obj, hex_string):
 def tx_from_hex(hex_string):
     """Deserialize from hex string to a transaction object"""
     return from_hex(CTransaction(), hex_string)
+
+
+def malleate_tx_to_invalid_witness(tx):
+    """
+    Create a malleated version of the tx where the witness is replaced with garbage data.
+    Returns a CTransaction object.
+    """
+    tx_bad_wit = tx_from_hex(tx["hex"])
+    tx_bad_wit.wit.vtxinwit = [CTxInWitness()]
+    # Add garbage data to witness 0. We cannot simply strip the witness, as the node would
+    # classify it as a transaction in which the witness was missing rather than wrong.
+    tx_bad_wit.wit.vtxinwit[0].scriptWitness.stack = [b'garbage']
+
+    assert_equal(tx["txid"], tx_bad_wit.txid_hex)
+    assert_not_equal(tx["wtxid"], tx_bad_wit.wtxid_hex)
+
+    return tx_bad_wit
 
 
 # like from_hex, but without the hex part
@@ -236,13 +288,13 @@ def from_binary(cls, stream):
     return obj
 
 
-# Objects that map to bitcoinIId objects, which can be serialized/deserialized
+# Objects that map to bitcoinII-d objects, which can be serialized/deserialized
 
 
 class CAddress:
     __slots__ = ("net", "ip", "nServices", "port", "time")
 
-    # see https://github.com/bitcoinII/bips/blob/master/bip-0155.mediawiki
+    # see https://github.com/bitcoin/bips/blob/master/bip-0155.mediawiki
     NET_IPV4 = 1
     NET_IPV6 = 2
     NET_TORV3 = 4
@@ -394,7 +446,7 @@ class CInv:
         return r
 
     def __repr__(self):
-        return "CInv(type=%s hash=%064x)" \
+        return "CInv(type=%s hash=%064x)"\
             % (self.typemap[self.type], self.hash)
 
     def __eq__(self, other):
@@ -467,7 +519,7 @@ class CTxIn:
         return r
 
     def __repr__(self):
-        return "CTxIn(prevout=%s scriptSig=%s nSequence=%i)" \
+        return "CTxIn(prevout=%s scriptSig=%s nSequence=%i)"\
             % (repr(self.prevout), self.scriptSig.hex(),
                self.nSequence)
 
@@ -490,7 +542,7 @@ class CTxOut:
         return r
 
     def __repr__(self):
-        return "CTxOut(nValue=%i.%08i scriptPubKey=%s)" \
+        return "CTxOut(nValue=%i.%08i scriptPubKey=%s)"\
             % (self.nValue // COIN, self.nValue % COIN,
                self.scriptPubKey.hex())
 
@@ -503,7 +555,7 @@ class CScriptWitness:
         self.stack = []
 
     def __repr__(self):
-        return "CScriptWitness(%s)" % \
+        return "CScriptWitness(%s)" %\
                (",".join([x.hex() for x in self.stack]))
 
     def is_null(self):
@@ -551,7 +603,7 @@ class CTxWitness:
         return r
 
     def __repr__(self):
-        return "CTxWitness(%s)" % \
+        return "CTxWitness(%s)" %\
                (';'.join([repr(x) for x in self.vtxinwit]))
 
     def is_null(self):
@@ -562,8 +614,7 @@ class CTxWitness:
 
 
 class CTransaction:
-    __slots__ = ("hash", "nLockTime", "version", "sha256", "vin", "vout",
-                 "wit")
+    __slots__ = ("nLockTime", "version", "vin", "vout", "wit")
 
     def __init__(self, tx=None):
         if tx is None:
@@ -572,15 +623,11 @@ class CTransaction:
             self.vout = []
             self.wit = CTxWitness()
             self.nLockTime = 0
-            self.sha256 = None
-            self.hash = None
         else:
             self.version = tx.version
             self.vin = copy.deepcopy(tx.vin)
             self.vout = copy.deepcopy(tx.vout)
             self.nLockTime = tx.nLockTime
-            self.sha256 = tx.sha256
-            self.hash = tx.hash
             self.wit = copy.deepcopy(tx.wit)
 
     def deserialize(self, f):
@@ -590,7 +637,7 @@ class CTransaction:
         if len(self.vin) == 0:
             flags = int.from_bytes(f.read(1), "little")
             # Not sure why flags can't be zero, but this
-            # matches the implementation in bitcoinIId
+            # matches the implementation in bitcoinII-d
             if (flags != 0):
                 self.vin = deser_vector(f, CTxIn)
                 self.vout = deser_vector(f, CTxOut)
@@ -602,8 +649,6 @@ class CTransaction:
         else:
             self.wit = CTxWitness()
         self.nLockTime = int.from_bytes(f.read(4), "little")
-        self.sha256 = None
-        self.hash = None
 
     def serialize_without_witness(self):
         r = b""
@@ -641,28 +686,27 @@ class CTransaction:
     def serialize(self):
         return self.serialize_with_witness()
 
-    def getwtxid(self):
+    @property
+    def wtxid_hex(self):
+        """Return wtxid (transaction hash with witness) as hex string."""
         return hash256(self.serialize())[::-1].hex()
 
-    # Recalculate the txid (transaction hash without witness)
-    def rehash(self):
-        self.sha256 = None
-        self.calc_sha256()
-        return self.hash
+    @property
+    def wtxid_int(self):
+        """Return wtxid (transaction hash with witness) as integer."""
+        return uint256_from_str(hash256(self.serialize_with_witness()))
 
-    # We will only cache the serialization without witness in
-    # self.sha256 and self.hash -- those are expected to be the txid.
-    def calc_sha256(self, with_witness=False):
-        if with_witness:
-            # Don't cache the result, just return it
-            return uint256_from_str(hash256(self.serialize_with_witness()))
+    @property
+    def txid_hex(self):
+        """Return txid (transaction hash without witness) as hex string."""
+        return hash256(self.serialize_without_witness())[::-1].hex()
 
-        if self.sha256 is None:
-            self.sha256 = uint256_from_str(hash256(self.serialize_without_witness()))
-        self.hash = hash256(self.serialize_without_witness())[::-1].hex()
+    @property
+    def txid_int(self):
+        """Return txid (transaction hash without witness) as integer."""
+        return uint256_from_str(hash256(self.serialize_without_witness()))
 
     def is_valid(self):
-        self.calc_sha256()
         for tout in self.vout:
             if tout.nValue < 0 or tout.nValue > 21000000 * COIN:
                 return False
@@ -679,13 +723,13 @@ class CTransaction:
         return math.ceil(self.get_weight() / WITNESS_SCALE_FACTOR)
 
     def __repr__(self):
-        return "CTransaction(version=%i vin=%s vout=%s wit=%s nLockTime=%i)" \
+        return "CTransaction(version=%i vin=%s vout=%s wit=%s nLockTime=%i)"\
             % (self.version, repr(self.vin), repr(self.vout), repr(self.wit), self.nLockTime)
 
 
 class CBlockHeader:
-    __slots__ = ("hash", "hashMerkleRoot", "hashPrevBlock", "nBits", "nNonce",
-                 "nTime", "nVersion", "sha256")
+    __slots__ = ("hashMerkleRoot", "hashPrevBlock", "nBits", "nNonce",
+                 "nTime", "nVersion")
 
     def __init__(self, header=None):
         if header is None:
@@ -697,9 +741,6 @@ class CBlockHeader:
             self.nTime = header.nTime
             self.nBits = header.nBits
             self.nNonce = header.nNonce
-            self.sha256 = header.sha256
-            self.hash = header.hash
-            self.calc_sha256()
 
     def set_null(self):
         self.nVersion = 4
@@ -708,8 +749,6 @@ class CBlockHeader:
         self.nTime = 0
         self.nBits = 0
         self.nNonce = 0
-        self.sha256 = None
-        self.hash = None
 
     def deserialize(self, f):
         self.nVersion = int.from_bytes(f.read(4), "little", signed=True)
@@ -718,10 +757,11 @@ class CBlockHeader:
         self.nTime = int.from_bytes(f.read(4), "little")
         self.nBits = int.from_bytes(f.read(4), "little")
         self.nNonce = int.from_bytes(f.read(4), "little")
-        self.sha256 = None
-        self.hash = None
 
     def serialize(self):
+        return self._serialize_header()
+
+    def _serialize_header(self):
         r = b""
         r += self.nVersion.to_bytes(4, "little", signed=True)
         r += ser_uint256(self.hashPrevBlock)
@@ -731,25 +771,18 @@ class CBlockHeader:
         r += self.nNonce.to_bytes(4, "little")
         return r
 
-    def calc_sha256(self):
-        if self.sha256 is None:
-            r = b""
-            r += self.nVersion.to_bytes(4, "little", signed=True)
-            r += ser_uint256(self.hashPrevBlock)
-            r += ser_uint256(self.hashMerkleRoot)
-            r += self.nTime.to_bytes(4, "little")
-            r += self.nBits.to_bytes(4, "little")
-            r += self.nNonce.to_bytes(4, "little")
-            self.sha256 = uint256_from_str(hash256(r))
-            self.hash = hash256(r)[::-1].hex()
+    @property
+    def hash_hex(self):
+        """Return block header hash as hex string."""
+        return hash256(self._serialize_header())[::-1].hex()
 
-    def rehash(self):
-        self.sha256 = None
-        self.calc_sha256()
-        return self.sha256
+    @property
+    def hash_int(self):
+        """Return block header hash as integer."""
+        return uint256_from_str(hash256(self._serialize_header()))
 
     def __repr__(self):
-        return "CBlockHeader(nVersion=%i hashPrevBlock=%064x hashMerkleRoot=%064x nTime=%s nBits=%08x nNonce=%08x)" \
+        return "CBlockHeader(nVersion=%i hashPrevBlock=%064x hashMerkleRoot=%064x nTime=%s nBits=%08x nNonce=%08x)"\
             % (self.nVersion, self.hashPrevBlock, self.hashMerkleRoot,
                time.ctime(self.nTime), self.nBits, self.nNonce)
 
@@ -790,8 +823,7 @@ class CBlock(CBlockHeader):
     def calc_merkle_root(self):
         hashes = []
         for tx in self.vtx:
-            tx.calc_sha256()
-            hashes.append(ser_uint256(tx.sha256))
+            hashes.append(ser_uint256(tx.txid_int))
         return self.get_merkle_root(hashes)
 
     def calc_witness_merkle_root(self):
@@ -801,14 +833,13 @@ class CBlock(CBlockHeader):
 
         for tx in self.vtx[1:]:
             # Calculate the hashes with witness data
-            hashes.append(ser_uint256(tx.calc_sha256(True)))
+            hashes.append(ser_uint256(tx.wtxid_int))
 
         return self.get_merkle_root(hashes)
 
     def is_valid(self):
-        self.calc_sha256()
         target = uint256_from_compact(self.nBits)
-        if self.sha256 > target:
+        if self.hash_int > target:
             return False
         for tx in self.vtx:
             if not tx.is_valid():
@@ -818,11 +849,9 @@ class CBlock(CBlockHeader):
         return True
 
     def solve(self):
-        self.rehash()
         target = uint256_from_compact(self.nBits)
-        while self.sha256 > target:
+        while self.hash_int > target:
             self.nNonce += 1
-            self.rehash()
 
     # Calculate the block weight using witness and non-witness
     # serialization size (does NOT use sigops).
@@ -832,7 +861,7 @@ class CBlock(CBlockHeader):
         return (WITNESS_SCALE_FACTOR - 1) * without_witness_size + with_witness_size
 
     def __repr__(self):
-        return "CBlock(nVersion=%i hashPrevBlock=%064x hashMerkleRoot=%064x nTime=%s nBits=%08x nNonce=%08x vtx=%s)" \
+        return "CBlock(nVersion=%i hashPrevBlock=%064x hashMerkleRoot=%064x nTime=%s nBits=%08x nNonce=%08x vtx=%s)"\
             % (self.nVersion, self.hashPrevBlock, self.hashMerkleRoot,
                time.ctime(self.nTime), self.nBits, self.nNonce, repr(self.vtx))
 
@@ -983,9 +1012,9 @@ class HeaderAndShortIDs:
         [k0, k1] = self.get_siphash_keys()
         for i in range(len(block.vtx)):
             if i not in prefill_list:
-                tx_hash = block.vtx[i].sha256
+                tx_hash = block.vtx[i].txid_int
                 if use_witness:
-                    tx_hash = block.vtx[i].calc_sha256(with_witness=True)
+                    tx_hash = block.vtx[i].wtxid_int
                 self.shortids.append(calculate_shortid(k0, k1, tx_hash))
 
     def __repr__(self):
@@ -1140,7 +1169,7 @@ class msg_version:
         self.nStartingHeight = int.from_bytes(f.read(4), "little", signed=True)
 
         # Relay field is optional for version 70001 onwards
-        # But, unconditionally check it to match behaviour in bitcoinIId
+        # But, unconditionally check it to match behaviour in bitcoinII-d
         self.relay = int.from_bytes(f.read(1), "little")  # f.read(1) may return an empty b''
 
     def serialize(self):
@@ -1157,7 +1186,7 @@ class msg_version:
         return r
 
     def __repr__(self):
-        return 'msg_version(nVersion=%i nServices=%i nTime=%s addrTo=%s addrFrom=%s nNonce=0x%016X strSubVer=%s nStartingHeight=%i relay=%i)' \
+        return 'msg_version(nVersion=%i nServices=%i nTime=%s addrTo=%s addrFrom=%s nNonce=0x%016X strSubVer=%s nStartingHeight=%i relay=%i)'\
             % (self.nVersion, self.nServices, time.ctime(self.nTime),
                repr(self.addrTo), repr(self.addrFrom), self.nNonce,
                self.strSubVer, self.nStartingHeight, self.relay)
@@ -1288,7 +1317,7 @@ class msg_getblocks:
         return r
 
     def __repr__(self):
-        return "msg_getblocks(locator=%s hashstop=%064x)" \
+        return "msg_getblocks(locator=%s hashstop=%064x)"\
             % (repr(self.locator), self.hashstop)
 
 
@@ -1355,10 +1384,10 @@ class msg_block:
         return "msg_block(block=%s)" % (repr(self.block))
 
 
-# for cases where a user needs tighter control over what is sent over the wire
-# note that the user must supply the name of the msgtype, and the data
+# Generic type to control the raw bytes sent over the wire.
+# The msgtype and the data must be provided.
 class msg_generic:
-    __slots__ = ("data")
+    __slots__ = ("msgtype", "data")
 
     def __init__(self, msgtype, data=None):
         self.msgtype = msgtype
@@ -1507,7 +1536,7 @@ class msg_getheaders:
         return r
 
     def __repr__(self):
-        return "msg_getheaders(locator=%s, stop=%064x)" \
+        return "msg_getheaders(locator=%s, stop=%064x)"\
             % (repr(self.locator), self.hashstop)
 
 
@@ -1521,7 +1550,7 @@ class msg_headers:
         self.headers = headers if headers is not None else []
 
     def deserialize(self, f):
-        # comment in bitcoinIId indicates these should be deserialized as blocks
+        # comment in bitcoinII-d indicates these should be deserialized as blocks
         blocks = deser_vector(f, CBlock)
         for x in blocks:
             self.headers.append(CBlockHeader(x))
@@ -1913,3 +1942,20 @@ class TestFrameworkScript(unittest.TestCase):
         check_addrv2("2bqghnldu6mcug4pikzprwhtjjnsyederctvci6klcwzepnjd46ikjyd.onion", CAddress.NET_TORV3)
         check_addrv2("255fhcp6ajvftnyo7bwz3an3t4a4brhopm3bamyh2iu5r3gnr2rq.b32.i2p", CAddress.NET_I2P)
         check_addrv2("fc32:17ea:e415:c3bf:9808:149d:b5a2:c9aa", CAddress.NET_CJDNS)
+
+    def test_varint_encode_decode(self):
+        def check_varint(num, expected_encoding_hex):
+            expected_encoding = bytes.fromhex(expected_encoding_hex)
+            self.assertEqual(ser_varint(num), expected_encoding)
+            self.assertEqual(deser_varint(BytesIO(expected_encoding)), num)
+
+        # test cases from serialize_tests.cpp:varint_bitpatterns
+        check_varint(0, "00")
+        check_varint(0x7f, "7f")
+        check_varint(0x80, "8000")
+        check_varint(0x1234, "a334")
+        check_varint(0xffff, "82fe7f")
+        check_varint(0x123456, "c7e756")
+        check_varint(0x80123456, "86ffc7e756")
+        check_varint(0xffffffff, "8efefefe7f")
+        check_varint(0xffffffffffffffff, "80fefefefefefefefe7f")

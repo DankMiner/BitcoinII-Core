@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2014-2022 The BitcoinII Core developers
+# Copyright (c) 2014-present The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test the pruning code.
@@ -8,6 +8,7 @@ WARNING:
 This test uses 4GB of disk space.
 This test takes 30 mins or more (up to 2 hours)
 """
+import hashlib
 import os
 
 from test_framework.blocktools import (
@@ -17,8 +18,7 @@ from test_framework.blocktools import (
 )
 from test_framework.script import (
     CScript,
-    OP_NOP,
-    OP_RETURN,
+    OP_0,
 )
 from test_framework.test_framework import BitcoinIITestFramework
 from test_framework.util import (
@@ -34,45 +34,55 @@ from test_framework.util import (
 TIMESTAMP_WINDOW = 2 * 60 * 60
 
 def mine_large_blocks(node, n):
-    # Make a large scriptPubKey for the coinbase transaction. This is OP_RETURN
-    # followed by 950k of OP_NOP. This would be non-standard in a non-coinbase
-    # transaction but is consensus valid.
+    # Create physically large, incompressible blocks without violating
+    # BitcoinII's OP_RETURN consensus limits. A scriptPubKey larger than
+    # MAX_SCRIPT_SIZE is provably unspendable and is therefore not added
+    # to the UTXO set.
 
     # Set the nTime if this is the first time this function has been called.
-    # A static variable ensures that time is monotonicly increasing and is therefore
-    # different for each block created => blockhash is unique.
-    if "nTimes" not in mine_large_blocks.__dict__:
+    # A static variable ensures that time is monotonically increasing and is
+    # therefore different for each block created => blockhash is unique.
+    if "nTime" not in mine_large_blocks.__dict__:
         mine_large_blocks.nTime = 0
 
-    # Get the block parameters for the first block
-    big_script = CScript([OP_RETURN] + [OP_NOP] * 950000)
+    # Prefix with OP_0 rather than OP_RETURN so BitcoinII's data-carrier
+    # consensus rules do not apply. The deterministic SHAKE output keeps
+    # the ~950 kB script effectively incompressible for pruning tests.
+    big_script = CScript(
+        bytes([OP_0])
+        + hashlib.shake_256(b"feature-pruning-large-block").digest(950000)
+    )
+
     best_block = node.getblock(node.getbestblockhash())
     height = int(best_block["height"]) + 1
     mine_large_blocks.nTime = max(mine_large_blocks.nTime, int(best_block["time"])) + 1
     previousblockhash = int(best_block["hash"], 16)
 
     for _ in range(n):
-        block = create_block(hashprev=previousblockhash, ntime=mine_large_blocks.nTime, coinbase=create_coinbase(height, script_pubkey=big_script))
+        block = create_block(
+            hashprev=previousblockhash,
+            ntime=mine_large_blocks.nTime,
+            coinbase=create_coinbase(height, script_pubkey=big_script),
+        )
         block.solve()
 
         # Submit to the node
         node.submitblock(block.serialize().hex())
 
-        previousblockhash = block.sha256
+        previousblockhash = block.hash_int
         height += 1
         mine_large_blocks.nTime += 1
+
 
 def calc_usage(blockdir):
     return sum(os.path.getsize(blockdir + f) for f in os.listdir(blockdir) if os.path.isfile(os.path.join(blockdir, f))) / (1024. * 1024.)
 
-class PruneTest(BitcoinIITestFramework):
-    def add_options(self, parser):
-        self.add_wallet_options(parser)
 
+class PruneTest(BitcoinIITestFramework):
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 6
-        self.supports_cli = False
+        self.uses_wallet = None
 
         # Create nodes 0 and 1 to mine.
         # Create node 2 to test pruning.
@@ -228,7 +238,7 @@ class PruneTest(BitcoinIITestFramework):
     def reorg_back(self):
         # Verify that a block on the old main chain fork has been pruned away
         assert_raises_rpc_error(-1, "Block not available (pruned data)", self.nodes[2].getblock, self.forkhash)
-        with self.nodes[2].assert_debug_log(expected_msgs=['block verification stopping at height', '(no data)']):
+        with self.nodes[2].assert_debug_log(expected_msgs=["Block verification stopping at height", "(no data)"]):
             assert not self.nodes[2].verifychain(checklevel=4, nblocks=0)
         self.log.info(f"Will need to redownload block {self.forkheight}")
 
@@ -349,20 +359,22 @@ class PruneTest(BitcoinIITestFramework):
 
         self.log.info("Success")
 
-    def wallet_test(self):
+    def test_wallet_rescan(self):
         # check that the pruning node's wallet is still in good shape
         self.log.info("Stop and start pruning node to trigger wallet rescan")
         self.restart_node(2, extra_args=["-prune=550"])
-        self.log.info("Success")
+
+        wallet_info = self.nodes[2].getwalletinfo()
+        self.wait_until(lambda: wallet_info["scanning"] == False)
+        self.wait_until(lambda: wallet_info["lastprocessedblock"]["height"] == self.nodes[2].getblockcount())
 
         # check that wallet loads successfully when restarting a pruned node after IBD.
         # this was reported to fail in #7494.
-        self.log.info("Syncing node 5 to test wallet")
-        self.connect_nodes(0, 5)
-        nds = [self.nodes[0], self.nodes[5]]
-        self.sync_blocks(nds, wait=5, timeout=300)
         self.restart_node(5, extra_args=["-prune=550", "-blockfilterindex=1"]) # restart to trigger rescan
-        self.log.info("Success")
+
+        wallet_info = self.nodes[5].getwalletinfo()
+        self.wait_until(lambda: wallet_info["scanning"] == False)
+        self.wait_until(lambda: wallet_info["lastprocessedblock"]["height"] == self.nodes[0].getblockcount())
 
     def run_test(self):
         self.log.info("Warning! This test requires 4GB of disk space")
@@ -470,9 +482,13 @@ class PruneTest(BitcoinIITestFramework):
         self.log.info("Test manual pruning with timestamps")
         self.manual_test(4, use_timestamp=True)
 
+        self.log.info("Syncing node 5 to node 0")
+        self.connect_nodes(0, 5)
+        self.sync_blocks([self.nodes[0], self.nodes[5]], wait=5, timeout=300)
+
         if self.is_wallet_compiled():
             self.log.info("Test wallet re-scan")
-            self.wallet_test()
+            self.test_wallet_rescan()
 
             self.log.info("Test it's not possible to rescan beyond pruned data")
             self.test_rescan_blockchain()
@@ -491,20 +507,23 @@ class PruneTest(BitcoinIITestFramework):
     def test_scanblocks_pruned(self):
         node = self.nodes[5]
         genesis_blockhash = node.getblockhash(0)
-        false_positive_spk = bytes.fromhex("001400000000000000000000000000000000000cadcb")
+        genesis_spk = bytes.fromhex(
+            "4104678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61de"
+            "b649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5fac"
+        )
 
         assert genesis_blockhash in node.scanblocks(
-            "start", [{"desc": f"raw({false_positive_spk.hex()})"}], 0, 0)['relevant_blocks']
+            "start", [{"desc": f"raw({genesis_spk.hex()})"}], 0, 0)['relevant_blocks']
 
         assert_raises_rpc_error(-1, "Block not available (pruned data)", node.scanblocks,
-            "start", [{"desc": f"raw({false_positive_spk.hex()})"}], 0, 0, "basic", {"filter_false_positives": True})
+            "start", [{"desc": f"raw({genesis_spk.hex()})"}], 0, 0, "basic", {"filter_false_positives": True})
 
     def test_pruneheight_undo_presence(self):
-        node = self.nodes[2]
+        node = self.nodes[5]
         pruneheight = node.getblockchaininfo()["pruneheight"]
         fetch_block = node.getblockhash(pruneheight - 1)
 
-        self.connect_nodes(1, 2)
+        self.connect_nodes(1, 5)
         peers = node.getpeerinfo()
         node.getblockfrompeer(fetch_block, peers[0]["id"])
         self.wait_until(lambda: not try_rpc(-1, "Block not available (pruned data)", node.getblock, fetch_block), timeout=5)

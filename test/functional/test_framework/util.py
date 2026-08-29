@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2014-2022 The BitcoinII Core developers
+# Copyright (c) 2014-present The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Helpful routines for regression testing."""
@@ -16,14 +16,17 @@ import pathlib
 import platform
 import random
 import re
+import shlex
 import time
+import types
 
 from . import coverage
 from .authproxy import AuthServiceProxy, JSONRPCException
+from .descriptors import descsum_create
 from collections.abc import Callable
 from typing import Optional, Union
 
-SATOSHI_PRECISION = Decimal('0.00000001')
+SATOOSHI_PRECISION = Decimal('0.00000001')
 
 logger = logging.getLogger("TestFramework.utils")
 
@@ -76,6 +79,10 @@ def assert_equal(thing1, thing2, *args):
     if thing1 != thing2 or any(thing1 != arg for arg in args):
         raise AssertionError("not(%s)" % " == ".join(str(arg) for arg in (thing1, thing2) + args))
 
+def assert_not_equal(thing1, thing2, *, error_message=""):
+    if thing1 == thing2:
+        raise AssertionError(f"Both values are {thing1}{f', {error_message}' if error_message else ''}")
+
 
 def assert_greater_than(thing1, thing2):
     if thing1 <= thing2:
@@ -97,10 +104,9 @@ def assert_raises_message(exc, message, fun, *args, **kwds):
     except JSONRPCException:
         raise AssertionError("Use assert_raises_rpc_error() to test RPC failures")
     except exc as e:
-        if message is not None and message not in e.error['message']:
-            raise AssertionError(
-                "Expected substring not found in error message:\nsubstring: '{}'\nerror message: '{}'.".format(
-                    message, e.error['message']))
+        if message is not None and message not in str(e):
+            raise AssertionError("Expected substring not found in exception:\n"
+                                 f"substring: '{message}'\nexception: {e!r}.")
     except Exception as e:
         raise AssertionError("Unexpected exception raised: " + type(e).__name__)
     else:
@@ -159,13 +165,13 @@ def try_rpc(code, message, fun, *args, **kwds):
     try:
         fun(*args, **kwds)
     except JSONRPCException as e:
-        # JSONRPCException was thrown as expected. Check the code and message values are correct.
-        if (code is not None) and (code != e.error["code"]):
-            raise AssertionError("Unexpected JSONRPC error code %i" % e.error["code"])
+        # JSONRPCException was thrown as expected. Check the message and code values are correct.
         if (message is not None) and (message not in e.error['message']):
             raise AssertionError(
                 "Expected substring not found in error message:\nsubstring: '{}'\nerror message: '{}'.".format(
                     message, e.error['message']))
+        if (code is not None) and (code != e.error["code"]):
+            raise AssertionError("Unexpected JSONRPC error code %i" % e.error["code"])
         return True
     except Exception as e:
         raise AssertionError("Unexpected exception raised: " + type(e).__name__)
@@ -226,9 +232,138 @@ def assert_array_result(object_array, to_match, expected, should_not_find=False)
 def check_json_precision():
     """Make sure json library being used does not lose precision converting BC2 values"""
     n = Decimal("20000000.00000003")
-    satoshis = int(json.loads(json.dumps(float(n))) * 1.0e8)
-    if satoshis != 2000000000000003:
+    satooshis = int(json.loads(json.dumps(float(n))) * 1.0e8)
+    if satooshis != 2000000000000003:
         raise RuntimeError("JSON encode/decode loses precision")
+
+
+class Binaries:
+    """Helper class to provide information about bitcoinII binaries
+
+    Attributes:
+        paths: Object returned from get_binary_paths() containing information
+            which binaries and command lines to use from environment variables and
+            the config file.
+        bin_dir: An optional string containing a directory path to look for
+            binaries, which takes precedence over the paths above, if specified.
+            This is used by tests calling binaries from previous releases.
+    """
+    def __init__(self, paths, bin_dir, *, use_valgrind=False):
+        self.paths = paths
+        self.bin_dir = bin_dir
+        suppressions_file = pathlib.Path(__file__).resolve().parents[3] / "test" / "sanitizer_suppressions" / "valgrind.supp"
+        self.valgrind_cmd = [
+            "valgrind",
+            f"--suppressions={suppressions_file}",
+            "--gen-suppressions=all",
+            "--trace-children=yes",  # Needed for 'bitcoinII' wrapper
+            "--exit-on-first-error=yes",
+            "--error-exitcode=1",
+            "--quiet",
+        ] if use_valgrind else []
+
+    def node_argv(self, **kwargs):
+        "Return argv array that should be used to invoke bitcoinII-d"
+        return self._argv("node", self.paths.bitcoinII_d, **kwargs)
+
+    def rpc_argv(self):
+        "Return argv array that should be used to invoke bitcoinII-cli"
+        # Add -nonamed because "bitcoinII rpc" enables -named by default, but bitcoinII-cli doesn't
+        return self._argv("rpc", self.paths.bitcoinIIcli) + ["-nonamed"]
+
+    def bench_argv(self):
+        "Return argv array that should be used to invoke bench_bitcoinII"
+        return self._argv("bench", self.paths.bitcoinII_bench)
+
+    def tx_argv(self):
+        "Return argv array that should be used to invoke bitcoinII-tx"
+        return self._argv("tx", self.paths.bitcoinIItx)
+
+    def util_argv(self):
+        "Return argv array that should be used to invoke bitcoinII-util"
+        return self._argv("util", self.paths.bitcoinIIutil)
+
+    def wallet_argv(self):
+        "Return argv array that should be used to invoke bitcoinII-wallet"
+        return self._argv("wallet", self.paths.bitcoinIIwallet)
+
+    def chainstate_argv(self):
+        "Return argv array that should be used to invoke bitcoinII-chainstate"
+        return self._argv("chainstate", self.paths.bitcoinIIchainstate)
+
+    def _argv(self, command, bin_path, need_ipc=False):
+        """Return argv array that should be used to invoke the command.
+
+        It either uses the bitcoinII wrapper executable (if BITCOINII_CMD is set or
+        need_ipc is True), or the direct binary path (bitcoinII-d, etc). When
+        bin_dir is set (by tests calling binaries from previous releases) it
+        always uses the direct path.
+
+        The returned args include valgrind, except when bin_dir is set
+        (previous releases). Also, valgrind will only apply to the bitcoinII
+        wrapper executable directly, not to the commands that `bitcoinII` calls.
+        """
+        if self.bin_dir is not None:
+            # Previous-release compatibility tests use upstream BitcoinII Core
+            # binaries, whose executable names differ from BitcoinII.
+            previous_release_binaries = {
+                "node": "bitcoinII-d",
+                "rpc": "bitcoinII-cli",
+                "bench": "bench_bitcoinII",
+                "tx": "bitcoinII-tx",
+                "util": "bitcoinII-util",
+                "wallet": "bitcoinII-wallet",
+                "chainstate": "bitcoinII-chainstate",
+            }
+            return [os.path.join(self.bin_dir, previous_release_binaries[command])]
+        elif self.paths.bitcoinII_cmd is not None or need_ipc:
+            # If the current test needs IPC functionality, use the bitcoinII
+            # wrapper binary and append -m so it calls multiprocess binaries.
+            bitcoinII_cmd = self.paths.bitcoinII_cmd or [self.paths.bitcoinII_bin]
+            return self.valgrind_cmd + bitcoinII_cmd + (["-m"] if need_ipc else []) + [command]
+        else:
+            return self.valgrind_cmd + [bin_path]
+
+
+def get_binary_paths(config):
+    """Get paths of all binaries from environment variables or their default values"""
+
+    paths = types.SimpleNamespace()
+    binaries = {
+        "bitcoinII": "BITCOINII_BIN",
+        "bitcoinII-d": "BITCOINIID",
+        "bench_bitcoinII": "BITCOINII_BENCH",
+        "bitcoinII-cli": "BITCOINIICLI",
+        "bitcoinII-util": "BITCOINIIUTIL",
+        "bitcoinII-tx": "BITCOINIITX",
+        "bitcoinII-chainstate": "BITCOINIICHAINSTATE",
+        "bitcoinII-wallet": "BITCOINIIWALLET",
+    }
+    # Set paths to bitcoinII core binaries allowing overrides with environment
+    # variables.
+    for binary, env_variable_name in binaries.items():
+        default_filename = os.path.join(
+            config["environment"]["BUILDDIR"],
+            "bin",
+            binary + config["environment"]["EXEEXT"],
+        )
+        attribute_name = (
+            "bitcoinII_d"
+            if binary == "bitcoinII-d"
+            else env_variable_name.lower().replace("bitcoinii", "bitcoinII", 1)
+        )
+        setattr(paths, attribute_name, os.getenv(env_variable_name, default=default_filename))
+    # BITCOINII_CMD environment variable can be specified to invoke bitcoinII
+    # wrapper binary instead of other executables.
+    paths.bitcoinII_cmd = shlex.split(os.getenv("BITCOINII_CMD", "")) or None
+    return paths
+
+
+def export_env_build_path(config):
+    os.environ["PATH"] = os.pathsep.join([
+        os.path.join(config["environment"]["BUILDDIR"], "bin"),
+        os.environ["PATH"],
+    ])
 
 
 def count_bytes(hex_string):
@@ -256,16 +391,16 @@ def random_bitflip(data):
     return bytes(data)
 
 
-def get_fee(tx_size, feerate_btc_kvb):
+def get_fee(tx_size, feerate_bc2_kvb):
     """Calculate the fee in BC2 given a feerate is BC2/kvB. Reflects CFeeRate::GetFee"""
-    feerate_sat_kvb = int(feerate_btc_kvb * Decimal(1e8)) # Fee in sat/kvb as an int to avoid float precision errors
-    target_fee_sat = ceildiv(feerate_sat_kvb * tx_size, 1000) # Round calculated fee up to nearest sat
-    return target_fee_sat / Decimal(1e8) # Return result in  BC2
+    feerate_sat2_kvb = int(feerate_bc2_kvb * Decimal(1e8)) # Fee in sat2/kvb as an int to avoid float precision errors
+    target_fee_sat2 = ceildiv(feerate_sat2_kvb * tx_size, 1000) # Round calculated fee up to nearest sat2
+    return target_fee_sat2 / Decimal(1e8) # Return result in  BC2
 
 
-def satoshi_round(amount: Union[int, float, str], *, rounding: str) -> Decimal:
-    """Rounds a Decimal amount to the nearest satoshi using the specified rounding mode."""
-    return Decimal(amount).quantize(SATOSHI_PRECISION, rounding=rounding)
+def satooshi_round(amount: Union[int, float, str], *, rounding: str) -> Decimal:
+    """Rounds a Decimal amount to the nearest satooshi using the specified rounding mode."""
+    return Decimal(amount).quantize(SATOOSHI_PRECISION, rounding=rounding)
 
 
 def ensure_for(*, duration, f, check_interval=0.2):
@@ -315,6 +450,13 @@ def wait_until_helper_internal(predicate, *, timeout=60, lock=None, timeout_fact
     predicate_source = "''''\n" + inspect.getsource(predicate) + "'''"
     logger.error("wait_until() failed. Predicate: {}".format(predicate_source))
     raise AssertionError("Predicate {} not true after {} seconds".format(predicate_source, timeout))
+
+
+def bpf_cflags():
+    return [
+        "-Wno-error=implicit-function-declaration",
+        "-Wno-duplicate-decl-specifier",  # https://github.com/bitcoin/bitcoin/issues/32322
+    ]
 
 
 def sha256sum_file(filename):
@@ -423,7 +565,7 @@ def write_config(config_path, *, n, chain, extra_config="", disable_autoconnect=
     else:
         chain_name_conf_arg = chain
         chain_name_conf_section = chain
-    with open(config_path, 'w', encoding='utf8') as f:
+    with open(config_path, 'w') as f:
         if chain_name_conf_arg:
             f.write("{}=1\n".format(chain_name_conf_arg))
         if chain_name_conf_section:
@@ -433,6 +575,7 @@ def write_config(config_path, *, n, chain, extra_config="", disable_autoconnect=
         # Disable server-side timeouts to avoid intermittent issues
         f.write("rpcservertimeout=99000\n")
         f.write("rpcdoccheck=1\n")
+        f.write("rpcthreads=2\n")
         f.write("fallbackfee=0.0002\n")
         f.write("server=1\n")
         f.write("keypool=1\n")
@@ -448,7 +591,6 @@ def write_config(config_path, *, n, chain, extra_config="", disable_autoconnect=
         f.write("printtoconsole=0\n")
         f.write("natpmp=0\n")
         f.write("shrinkdebugfile=0\n")
-        f.write("deprecatedrpc=create_bdb\n")  # Required to run the tests
         # To improve SQLite wallet performance so that the tests don't timeout, use -unsafesqlitesync
         f.write("unsafesqlitesync=1\n")
         if disable_autoconnect:
@@ -464,6 +606,9 @@ def write_config(config_path, *, n, chain, extra_config="", disable_autoconnect=
         #  min_required_fds = MIN_CORE_FDS + MAX_ADDNODE_CONNECTIONS + nBind = 151 + 8 + 3 = 162;
         #  nMaxConnections = available_fds - min_required_fds = 256 - 161 = 94;
         f.write("maxconnections=94\n")
+        f.write("par=" + str(min(2, os.cpu_count())) + "\n")
+        # Use a single prevoutfetch worker thread to keep per-node resource usage low.
+        f.write("prevoutfetchthreads=1\n")
         f.write(extra_config)
 
 
@@ -488,16 +633,19 @@ def get_temp_default_datadir(temp_dir: pathlib.Path) -> tuple[dict, pathlib.Path
 
 
 def append_config(datadir, options):
-    with open(os.path.join(datadir, "bitcoinII.conf"), 'a', encoding='utf8') as f:
-        for option in options:
-            f.write(option + "\n")
+    config_paths = [os.path.join(datadir, "bitcoinII.conf")]
+
+    for config_path in config_paths:
+        with open(config_path, 'a') as f:
+            for option in options:
+                f.write(option + "\n")
 
 
 def get_auth_cookie(datadir, chain):
     user = None
     password = None
     if os.path.isfile(os.path.join(datadir, "bitcoinII.conf")):
-        with open(os.path.join(datadir, "bitcoinII.conf"), 'r', encoding='utf8') as f:
+        with open(os.path.join(datadir, "bitcoinII.conf"), 'r') as f:
             for line in f:
                 if line.startswith("rpcuser="):
                     assert user is None  # Ensure that there is only one rpcuser line
@@ -506,7 +654,7 @@ def get_auth_cookie(datadir, chain):
                     assert password is None  # Ensure that there is only one rpcpassword line
                     password = line.split("=")[1].strip("\n")
     try:
-        with open(os.path.join(datadir, chain, ".cookie"), 'r', encoding="ascii") as f:
+        with open(os.path.join(datadir, chain, ".cookie"), 'r') as f:
             userpass = f.read()
             split_userpass = userpass.split(':')
             user = split_userpass[0]
@@ -545,14 +693,18 @@ def check_node_connections(*, node, num_in, num_out):
 #############################
 
 
-# Create large OP_RETURN txouts that can be appended to a transaction
-# to make it large (helper for constructing large transactions). The
-# total serialized size of the txouts is about 66k vbytes.
+# Create standard txouts that can be appended to a transaction to make
+# it large. BitcoinII limits OP_RETURN payloads, so use ordinary P2WSH
+# outputs instead. The total serialized size is about 66k vbytes.
 def gen_return_txouts():
     from .messages import CTxOut
-    from .script import CScript, OP_RETURN
-    txouts = [CTxOut(nValue=0, scriptPubKey=CScript([OP_RETURN, b'\x01'*67437]))]
-    assert_equal(sum([len(txout.serialize()) for txout in txouts]), 67456)
+    from .script import CScript, OP_0
+    padding_spk = CScript([OP_0, b'\x01' * 32])
+    txouts = [
+        CTxOut(nValue=10_000, scriptPubKey=padding_spk)
+        for _ in range(1568)
+    ]
+    assert_equal(sum(len(txout.serialize()) for txout in txouts), 67424)
     return txouts
 
 
@@ -566,6 +718,9 @@ def create_lots_of_big_transactions(mini_wallet, node, fee, tx_batch_size, txout
             utxo_to_spend=None if use_internal_utxos else utxos.pop(),
             fee=fee,
         )["tx"]
+        # Preserve the requested transaction fee after adding the
+        # positive-value padding outputs.
+        tx.vout[0].nValue -= sum(txout.nValue for txout in txouts)
         tx.vout.extend(txouts)
         res = node.testmempoolaccept([tx.serialize().hex()])[0]
         assert_equal(res['fees']['base'], fee)
@@ -592,3 +747,30 @@ def find_vout_for_address(node, txid, addr):
         if addr == tx["vout"][i]["scriptPubKey"]["address"]:
             return i
     raise RuntimeError("Vout not found for address: txid=%s, addr=%s" % (txid, addr))
+
+
+def dumb_sync_blocks(*, src, dst, height=None):
+    """Sync blocks between `src` and `dst` nodes via RPC submitblock up to height."""
+    height = height or src.getblockcount()
+    for i in range(dst.getblockcount() + 1, height + 1):
+        block_hash = src.getblockhash(i)
+        block = src.getblock(blockhash=block_hash, verbosity=0)
+        dst.submitblock(block)
+    assert_equal(dst.getblockcount(), height)
+
+
+def sync_txindex(test_framework, node):
+    test_framework.log.debug("Waiting for node txindex to sync")
+    sync_start = int(time.time())
+    test_framework.wait_until(lambda: node.getindexinfo("txindex")["txindex"]["synced"])
+    test_framework.log.debug(f"Synced in {time.time() - sync_start} seconds")
+
+def wallet_importprivkey(wallet_rpc, privkey, timestamp, *, label=""):
+    desc = descsum_create("combo(" + privkey + ")")
+    req = [{
+        "desc": desc,
+        "timestamp": timestamp,
+        "label": label,
+    }]
+    import_res = wallet_rpc.importdescriptors(req)
+    assert_equal(import_res[0]["success"], True)

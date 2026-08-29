@@ -1,4 +1,4 @@
-// Copyright (c) 2024-present The BitcoinII Core developers
+// Copyright (c) 2024-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -15,6 +15,7 @@
 #include <test/util/net.h>
 #include <test/util/script.h>
 #include <test/util/setup_common.h>
+#include <test/util/time.h>
 #include <uint256.h>
 #include <validation.h>
 
@@ -31,6 +32,15 @@ public:
         PeerManager::Options peerman_opts;
         node::ApplyArgsManOptions(*m_node.args, peerman_opts);
         peerman_opts.max_headers_result = FUZZ_MAX_HEADERS_RESULTS;
+        // The peerman's rng is a global that is reused, so it will be reused
+        // and may cause non-determinism between runs. This may even influence
+        // the global RNG, because seeding may be done from the global one. For
+        // now, avoid it influencing the global RNG, and initialize it with a
+        // constant instead.
+        peerman_opts.deterministic_rng = true;
+        // No txs are relayed. Disable irrelevant and possibly
+        // non-deterministic code paths.
+        peerman_opts.ignore_incoming_txs = true;
         m_node.peerman = PeerManager::make(*m_node.connman, *m_node.addrman,
                                            m_node.banman.get(), *m_node.chainman,
                                            *m_node.mempool, *m_node.warnings, peerman_opts);
@@ -51,7 +61,7 @@ void HeadersSyncSetup::ResetAndInitialize()
     auto& connman = static_cast<ConnmanTestMsg&>(*m_node.connman);
     connman.StopNodes();
 
-    NodeId id{0};
+    static NodeId id{0};
     std::vector<ConnectionType> conn_types = {
         ConnectionType::OUTBOUND_FULL_RELAY,
         ConnectionType::BLOCK_RELAY,
@@ -60,7 +70,7 @@ void HeadersSyncSetup::ResetAndInitialize()
 
     for (auto conn_type : conn_types) {
         CAddress addr{};
-        m_connections.push_back(new CNode(id++, nullptr, addr, 0, 0, addr, "", conn_type, false));
+        m_connections.push_back(new CNode(id++, nullptr, addr, 0, 0, addr, "", conn_type, false, 0));
         CNode& p2p_node = *m_connections.back();
 
         connman.Handshake(
@@ -87,7 +97,7 @@ void HeadersSyncSetup::SendMessage(FuzzedDataProvider& fuzzed_data_provider, CSe
         connman.ProcessMessagesOnce(connection);
     } catch (const std::ios_base::failure&) {
     }
-    m_node.peerman->SendMessages(&connection);
+    m_node.peerman->SendMessages(connection);
 }
 
 CBlockHeader ConsumeHeader(FuzzedDataProvider& fuzzed_data_provider, const uint256& prev_hash, uint32_t prev_nbits)
@@ -95,23 +105,18 @@ CBlockHeader ConsumeHeader(FuzzedDataProvider& fuzzed_data_provider, const uint2
     CBlockHeader header;
     header.nNonce = 0;
     // Either use the previous difficulty or let the fuzzer choose. The upper target in the
-    // range comes from the bits value of the genesis block, which is 0x1d00ffff. The lower
-    // target comes from the bits value of mainnet block 840000, which is 0x17034219.
-    // Calling lower_target.SetCompact(0x17034219) and upper_target.SetCompact(0x1d00ffff)
-    // should return the values below.
-    //
-    // RPC commands to verify:
-    // getblockheader 000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f
-    // getblockheader 0000000000000000000320283a032748cef8227873ff4872689bf23f1cda83a5
+    // range is the BitcoinII genesis target, 0x1d00ffff. The lower target, 0x190fffff,
+    // bounds the maximum claimed work of the longest fuzz-generated chain comfortably
+    // below BitcoinII mainnet MinimumChainWork.
     if (fuzzed_data_provider.ConsumeBool()) {
         header.nBits = prev_nbits;
     } else {
-        arith_uint256 lower_target = UintToArith256(uint256{"0000000000000000000342190000000000000000000000000000000000000000"});
+        arith_uint256 lower_target = UintToArith256(uint256{"000000000000000fffff00000000000000000000000000000000000000000000"});
         arith_uint256 upper_target = UintToArith256(uint256{"00000000ffff0000000000000000000000000000000000000000000000000000"});
         arith_uint256 target = ConsumeArithUInt256InRange(fuzzed_data_provider, lower_target, upper_target);
         header.nBits = target.GetCompact();
     }
-    header.nTime = ConsumeTime(fuzzed_data_provider);
+    header.nTime = TicksSinceEpoch<std::chrono::seconds>(ConsumeTime(fuzzed_data_provider));
     header.hashPrevBlock = prev_hash;
     header.nVersion = fuzzed_data_provider.ConsumeIntegral<int32_t>();
     return header;
@@ -129,7 +134,7 @@ CBlock ConsumeBlock(FuzzedDataProvider& fuzzed_data_provider, const uint256& pre
     tx.vout[0].nValue = 0;
     tx.vin[0].scriptSig.resize(2);
     block.vtx.push_back(MakeTransactionRef(tx));
-    block.hashMerkleRoot = block.vtx[0]->GetHash();
+    block.hashMerkleRoot = block.vtx[0]->GetHash().ToUint256();
     return block;
 }
 
@@ -146,7 +151,12 @@ HeadersSyncSetup* g_testing_setup;
 
 void initialize()
 {
-    static auto setup = MakeNoLogFileContext<HeadersSyncSetup>(ChainType::MAIN, {.extra_args = {"-checkpoints=0"}});
+    static auto setup{
+        MakeNoLogFileContext<HeadersSyncSetup>(ChainType::MAIN,
+                                               {
+                                                   .setup_validation_interface = false,
+                                               }),
+    };
     g_testing_setup = setup.get();
 }
 } // namespace
@@ -155,16 +165,17 @@ FUZZ_TARGET(p2p_headers_presync, .init = initialize)
 {
     SeedRandomStateForTest(SeedRand::ZEROS);
     FuzzedDataProvider fuzzed_data_provider{buffer.data(), buffer.size()};
-    SetMockTime(ConsumeTime(fuzzed_data_provider));
+    // The steady clock is currently only used for logging, so a constant
+    // time-point seems acceptable for now.
+    SteadyClockContext steady_ctx{};
 
     ChainstateManager& chainman = *g_testing_setup->m_node.chainman;
+    CBlockHeader base{chainman.GetParams().GenesisBlock()};
+    SetMockTime(base.nTime);
 
     LOCK(NetEventsInterface::g_msgproc_mutex);
 
     g_testing_setup->ResetAndInitialize();
-
-    CBlockHeader base{chainman.GetParams().GenesisBlock()};
-    SetMockTime(base.nTime);
 
     // The chain is just a single block, so this is equal to 1
     size_t original_index_size{WITH_LOCK(cs_main, return chainman.m_blockman.m_block_index.size())};
@@ -231,6 +242,4 @@ FUZZ_TARGET(p2p_headers_presync, .init = initialize)
     // to meet the anti-DoS work threshold. So, if at any point the block index grew in size, then there's a bug
     // in the headers pre-sync logic.
     assert(WITH_LOCK(cs_main, return chainman.m_blockman.m_block_index.size()) == original_index_size);
-
-    g_testing_setup->m_node.validation_signals->SyncWithValidationInterfaceQueue();
 }

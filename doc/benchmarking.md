@@ -74,4 +74,4 @@ specifically aimed at exploring the possible input space.
 Going Further
 --------------------
 
-To monitor BitcoinII Core performance more in depth (like reindex or IBD): https://github.com/bitcoinII-dev-tools/benchcoin
+To monitor Bitcoin Core performance more in depth (like reindex or IBD): https://github.com/bitcoin-dev-tools/benchcoin

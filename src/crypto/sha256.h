@@ -1,12 +1,12 @@
-// Copyright (c) 2014-2022 The BitcoinII Core developers
+// Copyright (c) 2014-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #ifndef BITCOINII_CRYPTO_SHA256_H
 #define BITCOINII_CRYPTO_SHA256_H
 
+#include <cstdint>
 #include <cstdlib>
-#include <stdint.h>
 #include <string>
 
 /** A hasher class for SHA-256. */

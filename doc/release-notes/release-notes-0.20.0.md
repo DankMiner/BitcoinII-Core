@@ -3,14 +3,14 @@
 
 BitcoinII Core version 0.20.0 is now available from:
 
-  <https://bitcoincore.org/bin/bitcoinII-core-0.20.0/>
+  <https://bitcoincore.org/bin/bitcoin-core-0.20.0/>
 
 This release includes new features, various bug fixes and performance
 improvements, as well as updated translations.
 
 Please report bugs using the issue tracker at GitHub:
 
-  <https://github.com/bitcoinII/bitcoinII/issues>
+  <https://github.com/bitcoin/bitcoin/issues>
 
 To receive security and update notifications, please subscribe to:
 
@@ -22,7 +22,7 @@ How to Upgrade
 If you are running an older version, shut it down. Wait until it has completely
 shut down (which might take a few minutes in some cases), then run the
 installer (on Windows) or just copy over `/Applications/BitcoinII-Qt` (on Mac)
-or `bitcoinIId`/`bitcoinII-qt` (on Linux).
+or `bitcoinII-d`/`bitcoinII-qt` (on Linux).
 
 Upgrading directly from a version of BitcoinII Core that has reached its EOL is
 possible, but it might take some time if the data directory needs to be migrated. Old
@@ -163,9 +163,9 @@ New settings
 - A new `-asmap` configuration option has been added to diversify the
   node's network connections by mapping IP addresses Autonomous System
   Numbers (ASNs) and then limiting the number of connections made to any
-  single ASN.  See [issue #16599](https://github.com/bitcoinII/bitcoinII/issues/16599),
-  [PR #16702](https://github.com/bitcoinII/bitcoinII/pull/16702), and the
-  `bitcoinIId help` for more information.  This option is experimental and
+  single ASN.  See [issue #16599](https://github.com/bitcoin/bitcoin/issues/16599),
+  [PR #16702](https://github.com/bitcoin/bitcoin/pull/16702), and the
+  `bitcoinII-d help` for more information.  This option is experimental and
   subject to removal or breaking changes in future releases, so the
   legacy /16 prefix mapping of IP addresses remains the default.  (#16702)
 
@@ -215,7 +215,7 @@ GUI changes
   or fee bumping an existing transaction in the Transactions screen will
   automatically copy a Partially-Signed BitcoinII Transaction (PSBT) to
   the system clipboard.  This can then be pasted into an external
-  program such as [HWI](https://github.com/bitcoinII-core/HWI) for
+  program such as [HWI](https://github.com/bitcoin-core/HWI) for
   signing.  Future versions of BitcoinII Core should support a GUI option
   for finalizing and broadcasting PSBTs, but for now the debug console
   may be used with the `finalizepsbt` and `sendrawtransaction` RPCs.
@@ -528,7 +528,7 @@ Build system
 - #17756 Remove `WINDOWS_BITS` from build system (fanquake)
 - #17769 Set `AC_PREREQ` to 2.69 (fanquake)
 - #17880 Add -Wdate-time to Werror flags (fanquake)
-- #17910 Remove double `LIBBITCOIN_SERVER` linking (fanquake)
+- #17910 Remove double `LIBBITCOINII_SERVER` linking (fanquake)
 - #17928 Consistent use of package variable (Bushstar)
 - #17933 guix: Pin Guix using `guix time-machine` (dongcarl)
 - #17948 pass -fno-ident in Windows gitian descriptor (fanquake)
@@ -546,7 +546,7 @@ Build system
 - #18331 Use git archive as source tarball (hebasto)
 - #18397 Fix libevent linking for `bench_bitcoinII` binary (hebasto)
 - #18426 scripts: `Previous_release`: improve behaviour on failed download (theStack)
-- #18429 Remove double `LIBBITCOIN_SERVER` from bench-Makefile (brakmic)
+- #18429 Remove double `LIBBITCOINII_SERVER` from bench-Makefile (brakmic)
 - #18528 Create `test_fuzz` library from src/test/fuzz/fuzz.cpp (brakmic)
 - #18558 Fix boost detection for arch armv7l (hebasto)
 - #18598 gitian: Add missing automake package to gitian-win-signer.yml (achow101)
@@ -817,7 +817,7 @@ Build system
 ### Miscellaneous
 - #15600 lockedpool: When possible, use madvise to avoid including sensitive information in core dumps (luke-jr)
 - #15934 Merge settings one place instead of five places (ryanofsky)
-- #16115 On bitcoinIId startup, write config args to debug.log (LarryRuane)
+- #16115 On bitcoinII-d startup, write config args to debug.log (LarryRuane)
 - #16117 util: Replace boost sleep with std sleep (MarcoFalke)
 - #16161 util: Fix compilation errors in support/lockedpool.cpp (jkczyz)
 - #16802 scripts: In linearize, search for next position of magic bytes rather than fail (takinbo)
@@ -984,4 +984,4 @@ Thanks to everyone who directly contributed to this release:
 - Zero
 
 As well as to everyone that helped with translations on
-[Transifex](https://www.transifex.com/bitcoinII/bitcoinII/).
+[Transifex](https://www.transifex.com/bitcoin/bitcoin/).

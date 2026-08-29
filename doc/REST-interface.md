@@ -47,6 +47,11 @@ The HTTP request and response are both handled entirely in-memory.
 
 With the /notxdetails/ option JSON response will only contain the transaction hash instead of the complete transaction details. The option only affects the JSON response.
 
+- `GET /rest/blockpart/<BLOCK-HASH>.<bin|hex>?offset=<OFFSET>&size=<SIZE>`
+
+Given a block hash: returns a block part, in binary or hex-encoded binary formats.
+Responds with 404 if the block or the byte range doesn't exist.
+
 #### Blockheaders
 `GET /rest/headers/<BLOCK-HASH>.<bin|hex|json>?count=<COUNT=5>`
 
@@ -79,6 +84,13 @@ Responds with 404 if the block doesn't exist.
 Given a height: returns hash of block in best-block-chain at height provided.
 Responds with 404 if block not found.
 
+#### Spent transaction outputs
+`GET /rest/spenttxouts/<BLOCK-HASH>.<bin|hex|json>`
+
+Given a block hash: returns a collection of spent transaction output lists,
+one per transaction in the block.
+Responds with 404 if the block doesn't exist or its undo data is not available.
+
 #### Chaininfos
 `GET /rest/chaininfo.json`
 
@@ -101,7 +113,7 @@ Refer to the `getdeploymentinfo` RPC help for details.
 
 The getutxos endpoint allows querying the UTXO set, given a set of outpoints.
 With the `/checkmempool/` option, the mempool is also taken into account.
-See [BIP64](https://github.com/bitcoinII/bips/blob/master/bip-0064.mediawiki) for
+See [BIP64](https://github.com/bitcoin/bips/blob/master/bip-0064.mediawiki) for
 input and output serialization (relevant for `bin` and `hex` output formats).
 
 Example:
@@ -146,4 +158,4 @@ Refer to the `getrawmempool` RPC help for details. Defaults to setting
 
 Risks
 -------------
-Running a web browser on the same node with a REST enabled bitcoinIId can be a risk. Accessing prepared XSS websites could read out tx/block data of your node by placing links like `<script src="http://127.0.0.1:8332/rest/tx/1234567890.json">` which might break the nodes privacy.
+Running a web browser on the same node with a REST enabled bitcoind can be a risk. Accessing prepared XSS websites could read out tx/block data of your node by placing links like `<script src="http://127.0.0.1:8332/rest/tx/1234567890.json">` which might break the nodes privacy.

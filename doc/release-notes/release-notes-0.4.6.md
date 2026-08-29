@@ -1,7 +1,7 @@
-bitcoinIId version 0.4.6 is now available for download at:
+bitcoinII-d version 0.4.6 is now available for download at:
 Windows: installer | zip (sig)
 Source: tar.gz
-bitcoinIId and BitcoinII-Qt version 0.6.0.7 are also tagged in git, but it is recommended to upgrade to 0.6.1.
+bitcoinII-d and BitcoinII-Qt version 0.6.0.7 are also tagged in git, but it is recommended to upgrade to 0.6.1.
 
 These are bugfix-only releases.
 

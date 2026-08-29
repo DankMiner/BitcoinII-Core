@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2021 The BitcoinII Core developers
+// Copyright (c) 2020-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -16,20 +16,20 @@
 FUZZ_TARGET(fee_rate)
 {
     FuzzedDataProvider fuzzed_data_provider(buffer.data(), buffer.size());
-    const CAmount satoshis_per_k = ConsumeMoney(fuzzed_data_provider);
-    const CFeeRate fee_rate{satoshis_per_k};
+    const CAmount satooshis_per_k = ConsumeMoney(fuzzed_data_provider);
+    const CFeeRate fee_rate{satooshis_per_k};
 
     (void)fee_rate.GetFeePerK();
-    const auto bytes = fuzzed_data_provider.ConsumeIntegral<uint32_t>();
-    if (!MultiplicationOverflow(int64_t{bytes}, satoshis_per_k)) {
+    const auto bytes = fuzzed_data_provider.ConsumeIntegralInRange<int32_t>(0, std::numeric_limits<int32_t>::max());
+    if (!MultiplicationOverflow(int64_t{bytes}, satooshis_per_k)) {
         (void)fee_rate.GetFee(bytes);
     }
     (void)fee_rate.ToString();
 
-    const CAmount another_satoshis_per_k = ConsumeMoney(fuzzed_data_provider);
-    CFeeRate larger_fee_rate{another_satoshis_per_k};
+    const CAmount another_satooshis_per_k = ConsumeMoney(fuzzed_data_provider);
+    CFeeRate larger_fee_rate{another_satooshis_per_k};
     larger_fee_rate += fee_rate;
-    if (satoshis_per_k != 0 && another_satoshis_per_k != 0) {
+    if (satooshis_per_k != 0 && another_satooshis_per_k != 0) {
         assert(fee_rate < larger_fee_rate);
         assert(!(fee_rate > larger_fee_rate));
         assert(!(fee_rate == larger_fee_rate));

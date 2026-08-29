@@ -14,10 +14,6 @@
         <translation type="unfinished">&amp; નવું</translation>
     </message>
     <message>
-        <source>Copy the currently selected address to the system clipboard</source>
-        <translation type="unfinished">હાલમાં પસંદ કરેલા સરનામાંને સિસ્ટમ ક્લિપબોર્ડ પર નકલ કરો</translation>
-    </message>
-    <message>
         <source>&amp;Copy</source>
         <translation type="unfinished">&amp; નકલ કરો</translation>
     </message>
@@ -186,6 +182,10 @@ Signing is only possible with addresses of the type 'legacy'.</source>
     <message>
         <source>Continue</source>
         <translation type="unfinished">ચાલુ રાખો</translation>
+    </message>
+    <message>
+        <source>Back</source>
+        <translation type="unfinished">પાછળ </translation>
     </message>
     <message>
         <source>Remember that encrypting your wallet cannot fully protect your bitcoinIIs from being stolen by malware infecting your computer.</source>
@@ -819,14 +819,6 @@ Signing is only possible with addresses of the type 'legacy'.</source>
         <translation type="unfinished">પ્રી-સિંકિંગ હેડર્સ (%1%)…</translation>
     </message>
     <message>
-        <source>Error creating wallet</source>
-        <translation type="unfinished">વૉલેટ બનાવવામાં ભૂલ</translation>
-    </message>
-    <message>
-        <source>Cannot create new wallet, the software was compiled without sqlite support (required for descriptor wallets)</source>
-        <translation type="unfinished">નવું વૉલેટ બનાવી શકાતું નથી, સૉફ્ટવેર sqlite સપોર્ટ વિના સંકલિત કરવામાં આવ્યું હતું (વર્ણનકર્તા વૉલેટ માટે જરૂરી)</translation>
-    </message>
-    <message>
         <source>Error: %1</source>
         <translation type="unfinished">ભૂલ: %1</translation>
     </message>
@@ -855,7 +847,7 @@ Signing is only possible with addresses of the type 'legacy'.</source>
     <message>
         <source>Type: %1
 </source>
-        <translation type="unfinished">પ્રકાર: %1 
+        <translation type="unfinished">પ્રકાર: %1
 </translation>
     </message>
     <message>
@@ -867,7 +859,7 @@ Signing is only possible with addresses of the type 'legacy'.</source>
     <message>
         <source>Address: %1
 </source>
-        <translation type="unfinished">સરનામું: %1 
+        <translation type="unfinished">સરનામું: %1
 </translation>
     </message>
     <message>
@@ -1029,7 +1021,7 @@ Signing is only possible with addresses of the type 'legacy'.</source>
         <translation type="unfinished">(%1લોક કરેલ)</translation>
     </message>
     <message>
-        <source>Can vary +/- %1 satoshi(s) per input.</source>
+        <source>Can vary +/- %1 satooshi(s) per input.</source>
         <translation type="unfinished">ઇનપુટ દીઠ +/-%1 સતોશી(ઓ) બદલાઈ શકે છે.</translation>
     </message>
     <message>
@@ -1128,6 +1120,16 @@ The migration process will create a backup of the wallet before migrating. This 
     <message>
         <source>Solvable but not watched scripts have been migrated to a new wallet named '%1'.</source>
         <translation type="unfinished">ઉકેલી શકાય તેવી પરંતુ જોયેલી સ્ક્રિપ્ટો '%1' નામના નવા વૉલેટમાં સ્થાનાંતરિત કરવામાં આવી છે.</translation>
+    </message>
+    <message>
+        <source>Restore Wallet</source>
+        <extracomment>Title of progress window which is displayed when wallets are being restored.</extracomment>
+        <translation type="unfinished">વૉલેટ પુનઃસ્થાપિત કરો</translation>
+    </message>
+    <message>
+        <source>Restoring Wallet &lt;b&gt;%1&lt;/b&gt;…</source>
+        <extracomment>Descriptive text of the restore wallets progress window which indicates to the user that wallets are currently being restored.</extracomment>
+        <translation type="unfinished">વૉલેટ પુનઃસ્થાપિત કરી રહ્યાં છીએ &lt;b&gt;%1&lt;/b&gt;...</translation>
     </message>
     <message>
         <source>Migration failed</source>
@@ -1253,10 +1255,6 @@ The migration process will create a backup of the wallet before migrating. This 
         <translation type="unfinished">ખાનગી ચાવીને અક્ષમ કરો</translation>
     </message>
     <message>
-        <source>Make a blank wallet. Blank wallets do not initially have private keys or scripts. Private keys and addresses can be imported, or an HD seed can be set, at a later time.</source>
-        <translation type="unfinished">ખાલી પાકીટ બનાવો. ખાલી વોલેટ્સમાં શરૂઆતમાં ખાનગી કી અથવા સ્ક્રિપ્ટ હોતી નથી. ખાનગી કીઓ અને સરનામાંઓ આયાત કરી શકાય છે અથવા પછીના સમયે HD સીડ સેટ કરી શકાય છે.</translation>
-    </message>
-    <message>
         <source>Make Blank Wallet</source>
         <translation type="unfinished">ખાલી વોલેટ બનાવો</translation>
     </message>
@@ -1357,7 +1355,77 @@ The migration process will create a backup of the wallet before migrating. This 
     </message>
 </context>
 <context>
+    <name>HelpMessageDialog</name>
+    <message>
+        <source>version</source>
+        <translation type="unfinished">આવૃત્તિ</translation>
+    </message>
+    <message>
+        <source>About %1</source>
+        <translation type="unfinished">વિશે%1</translation>
+    </message>
+    <message>
+        <source>Command-line options</source>
+        <translation type="unfinished">કમાન્ડ-લાઇન વિકલ્પો</translation>
+    </message>
+</context>
+<context>
+    <name>ShutdownWindow</name>
+    <message>
+        <source>%1 is shutting down…</source>
+        <translation type="unfinished">%1બંધ થઈ રહ્યું છે…</translation>
+    </message>
+    <message>
+        <source>Do not shut down the computer until this window disappears.</source>
+        <translation type="unfinished">આ વિન્ડો અદૃશ્ય થઈ જાય ત્યાં સુધી કમ્પ્યુટરને બંધ કરશો નહીં.</translation>
+    </message>
+</context>
+<context>
     <name>Intro</name>
+    <message>
+        <source>Welcome</source>
+        <translation type="unfinished">સ્વાગત છે</translation>
+    </message>
+    <message>
+        <source>Welcome to %1.</source>
+        <translation type="unfinished">સ્વાગત છે %1.</translation>
+    </message>
+    <message>
+        <source>As this is the first time the program is launched, you can choose where %1 will store its data.</source>
+        <translation type="unfinished">આ પ્રથમ વખત પ્રોગ્રામ લોન્ચ થયો હોવાથી, , તમે પસંદ કરી શકો છો કે %1 તેનો ડેટા ક્યાં સંગ્રહિત કરશે</translation>
+    </message>
+    <message>
+        <source>Limit block chain storage to</source>
+        <translation type="unfinished">બ્લોક ચેઇન સ્ટોરેજ સુધી મર્યાદિત કરો</translation>
+    </message>
+    <message>
+        <source>Reverting this setting requires re-downloading the entire blockchain. It is faster to download the full chain first and prune it later. Disables some advanced features.</source>
+        <translation type="unfinished">આ સેટિંગને પાછું ફેરવવા માટે સમગ્ર બ્લોકચેનને ફરીથી ડાઉનલોડ કરવાની જરૂર છે. પહેલા સંપૂર્ણ શૃંખલાને ડાઉનલોડ કરવી અને પછીથી તેને કાપવું વધુ ઝડપી છે. કેટલીક અદ્યતન સુવિધાઓને અક્ષમ કરે છે.</translation>
+    </message>
+    <message>
+        <source> GB</source>
+        <translation type="unfinished">જીબી (GB)</translation>
+    </message>
+    <message>
+        <source>This initial synchronisation is very demanding, and may expose hardware problems with your computer that had previously gone unnoticed. Each time you run %1, it will continue downloading where it left off.</source>
+        <translation type="unfinished">આ પ્રારંભિક સિંક્રનાઇઝેશન ખૂબ જ માગણી કરે છે, અને તમારા કમ્પ્યુટર સાથેની હાર્ડવેર સમસ્યાઓનો પર્દાફાશ કરી શકે છે જે અગાઉ કોઈનું ધ્યાન ગયું ન હતું. દરેક વખતે જ્યારે તમે ચાલુ કરો %1, ત્યારે તે ડાઉનલોડ કરવાનું ચાલુ રાખશે જ્યાંથી તેણે છોડ્યું હતું.</translation>
+    </message>
+    <message>
+        <source>When you click OK, %1 will begin to download and process the full %4 block chain (%2 GB) starting with the earliest transactions in %3 when %4 initially launched.</source>
+        <translation type="unfinished">જ્યારે તમે ઓકે ક્લિક કરો છો,%1સંપૂર્ણ ડાઉનલોડ અને પ્રક્રિયા કરવાનું શરૂ કરશે%4બ્લોક ચેન (સાંકળ) (%2GB) માં સૌથી પહેલાના વ્યવહારોથી શરૂ થાય છે%3જ્યારે%4શરૂઆતમાં લોન્ચ કર્યું.</translation>
+    </message>
+    <message>
+        <source>If you have chosen to limit block chain storage (pruning), the historical data must still be downloaded and processed, but will be deleted afterward to keep your disk usage low.</source>
+        <translation type="unfinished">જો તમે બ્લોક ચેઈન સ્ટોરેજ (કાપણી)ને મર્યાદિત કરવાનું પસંદ કર્યું હોય, તો ઐતિહાસિક ડેટા હજુ પણ ડાઉનલોડ અને પ્રોસેસ થવો જોઈએ, પરંતુ તમારા ડિસ્ક વપરાશને ઓછો રાખવા માટે પછીથી કાઢી નાખવામાં આવશે.</translation>
+    </message>
+    <message>
+        <source>Use the default data directory</source>
+        <translation type="unfinished">ડિફૉલ્ટ ડેટા ડિરેક્ટરીનો ઉપયોગ કરો</translation>
+    </message>
+    <message>
+        <source>Use a custom data directory:</source>
+        <translation type="unfinished">કસ્ટમ ડેટા ડિરેક્ટરીનો ઉપયોગ કરો:</translation>
+    </message>
     <message>
         <source>BitcoinII</source>
         <translation type="unfinished">બીટકોઈન </translation>
@@ -1418,76 +1486,6 @@ The migration process will create a backup of the wallet before migrating. This 
     <message>
         <source>Error</source>
         <translation type="unfinished">ભૂલ</translation>
-    </message>
-    <message>
-        <source>Welcome</source>
-        <translation type="unfinished">સ્વાગત છે</translation>
-    </message>
-    <message>
-        <source>Welcome to %1.</source>
-        <translation type="unfinished">સ્વાગત છે %1.</translation>
-    </message>
-    <message>
-        <source>As this is the first time the program is launched, you can choose where %1 will store its data.</source>
-        <translation type="unfinished">આ પ્રથમ વખત પ્રોગ્રામ લોન્ચ થયો હોવાથી, , તમે પસંદ કરી શકો છો કે %1 તેનો ડેટા ક્યાં સંગ્રહિત કરશે</translation>
-    </message>
-    <message>
-        <source>Limit block chain storage to</source>
-        <translation type="unfinished">બ્લોક ચેઇન સ્ટોરેજ સુધી મર્યાદિત કરો</translation>
-    </message>
-    <message>
-        <source>Reverting this setting requires re-downloading the entire blockchain. It is faster to download the full chain first and prune it later. Disables some advanced features.</source>
-        <translation type="unfinished">આ સેટિંગને પાછું ફેરવવા માટે સમગ્ર બ્લોકચેનને ફરીથી ડાઉનલોડ કરવાની જરૂર છે. પહેલા સંપૂર્ણ શૃંખલાને ડાઉનલોડ કરવી અને પછીથી તેને કાપવું વધુ ઝડપી છે. કેટલીક અદ્યતન સુવિધાઓને અક્ષમ કરે છે.</translation>
-    </message>
-    <message>
-        <source> GB</source>
-        <translation type="unfinished">જીબી (GB)</translation>
-    </message>
-    <message>
-        <source>This initial synchronisation is very demanding, and may expose hardware problems with your computer that had previously gone unnoticed. Each time you run %1, it will continue downloading where it left off.</source>
-        <translation type="unfinished">આ પ્રારંભિક સિંક્રનાઇઝેશન ખૂબ જ માગણી કરે છે, અને તમારા કમ્પ્યુટર સાથેની હાર્ડવેર સમસ્યાઓનો પર્દાફાશ કરી શકે છે જે અગાઉ કોઈનું ધ્યાન ગયું ન હતું. દરેક વખતે જ્યારે તમે ચાલુ કરો %1, ત્યારે તે ડાઉનલોડ કરવાનું ચાલુ રાખશે જ્યાંથી તેણે છોડ્યું હતું.</translation>
-    </message>
-    <message>
-        <source>When you click OK, %1 will begin to download and process the full %4 block chain (%2 GB) starting with the earliest transactions in %3 when %4 initially launched.</source>
-        <translation type="unfinished">જ્યારે તમે ઓકે ક્લિક કરો છો,%1સંપૂર્ણ ડાઉનલોડ અને પ્રક્રિયા કરવાનું શરૂ કરશે%4બ્લોક ચેન (સાંકળ) (%2GB) માં સૌથી પહેલાના વ્યવહારોથી શરૂ થાય છે%3જ્યારે%4શરૂઆતમાં લોન્ચ કર્યું.</translation>
-    </message>
-    <message>
-        <source>If you have chosen to limit block chain storage (pruning), the historical data must still be downloaded and processed, but will be deleted afterward to keep your disk usage low.</source>
-        <translation type="unfinished">જો તમે બ્લોક ચેઈન સ્ટોરેજ (કાપણી)ને મર્યાદિત કરવાનું પસંદ કર્યું હોય, તો ઐતિહાસિક ડેટા હજુ પણ ડાઉનલોડ અને પ્રોસેસ થવો જોઈએ, પરંતુ તમારા ડિસ્ક વપરાશને ઓછો રાખવા માટે પછીથી કાઢી નાખવામાં આવશે.</translation>
-    </message>
-    <message>
-        <source>Use the default data directory</source>
-        <translation type="unfinished">ડિફૉલ્ટ ડેટા ડિરેક્ટરીનો ઉપયોગ કરો</translation>
-    </message>
-    <message>
-        <source>Use a custom data directory:</source>
-        <translation type="unfinished">કસ્ટમ ડેટા ડિરેક્ટરીનો ઉપયોગ કરો:</translation>
-    </message>
-</context>
-<context>
-    <name>HelpMessageDialog</name>
-    <message>
-        <source>version</source>
-        <translation type="unfinished">આવૃત્તિ</translation>
-    </message>
-    <message>
-        <source>About %1</source>
-        <translation type="unfinished">વિશે%1</translation>
-    </message>
-    <message>
-        <source>Command-line options</source>
-        <translation type="unfinished">કમાન્ડ-લાઇન વિકલ્પો</translation>
-    </message>
-</context>
-<context>
-    <name>ShutdownWindow</name>
-    <message>
-        <source>%1 is shutting down…</source>
-        <translation type="unfinished">%1બંધ થઈ રહ્યું છે…</translation>
-    </message>
-    <message>
-        <source>Do not shut down the computer until this window disappears.</source>
-        <translation type="unfinished">આ વિન્ડો અદૃશ્ય થઈ જાય ત્યાં સુધી કમ્પ્યુટરને બંધ કરશો નહીં.</translation>
     </message>
 </context>
 <context>
@@ -1586,6 +1584,11 @@ The migration process will create a backup of the wallet before migrating. This 
     <message>
         <source>Enabling pruning significantly reduces the disk space required to store transactions. All blocks are still fully validated. Reverting this setting requires re-downloading the entire blockchain.</source>
         <translation type="unfinished">કાપણીને સક્ષમ કરવાથી વ્યવહારો સ્ટોર કરવા માટે જરૂરી ડિસ્ક જગ્યા નોંધપાત્ર રીતે ઘટાડે છે. બધા બ્લોક હજુ પણ સંપૂર્ણ રીતે માન્ય છે. આ સેટિંગને પાછું ફેરવવા માટે સમગ્ર બ્લોકચેનને ફરીથી ડાઉનલોડ કરવાની જરૂર છે.</translation>
+    </message>
+    <message>
+        <source>Maximum database cache size. Make sure you have enough RAM. A larger cache can contribute to faster sync, after which the benefit is less pronounced for most use cases. Lowering the cache size will reduce memory usage. Unused mempool memory is shared for this cache.</source>
+        <extracomment>Tooltip text for Options window setting that sets the size of the database cache. Explains the corresponding effects of increasing/decreasing this value.</extracomment>
+        <translation type="unfinished">મહત્તમ ડેટાબેઝ કેશ કદ. ખાતરી કરો કે તમારી પાસે પૂરતી રેમ છે. મોટી કેશ ઝડપી સમન્વયનમાં ફાળો આપી શકે છે, જેના પછી મોટાભાગના ઉપયોગના કિસ્સાઓમાં ફાયદો ઓછો સ્પષ્ટ થાય છે. કેશ કદ ઘટાડવાથી મેમરી વપરાશ ઘટશે. આ કેશ માટે ન વપરાયેલ મેમ્પૂલ મેમરી શેર કરવામાં આવે છે.</translation>
     </message>
     <message>
         <source>Size of &amp;database cache</source>
@@ -1904,10 +1907,6 @@ The migration process will create a backup of the wallet before migrating. This 
         <translation type="unfinished">પ્રદર્શિત માહિતી જૂની હોઈ શકે છે. કનેક્શન સ્થાપિત થયા પછી તમારું વૉલેટ આપમેળે બિટકોઇન નેટવર્ક સાથે સિંક્રનાઇઝ થાય છે, પરંતુ આ પ્રક્રિયા હજી પૂર્ણ થઈ નથી.</translation>
     </message>
     <message>
-        <source>Watch-only:</source>
-        <translation type="unfinished">માત્ર જોવા માટે:</translation>
-    </message>
-    <message>
         <source>Available:</source>
         <translation type="unfinished">ઉપલબ્ધ:</translation>
     </message>
@@ -1944,28 +1943,8 @@ The migration process will create a backup of the wallet before migrating. This 
         <translation type="unfinished">તમારું વર્તમાન કુલ બેલેન્સ</translation>
     </message>
     <message>
-        <source>Your current balance in watch-only addresses</source>
-        <translation type="unfinished">ફક્ત જોવા માટેના સરનામામાં તમારું વર્તમાન બેલેન્સ</translation>
-    </message>
-    <message>
-        <source>Spendable:</source>
-        <translation type="unfinished">ખર્ચપાત્ર:</translation>
-    </message>
-    <message>
         <source>Recent transactions</source>
         <translation type="unfinished">તાજેતરના વ્યવહારો</translation>
-    </message>
-    <message>
-        <source>Unconfirmed transactions to watch-only addresses</source>
-        <translation type="unfinished">માત્ર જોવા માટેના સરનામાંઓ પર અપ્રમાણિત વ્યવહારો</translation>
-    </message>
-    <message>
-        <source>Mined balance in watch-only addresses that has not yet matured</source>
-        <translation type="unfinished">માત્ર વોચ-ઓન્લી એડ્રેસમાં માઇન કરેલ બેલેન્સ કે જે હજુ પરિપક્વ નથી</translation>
-    </message>
-    <message>
-        <source>Current total balance in watch-only addresses</source>
-        <translation type="unfinished">માત્ર જોવા માટેના સરનામામાં વર્તમાન કુલ બેલેન્સ</translation>
     </message>
     <message>
         <source>Privacy mode activated for the Overview tab. To unmask the values, uncheck Settings-&gt;Mask values.</source>
@@ -2014,9 +1993,12 @@ The migration process will create a backup of the wallet before migrating. This 
         <source>Could not sign any more inputs.</source>
         <translation type="unfinished">કોઈપણ વધુ ઇનપુટ્સ પર સહી કરી શકાઈ નથી.</translation>
     </message>
-    <message>
-        <source>Signed %1 inputs, but more signatures are still required.</source>
-        <translation type="unfinished">સહી કરેલ %1 ઇનપુટ્સ, પરંતુ હજુ વધુ સહીઓ જરૂરી છે.</translation>
+    <message numerus="yes">
+        <source>Signed %n input(s), but more signatures are still required.</source>
+        <translation type="unfinished">
+            <numerusform />
+            <numerusform />
+        </translation>
     </message>
     <message>
         <source>Signed transaction successfully. Transaction is ready to broadcast.</source>
@@ -2075,9 +2057,12 @@ The migration process will create a backup of the wallet before migrating. This 
         <source>or</source>
         <translation type="unfinished">અથવા</translation>
     </message>
-    <message>
-        <source>Transaction has %1 unsigned inputs.</source>
-        <translation type="unfinished">વ્યવહારમાં સહી વગરના %1 ઇનપુટ્સ છે.</translation>
+    <message numerus="yes">
+        <source>Transaction has %n unsigned input(s).</source>
+        <translation type="unfinished">
+            <numerusform />
+            <numerusform />
+        </translation>
     </message>
     <message>
         <source>Transaction is missing some information about inputs.</source>
@@ -2289,6 +2274,14 @@ BIP70 માં વ્યાપક સુરક્ષા ખામીઓને �
         <translation type="unfinished">જોડાણોની સંખ્યા</translation>
     </message>
     <message>
+        <source>Local Addresses</source>
+        <translation type="unfinished">સ્થાનિક સરનામું</translation>
+    </message>
+    <message>
+        <source>Network addresses that your BitcoinII node is currently using to communicate with other nodes.</source>
+        <translation type="unfinished">નેટવર્ક સરનામાં જેનો ઉપયોગ તમારા બિટકોઇન નોડ હાલમાં અન્ય નોડ્સ સાથે વાતચીત કરવા માટે કરી રહ્યા છે.</translation>
+    </message>
+    <message>
         <source>Block chain</source>
         <translation type="unfinished">બ્લોક સાંકળ</translation>
     </message>
@@ -2337,6 +2330,10 @@ BIP70 માં વ્યાપક સુરક્ષા ખામીઓને �
         <translation type="unfinished">વિગતવાર માહિતી જોવા માટે પીઅર પસંદ કરો.</translation>
     </message>
     <message>
+        <source>Hide Peers Detail</source>
+        <translation type="unfinished">પીઅર્સ વિગતો છુપાવો</translation>
+    </message>
+    <message>
         <source>The transport layer version: %1</source>
         <translation type="unfinished">પરિવહન સ્તર સંસ્કરણ:%1</translation>
     </message>
@@ -2359,10 +2356,6 @@ BIP70 માં વ્યાપક સુરક્ષા ખામીઓને �
     <message>
         <source>Transaction Relay</source>
         <translation type="unfinished">ટ્રાન્ઝેક્શન રિલે</translation>
-    </message>
-    <message>
-        <source>Starting Block</source>
-        <translation type="unfinished">પ્રારંભ બ્લોક</translation>
     </message>
     <message>
         <source>Synced Headers</source>
@@ -2514,6 +2507,10 @@ BIP70 માં વ્યાપક સુરક્ષા ખામીઓને �
     <message>
         <source>Last block time</source>
         <translation type="unfinished">છેલ્લા બ્લોક નો સમય</translation>
+    </message>
+    <message>
+        <source>&amp;Open</source>
+        <translation type="unfinished">&amp; ખોલો </translation>
     </message>
     <message>
         <source>Inbound: initiated by peer</source>
@@ -2820,6 +2817,10 @@ For more information on using this console, type %6.
         <translation type="unfinished">જૂના પાકીટ સાથે સુસંગત સરનામું જનરેટ કરે છે.</translation>
     </message>
     <message>
+        <source>Generates a native segwit address (BIP-173). Some old wallets don't support it.</source>
+        <translation type="unfinished">મૂળ સેગવિટ સરનામું (BIP-173) જનરેટ કરે છે. કેટલાક જૂના વોલેટ તેને સપોર્ટ કરતા નથી.</translation>
+    </message>
+    <message>
         <source>Could not unlock wallet.</source>
         <translation type="unfinished">વૉલેટ અનલૉક કરી શકાયું નથી.</translation>
     </message>
@@ -2869,6 +2870,10 @@ For more information on using this console, type %6.
 <context>
     <name>SendCoinsDialog</name>
     <message>
+        <source>Coin Control Features</source>
+        <translation type="unfinished">સિક્કા નિયંત્રણ સુવિધાઓ</translation>
+    </message>
+    <message>
         <source>Quantity:</source>
         <translation type="unfinished">જથ્થો:</translation>
     </message>
@@ -2891,6 +2896,14 @@ For more information on using this console, type %6.
     <message>
         <source>Change:</source>
         <translation type="unfinished">બદલો:</translation>
+    </message>
+    <message>
+        <source>If this is activated, but the change address is empty or invalid, change will be sent to a newly generated address.</source>
+        <translation type="unfinished">જો આ સક્રિય થયેલ હોય, પરંતુ ફેરફાર સરનામું ખાલી હોય અથવા અમાન્ય હોય, તો ફેરફાર નવા જનરેટ કરેલા સરનામાં પર મોકલવામાં આવશે.</translation>
+    </message>
+    <message>
+        <source>Custom change address</source>
+        <translation type="unfinished">સરનામું કસ્ટમાઇઝ કરો</translation>
     </message>
     <message>
         <source>Hide</source>
@@ -3099,4 +3112,11 @@ For more information on using this console, type %6.
         <translation type="unfinished">રદ કરો</translation>
     </message>
 </context>
+<context>
+    <name>bitcoinII-core</name>
+    <message>
+        <source>default wallet</source>
+        <translation type="unfinished">મૂળભૂત વૉલેટ</translation>
+    </message>
+    </context>
 </TS>

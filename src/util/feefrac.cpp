@@ -1,4 +1,4 @@
-// Copyright (c) The BitcoinII Core developers
+// Copyright (c) The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -7,10 +7,10 @@
 #include <array>
 #include <vector>
 
-std::partial_ordering CompareChunks(Span<const FeeFrac> chunks0, Span<const FeeFrac> chunks1)
+std::partial_ordering CompareChunks(std::span<const FeeFrac> chunks0, std::span<const FeeFrac> chunks1)
 {
     /** Array to allow indexed access to input diagrams. */
-    const std::array<Span<const FeeFrac>, 2> chunk = {chunks0, chunks1};
+    const std::array<std::span<const FeeFrac>, 2> chunk = {chunks0, chunks1};
     /** How many elements we have processed in each input. */
     size_t next_index[2] = {0, 0};
     /** Accumulated fee/sizes in diagrams, up to next_index[i] - 1. */

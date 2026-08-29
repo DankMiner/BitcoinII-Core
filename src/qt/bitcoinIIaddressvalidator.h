@@ -1,9 +1,9 @@
-// Copyright (c) 2011-2020 The BitcoinII Core developers
+// Copyright (c) 2011-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOINII_QT_BITCOINADDRESSVALIDATOR_H
-#define BITCOINII_QT_BITCOINADDRESSVALIDATOR_H
+#ifndef BITCOINII_QT_BITCOINIIADDRESSVALIDATOR_H
+#define BITCOINII_QT_BITCOINIIADDRESSVALIDATOR_H
 
 #include <QValidator>
 
@@ -32,4 +32,4 @@ public:
     State validate(QString &input, int &pos) const override;
 };
 
-#endif // BITCOINII_QT_BITCOINADDRESSVALIDATOR_H
+#endif // BITCOINII_QT_BITCOINIIADDRESSVALIDATOR_H

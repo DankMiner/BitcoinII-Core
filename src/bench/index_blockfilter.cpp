@@ -1,4 +1,4 @@
-// Copyright (c) 2023-present The BitcoinII Core developers
+// Copyright (c) 2023-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php.
 
@@ -53,7 +53,10 @@ static void BlockFilterIndexSync(benchmark::Bench& bench)
         IndexSummary summary = filter_index.GetSummary();
         assert(summary.synced);
         assert(summary.best_block_hash == WITH_LOCK(::cs_main, return test_setup->m_node.chainman->ActiveTip()->GetBlockHash()));
+
+        // Shutdown sequence (c.f. Shutdown() in init.cpp)
+        filter_index.Stop();
     });
 }
 
-BENCHMARK(BlockFilterIndexSync, benchmark::PriorityLevel::HIGH);
+BENCHMARK(BlockFilterIndexSync);

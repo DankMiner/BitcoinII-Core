@@ -4,19 +4,21 @@ BitcoinII Core can be launched with `-signer=<cmd>` where `<cmd>` is an external
 
 ## Example usage
 
-The following example is based on the [HWI](https://github.com/bitcoinII-core/HWI) tool. Version 2.0 or newer is required. Although this tool is hosted under the BitcoinII Core GitHub organization and maintained by BitcoinII Core developers, it should be used with caution. It is considered experimental and has far less review than BitcoinII Core itself. Be particularly careful when running tools such as these on a computer with private keys on it.
+The following example is based on the [HWI](https://github.com/bitcoin-core/HWI) tool. Version 2.0 or newer is required. Although this tool is hosted under the Bitcoin Core GitHub organization and maintained by Bitcoin Core developers, it should be used with caution. It is considered experimental and has far less review than Bitcoin Core itself. Be particularly careful when running tools such as these on a computer with private keys on it.
 
 When using a hardware wallet, consult the manufacturer website for (alternative) software they recommend. As long as their software conforms to the standard below, it should be able to work with BitcoinII Core.
 
 Start BitcoinII Core:
 
 ```sh
-$ bitcoinIId -signer=../HWI/hwi.py
+$ bitcoinII-d -signer=../HWI/hwi.py
 ```
+
+`bitcoinII node` can also be substituted for `bitcoinII-d`.
 
 ### Device setup
 
-Follow the hardware manufacturers instructions for the initial device setup, as well as their instructions for creating a backup. Alternatively, for some devices, you can use the `setup`, `restore` and `backup` commands provided by [HWI](https://github.com/bitcoinII-core/HWI).
+Follow the hardware manufacturers instructions for the initial device setup, as well as their instructions for creating a backup. Alternatively, for some devices, you can use the `setup`, `restore` and `backup` commands provided by [HWI](https://github.com/bitcoin-core/HWI).
 
 ### Create wallet and import keys
 
@@ -39,6 +41,8 @@ Create a wallet, this automatically imports the public keys:
 ```sh
 $ bitcoinII-cli createwallet "hww" true true "" true true true
 ```
+
+`bitcoinII rpc` can also be substituted for `bitcoinII-cli`.
 
 ### Verify an address
 

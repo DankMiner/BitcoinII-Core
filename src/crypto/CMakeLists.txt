@@ -1,4 +1,4 @@
-# Copyright (c) 2023-present The BitcoinII Core developers
+# Copyright (c) 2023-present The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://opensource.org/license/mit/.
 
@@ -47,7 +47,7 @@ if(HAVE_SSE41 AND HAVE_X86_SHANI)
   target_compile_definitions(bitcoinII_crypto PRIVATE ENABLE_SSE41 ENABLE_X86_SHANI)
   target_sources(bitcoinII_crypto PRIVATE sha256_x86_shani.cpp)
   set_property(SOURCE sha256_x86_shani.cpp PROPERTY
-    COMPILE_OPTIONS ${X86_SHANI_CXXFLAGS}
+    COMPILE_OPTIONS ${SSE41_CXXFLAGS} ${X86_SHANI_CXXFLAGS}
   )
 endif()
 

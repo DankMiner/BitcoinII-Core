@@ -1,21 +1,37 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2022 The BitcoinII Core developers
+// Copyright (c) 2009-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #ifndef BITCOINII_NET_PROCESSING_H
 #define BITCOINII_NET_PROCESSING_H
 
+#include <consensus/amount.h>
 #include <net.h>
-#include <txorphanage.h>
+#include <node/txorphanage.h>
+#include <private_broadcast.h>
+#include <protocol.h>
+#include <threadsafety.h>
+#include <uint256.h>
+#include <util/expected.h>
 #include <validationinterface.h>
 
+#include <atomic>
 #include <chrono>
+#include <cstdint>
+#include <memory>
+#include <optional>
+#include <string>
+#include <vector>
 
 class AddrMan;
-class CChainParams;
 class CTxMemPool;
 class ChainstateManager;
+class BanMan;
+class CBlockIndex;
+class CScheduler;
+class DataStream;
+class uint256;
 
 namespace node {
 class Warnings;
@@ -23,8 +39,6 @@ class Warnings;
 
 /** Whether transaction reconciliation protocol should be enabled by default. */
 static constexpr bool DEFAULT_TXRECONCILIATION_ENABLE{false};
-/** Default for -maxorphantx, maximum number of orphan transactions kept in memory */
-static const uint32_t DEFAULT_MAX_ORPHAN_TRANSACTIONS{100};
 /** Default number of non-mempool transactions to keep around for block reconstruction. Includes
     orphan, replaced, and rejected transactions. */
 static const uint32_t DEFAULT_BLOCK_RECONSTRUCTION_EXTRA_TXN{100};
@@ -43,6 +57,8 @@ struct CNodeStateStats {
     std::chrono::microseconds m_ping_wait;
     std::vector<int> vHeightInFlight;
     bool m_relay_txs;
+    int m_inv_to_send = 0;
+    uint64_t m_last_inv_seq{0};
     CAmount m_fee_filter_received;
     uint64_t m_addr_processed = 0;
     uint64_t m_addr_rate_limited = 0;
@@ -65,8 +81,6 @@ public:
         bool ignore_incoming_txs{DEFAULT_BLOCKSONLY};
         //! Whether transaction reconciliation protocol is enabled
         bool reconcile_txs{DEFAULT_TXRECONCILIATION_ENABLE};
-        //! Maximum number of orphan transactions kept in memory
-        uint32_t max_orphan_txs{DEFAULT_MAX_ORPHAN_TRANSACTIONS};
         //! Number of non-mempool transactions to keep around for block reconstruction. Includes
         //! orphan, replaced, and rejected transactions.
         uint32_t max_extra_txs{DEFAULT_BLOCK_RECONSTRUCTION_EXTRA_TXN};
@@ -78,6 +92,8 @@ public:
         //! Number of headers sent in one getheaders message result (this is
         //! a test-only option).
         uint32_t max_headers_result{MAX_HEADERS_RESULTS};
+        //! Whether private broadcast is used for sending transactions.
+        bool private_broadcast{DEFAULT_PRIVATE_BROADCAST};
     };
 
     static std::unique_ptr<PeerManager> make(CConnman& connman, AddrMan& addrman,
@@ -90,9 +106,8 @@ public:
      *
      * @param[in]  peer_id      The peer id
      * @param[in]  block_index  The blockindex
-     * @returns std::nullopt if a request was successfully made, otherwise an error message
      */
-    virtual std::optional<std::string> FetchBlock(NodeId peer_id, const CBlockIndex& block_index) = 0;
+    virtual util::Expected<void, std::string> FetchBlock(NodeId peer_id, const CBlockIndex& block_index) = 0;
 
     /** Begin running background tasks, should only be called once */
     virtual void StartScheduledTasks(CScheduler& scheduler) = 0;
@@ -100,13 +115,39 @@ public:
     /** Get statistics from node state */
     virtual bool GetNodeStateStats(NodeId nodeid, CNodeStateStats& stats) const = 0;
 
-    virtual std::vector<TxOrphanage::OrphanTxBase> GetOrphanTransactions() = 0;
+    virtual std::vector<node::TxOrphanage::OrphanInfo> GetOrphanTransactions() = 0;
 
     /** Get peer manager info. */
     virtual PeerManagerInfo GetInfo() const = 0;
 
-    /** Relay transaction to all peers. */
-    virtual void RelayTransaction(const uint256& txid, const uint256& wtxid) = 0;
+    /** Get info about transactions currently being privately broadcast. */
+    virtual std::vector<PrivateBroadcast::TxBroadcastInfo> GetPrivateBroadcastInfo() const = 0;
+
+    /**
+     * Abort private broadcast attempts for transactions currently being privately broadcast.
+     *
+     * @param[in] id A transaction identifier. It will be matched against both txid and wtxid for
+     *               all transactions in the private broadcast queue.
+     *
+     * @return Transactions removed from the private broadcast queue. If the provided id matches a
+     *         txid that corresponds to multiple transactions with different wtxids, multiple
+     *         transactions may be returned.
+     */
+    virtual std::vector<CTransactionRef> AbortPrivateBroadcast(const uint256& id) = 0;
+
+    /**
+     * Initiate a transaction broadcast to eligible peers.
+     * Queue the witness transaction id to `Peer::TxRelay::m_tx_inventory_to_send`
+     * for each peer. Later, depending on `Peer::TxRelay::m_next_inv_send_time` and if
+     * the transaction is in the mempool, an `INV` about it may be sent to the peer.
+     */
+    virtual void InitiateTxBroadcastToAll(const Txid& txid, const Wtxid& wtxid) = 0;
+
+    /**
+     * Initiate a private transaction broadcast. This is done
+     * asynchronously via short-lived connections to peers on privacy networks.
+     */
+    virtual void InitiateTxBroadcastPrivate(const CTransactionRef& tx) = 0;
 
     /** Send ping message to all peers */
     virtual void SendPings() = 0;
@@ -122,10 +163,6 @@ public:
      * Public for unit testing.
      */
     virtual void CheckForStaleTipAndEvictPeers() = 0;
-
-    /** Process a single message from a peer. Public for fuzz testing */
-    virtual void ProcessMessage(CNode& pfrom, const std::string& msg_type, DataStream& vRecv,
-                                const std::chrono::microseconds time_received, const std::atomic<bool>& interruptMsgProc) EXCLUSIVE_LOCKS_REQUIRED(g_msgproc_mutex) = 0;
 
     /** This function is used for testing the stale tip eviction logic, see denialofservice_tests.cpp */
     virtual void UpdateLastBlockAnnounceTime(NodeId node, int64_t time_in_seconds) = 0;

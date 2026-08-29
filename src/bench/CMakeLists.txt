@@ -1,4 +1,4 @@
-# Copyright (c) 2023-present The BitcoinII Core developers
+# Copyright (c) 2023-present The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://opensource.org/license/mit/.
 
@@ -12,12 +12,14 @@ add_executable(bench_bitcoinII
   bech32.cpp
   bip324_ecdh.cpp
   block_assemble.cpp
+  blockencodings.cpp
   ccoins_caching.cpp
   chacha20.cpp
   checkblock.cpp
   checkblockindex.cpp
   checkqueue.cpp
   cluster_linearize.cpp
+  connectblock.cpp
   crypto_hash.cpp
   descriptors.cpp
   disconnected_transactions.cpp
@@ -34,6 +36,7 @@ add_executable(bench_bitcoinII
   mempool_eviction.cpp
   mempool_stress.cpp
   merkle_root.cpp
+  obfuscation.cpp
   parse_hex.cpp
   peer_eviction.cpp
   poly1305.cpp
@@ -47,10 +50,13 @@ add_executable(bench_bitcoinII
   sign_transaction.cpp
   streams_findbyte.cpp
   strencodings.cpp
+  txgraph.cpp
+  txorphanage.cpp
   util_time.cpp
   verify_script.cpp
-  xor.cpp
 )
+
+add_windows_application_manifest(bench_bitcoinII)
 
 include(TargetDataSources)
 target_raw_data_sources(bench_bitcoinII NAMESPACE benchmark::data
@@ -78,8 +84,4 @@ if(ENABLE_WALLET)
   target_link_libraries(bench_bitcoinII bitcoinII_wallet)
 endif()
 
-add_test(NAME bench_sanity_check_high_priority
-  COMMAND bench_bitcoinII -sanity-check -priority-level=high
-)
-
-install_binary_component(bench_bitcoinII)
+install_binary_component(bench_bitcoinII INTERNAL)

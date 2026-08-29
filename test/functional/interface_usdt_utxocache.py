@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-# Copyright (c) 2022 The BitcoinII Core developers
+# Copyright (c) 2022-present The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 """ Tests the utxocache:* tracepoint API interface.
-    See https://github.com/bitcoinII/bitcoinII/blob/master/doc/tracing.md#context-utxocache
+    See https://github.com/bitcoin/bitcoin/blob/master/doc/tracing.md#context-utxocache
 """
 
 import ctypes
@@ -15,7 +15,10 @@ except ImportError:
     pass
 from test_framework.messages import COIN
 from test_framework.test_framework import BitcoinIITestFramework
-from test_framework.util import assert_equal
+from test_framework.util import (
+    assert_equal,
+    bpf_cflags,
+)
 from test_framework.wallet import MiniWallet
 
 utxocache_changes_program = """
@@ -106,7 +109,8 @@ FLUSHMODE_NAME = {
     0: "NONE",
     1: "IF_NEEDED",
     2: "PERIODIC",
-    3: "ALWAYS",
+    3: "FORCE_FLUSH",
+    4: "FORCE_SYNC",
 }
 
 
@@ -120,7 +124,7 @@ class UTXOCacheChange(ctypes.Structure):
     ]
 
     def __repr__(self):
-        return f"UTXOCacheChange(outpoint={bytes(self.txid[::-1]).hex()}:{self.index}, height={self.height}, value={self.value}sat, is_coinbase={self.is_coinbase})"
+        return f"UTXOCacheChange(outpoint={bytes(self.txid[::-1]).hex()}:{self.index}, height={self.height}, value={self.value}sat2, is_coinbase={self.is_coinbase})"
 
 
 class UTXOCacheFlush(ctypes.Structure):
@@ -144,9 +148,10 @@ class UTXOCacheTracepointTest(BitcoinIITestFramework):
 
     def skip_test_if_missing_module(self):
         self.skip_if_platform_not_linux()
-        self.skip_if_no_bitcoinIId_tracepoints()
+        self.skip_if_no_bitcoinII_d_tracepoints()
         self.skip_if_no_python_bcc()
         self.skip_if_no_bpf_permissions()
+        self.skip_if_running_under_valgrind()
 
     def run_test(self):
         self.wallet = MiniWallet(self.nodes[0])
@@ -157,7 +162,7 @@ class UTXOCacheTracepointTest(BitcoinIITestFramework):
 
     def test_uncache(self):
         """ Tests the utxocache:uncache tracepoint API.
-        https://github.com/bitcoinII/bitcoinII/blob/master/doc/tracing.md#tracepoint-utxocacheuncache
+        https://github.com/bitcoin/bitcoin/blob/master/doc/tracing.md#tracepoint-utxocacheuncache
         """
         # To trigger an UTXO uncache from the cache, we create an invalid transaction
         # spending a not-cached, but existing UTXO. During transaction validation, this
@@ -181,7 +186,7 @@ class UTXOCacheTracepointTest(BitcoinIITestFramework):
         ctx = USDT(pid=self.nodes[0].process.pid)
         ctx.enable_probe(probe="utxocache:uncache",
                          fn_name="trace_utxocache_uncache")
-        bpf = BPF(text=utxocache_changes_program, usdt_contexts=[ctx], debug=0, cflags=["-Wno-error=implicit-function-declaration"])
+        bpf = BPF(text=utxocache_changes_program, usdt_contexts=[ctx], debug=0, cflags=bpf_cflags())
 
         # The handle_* function is a ctypes callback function called from C. When
         # we assert in the handle_* function, the AssertError doesn't propagate
@@ -222,8 +227,8 @@ class UTXOCacheTracepointTest(BitcoinIITestFramework):
 
     def test_add_spent(self):
         """ Tests the utxocache:add utxocache:spent tracepoint API
-            See https://github.com/bitcoinII/bitcoinII/blob/master/doc/tracing.md#tracepoint-utxocacheadd
-            and https://github.com/bitcoinII/bitcoinII/blob/master/doc/tracing.md#tracepoint-utxocachespent
+            See https://github.com/bitcoin/bitcoin/blob/master/doc/tracing.md#tracepoint-utxocacheadd
+            and https://github.com/bitcoin/bitcoin/blob/master/doc/tracing.md#tracepoint-utxocachespent
         """
 
         self.log.info(
@@ -250,7 +255,7 @@ class UTXOCacheTracepointTest(BitcoinIITestFramework):
         ctx.enable_probe(probe="utxocache:add", fn_name="trace_utxocache_add")
         ctx.enable_probe(probe="utxocache:spent",
                          fn_name="trace_utxocache_spent")
-        bpf = BPF(text=utxocache_changes_program, usdt_contexts=[ctx], debug=0, cflags=["-Wno-error=implicit-function-declaration"])
+        bpf = BPF(text=utxocache_changes_program, usdt_contexts=[ctx], debug=0, cflags=bpf_cflags())
 
         # The handle_* function is a ctypes callback function called from C. When
         # we assert in the handle_* function, the AssertError doesn't propagate
@@ -264,14 +269,6 @@ class UTXOCacheTracepointTest(BitcoinIITestFramework):
 
         actual_utxocache_adds = []
         actual_utxocache_spents = []
-
-        def compare_utxo_with_event(utxo, event):
-            """Compare a utxo dict to the event produced by BPF"""
-            assert_equal(utxo["txid"], bytes(event.txid[::-1]).hex())
-            assert_equal(utxo["index"], event.index)
-            assert_equal(utxo["height"], event.height)
-            assert_equal(utxo["value"], event.value)
-            assert_equal(utxo["is_coinbase"], event.is_coinbase)
 
         def handle_utxocache_add(_, data, __):
             event = ctypes.cast(data, ctypes.POINTER(UTXOCacheChange)).contents
@@ -324,22 +321,41 @@ class UTXOCacheTracepointTest(BitcoinIITestFramework):
 
         self.log.info(
             f"check that we successfully traced {EXPECTED_HANDLE_ADD_SUCCESS} adds and {EXPECTED_HANDLE_SPENT_SUCCESS} spent")
-        for expected_utxo, actual_event in zip(expected_utxocache_adds + expected_utxocache_spents,
-                                               actual_utxocache_adds + actual_utxocache_spents):
-            compare_utxo_with_event(expected_utxo, actual_event)
+
+        # Check that all expected tracepoints are received, but not the order they were received in.
+        # Tracepoint ordering is not strictly guaranteed, so this comparison avoids intermittent failures in the test.
+        def cache_event_to_key(event):
+            return (
+                bytes(event.txid[::-1]).hex(),
+                event.index,
+                event.height,
+                event.value,
+                event.is_coinbase
+            )
+
+        expected_add_keys = {(e["txid"], e["index"], e["height"], e["value"], e["is_coinbase"])
+                             for e in expected_utxocache_adds}
+        expected_spent_keys = {(e["txid"], e["index"], e["height"], e["value"], e["is_coinbase"])
+                              for e in expected_utxocache_spents}
+
+        actual_add_keys = {cache_event_to_key(e) for e in actual_utxocache_adds}
+        actual_spent_keys = {cache_event_to_key(e) for e in actual_utxocache_spents}
+
+        assert_equal(expected_add_keys, actual_add_keys)
+        assert_equal(expected_spent_keys, actual_spent_keys)
 
         bpf.cleanup()
 
     def test_flush(self):
         """ Tests the utxocache:flush tracepoint API.
-            See https://github.com/bitcoinII/bitcoinII/blob/master/doc/tracing.md#tracepoint-utxocacheflush"""
+            See https://github.com/bitcoin/bitcoin/blob/master/doc/tracing.md#tracepoint-utxocacheflush"""
 
         self.log.info("test the utxocache:flush tracepoint API")
         self.log.info("hook into the utxocache:flush tracepoint")
         ctx = USDT(pid=self.nodes[0].process.pid)
         ctx.enable_probe(probe="utxocache:flush",
                          fn_name="trace_utxocache_flush")
-        bpf = BPF(text=utxocache_flushes_program, usdt_contexts=[ctx], debug=0, cflags=["-Wno-error=implicit-function-declaration"])
+        bpf = BPF(text=utxocache_flushes_program, usdt_contexts=[ctx], debug=0, cflags=bpf_cflags())
 
         # The handle_* function is a ctypes callback function called from C. When
         # we assert in the handle_* function, the AssertError doesn't propagate
@@ -370,12 +386,12 @@ class UTXOCacheTracepointTest(BitcoinIITestFramework):
         bpf["utxocache_flush"].open_perf_buffer(handle_utxocache_flush)
 
         self.log.info("stop the node to flush the UTXO cache")
-        UTXOS_IN_CACHE = 2 # might need to be changed if the earlier tests are modified
+        UTXOS_IN_CACHE = 3 # might need to be changed if the earlier tests are modified
         # A node shutdown causes two flushes. One that flushes UTXOS_IN_CACHE
         # UTXOs and one that flushes 0 UTXOs. Normally the 0-UTXO-flush is the
         # second flush, however it can happen that the order changes.
-        expected_flushes.append({"mode": "ALWAYS", "for_prune": False, "size": UTXOS_IN_CACHE})
-        expected_flushes.append({"mode": "ALWAYS", "for_prune": False, "size": 0})
+        expected_flushes.append({"mode": "FORCE_FLUSH", "for_prune": False, "size": UTXOS_IN_CACHE})
+        expected_flushes.append({"mode": "FORCE_FLUSH", "for_prune": False, "size": 0})
         self.stop_node(0)
 
         bpf.perf_buffer_poll(timeout=200)
@@ -396,11 +412,11 @@ class UTXOCacheTracepointTest(BitcoinIITestFramework):
         ctx = USDT(pid=self.nodes[0].process.pid)
         ctx.enable_probe(probe="utxocache:flush",
                          fn_name="trace_utxocache_flush")
-        bpf = BPF(text=utxocache_flushes_program, usdt_contexts=[ctx], debug=0, cflags=["-Wno-error=implicit-function-declaration"])
+        bpf = BPF(text=utxocache_flushes_program, usdt_contexts=[ctx], debug=0, cflags=bpf_cflags())
         bpf["utxocache_flush"].open_perf_buffer(handle_utxocache_flush)
 
         self.log.info("prune blockchain to trigger a flush for pruning")
-        expected_flushes.append({"mode": "NONE", "for_prune": True, "size": 0})
+        expected_flushes.append({"mode": "NONE", "for_prune": True, "size": BLOCKS_TO_MINE})
         self.nodes[0].pruneblockchain(315)
 
         bpf.perf_buffer_poll(timeout=500)

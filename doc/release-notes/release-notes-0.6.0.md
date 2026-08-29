@@ -1,19 +1,19 @@
 BitcoinII version 0.6.0 is now available for download at:
-http://sourceforge.net/projects/bitcoinII/files/BitcoinII/bitcoinII-0.6.0/test/
+http://sourceforge.net/projects/bitcoin/files/Bitcoin/bitcoin-0.6.0/test/
 
 This release includes more than 20 language localizations.
 More translations are welcome; join the
 project at Transifex to help:
-https://www.transifex.net/projects/p/bitcoinII/
+https://www.transifex.net/projects/p/bitcoin/
 
 Please report bugs using the issue tracker at github:
-https://github.com/bitcoinII/bitcoinII/issues
+https://github.com/bitcoin/bitcoin/issues
 
 Project source code is hosted at github; we are no longer
 distributing .tar.gz files here, you can get them
 directly from github:
-https://github.com/bitcoinII/bitcoinII/tarball/v0.6.0  # .tar.gz
-https://github.com/bitcoinII/bitcoinII/zipball/v0.6.0  # .zip
+https://github.com/bitcoin/bitcoin/tarball/v0.6.0  # .tar.gz
+https://github.com/bitcoin/bitcoin/zipball/v0.6.0  # .zip
 
 For Ubuntu users, there is a ppa maintained by Matt Corallo which
 you can add to your system so that it will automatically keep
@@ -54,7 +54,7 @@ transactions and less traffic on the bitcoinII
 network. The shorter keys are already supported
 by the network but wallet.dat files containing
 short keys are not compatible with earlier
-versions of BitcoinII-Qt/bitcoinIId.
+versions of BitcoinII-Qt/bitcoinII-d.
 
 New command-line argument -blocknotify=<command>
 that will spawn a shell process to run <command> 

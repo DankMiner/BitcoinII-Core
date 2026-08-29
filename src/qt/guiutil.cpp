@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2022 The BitcoinII Core developers
+// Copyright (c) 2011-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -64,7 +64,7 @@
 #include <QSize>
 #include <QStandardPaths>
 #include <QString>
-#include <QTextDocument> // for Qt::mightBeRichText
+#include <QTextDocument>
 #include <QThread>
 #include <QUrlQuery>
 #include <QtGlobal>
@@ -149,7 +149,7 @@ void AddButtonShortcut(QAbstractButton* button, const QKeySequence& shortcut)
 bool parseBitcoinIIURI(const QUrl &uri, SendCoinsRecipient *out)
 {
     // return if URI is not valid or is no bitcoinII: URI
-    if(!uri.isValid() || uri.scheme() != QString("bitcoinII"))
+    if (!uri.isValid() || uri.scheme().compare(QStringLiteral("bitcoinII"), Qt::CaseInsensitive) != 0)
         return false;
 
     SendCoinsRecipient rv;
@@ -405,26 +405,19 @@ bool isObscured(QWidget *w)
 
 void bringToFront(QWidget* w)
 {
-    if (w) {
-        if (QGuiApplication::platformName() == "wayland") {
-            auto flags = w->windowFlags();
-            w->setWindowFlags(flags|Qt::WindowStaysOnTopHint);
-            w->show();
-            w->setWindowFlags(flags);
-            w->show();
-        } else {
 #ifdef Q_OS_MACOS
-            ForceActivation();
+    ForceActivation();
 #endif
-            // activateWindow() (sometimes) helps with keyboard focus on Windows
-            if (w->isMinimized()) {
-                w->showNormal();
-            } else {
-                w->show();
-            }
-            w->activateWindow();
-            w->raise();
+
+    if (w) {
+        // activateWindow() (sometimes) helps with keyboard focus on Windows
+        if (w->isMinimized()) {
+            w->showNormal();
+        } else {
+            w->show();
         }
+        w->activateWindow();
+        w->raise();
     }
 }
 
@@ -435,7 +428,7 @@ void handleCloseWindowShortcut(QWidget* w)
 
 void openDebugLogfile()
 {
-    fs::path pathDebug = gArgs.GetDataDirNet() / "debug.log";
+    fs::path pathDebug = LogInstance().m_file_path;
 
     /* Open debug.log with the associated application */
     if (fs::exists(pathDebug))
@@ -447,14 +440,22 @@ bool openBitcoinIIConf()
     fs::path pathConfig = gArgs.GetConfigFilePath();
 
     /* Create the file */
-    std::ofstream configFile{pathConfig, std::ios_base::app};
+    std::ofstream configFile{pathConfig.std_path(), std::ios_base::app};
 
     if (!configFile.good())
         return false;
 
     configFile.close();
 
-    /* Open bitcoinII.conf with the associated application */
+    /* Open the configuration file with the associated application. */
+#ifdef Q_OS_LINUX
+    // Some Linux desktop environments successfully open the file while
+    // QDesktopServices::openUrl() nevertheless reports failure.
+    QDesktopServices::openUrl(
+        QUrl::fromLocalFile(PathToQString(pathConfig))
+    );
+    return true;
+#else
     bool res = QDesktopServices::openUrl(QUrl::fromLocalFile(PathToQString(pathConfig)));
 #ifdef Q_OS_MACOS
     // Workaround for macOS-specific behavior; see #15409.
@@ -462,8 +463,8 @@ bool openBitcoinIIConf()
         res = QProcess::startDetached("/usr/bin/open", QStringList{"-t", PathToQString(pathConfig)});
     }
 #endif
-
     return res;
+#endif
 }
 
 ToolTipToRichTextFilter::ToolTipToRichTextFilter(int _size_threshold, QObject *parent) :
@@ -607,7 +608,7 @@ fs::path static GetAutostartFilePath()
 
 bool GetStartOnSystemStartup()
 {
-    std::ifstream optionFile{GetAutostartFilePath()};
+    std::ifstream optionFile{GetAutostartFilePath().std_path()};
     if (!optionFile.good())
         return false;
     // Scan through file for "Hidden=true":
@@ -639,7 +640,7 @@ bool SetStartOnSystemStartup(bool fAutoStart)
 
         fs::create_directories(GetAutostartDir());
 
-        std::ofstream optionFile{GetAutostartFilePath(), std::ios_base::out | std::ios_base::trunc};
+        std::ofstream optionFile{GetAutostartFilePath().std_path(), std::ios_base::out | std::ios_base::trunc};
         if (!optionFile.good())
             return false;
         ChainType chain = gArgs.GetChainType();
@@ -729,6 +730,8 @@ QString ConnectionTypeToQString(ConnectionType conn_type, bool prepend_direction
     case ConnectionType::FEELER: return prefix + QObject::tr("Feeler");
     //: Short-lived peer connection type that solicits known addresses from a peer.
     case ConnectionType::ADDR_FETCH: return prefix + QObject::tr("Address Fetch");
+    //: Short-lived peer connection type that is used for broadcasting privacy-sensitive data.
+    case ConnectionType::PRIVATE_BROADCAST: return prefix + QObject::tr("Private Broadcast");
     } // no default case, so the compiler can warn about missing cases
     assert(false);
 }
@@ -954,33 +957,12 @@ void PopupMenu(QMenu* menu, const QPoint& point, QAction* at_action)
 
 QDateTime StartOfDay(const QDate& date)
 {
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
     return date.startOfDay();
-#else
-    return QDateTime(date);
-#endif
 }
 
 bool HasPixmap(const QLabel* label)
 {
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 15, 0))
     return !label->pixmap(Qt::ReturnByValue).isNull();
-#else
-    return label->pixmap() != nullptr;
-#endif
-}
-
-QImage GetImage(const QLabel* label)
-{
-    if (!HasPixmap(label)) {
-        return QImage();
-    }
-
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 15, 0))
-    return label->pixmap(Qt::ReturnByValue).toImage();
-#else
-    return label->pixmap()->toImage();
-#endif
 }
 
 QString MakeHtmlLink(const QString& source, const QString& link)

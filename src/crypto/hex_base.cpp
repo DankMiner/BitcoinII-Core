@@ -1,10 +1,11 @@
-// Copyright (c) 2009-present The BitcoinII Core developers
+// Copyright (c) 2009-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <crypto/hex_base.h>
 
 #include <array>
+#include <cassert>
 #include <cstring>
 #include <string>
 
@@ -26,7 +27,7 @@ constexpr std::array<ByteAsHex, 256> CreateByteToHexMap()
 
 } // namespace
 
-std::string HexStr(const Span<const uint8_t> s)
+std::string HexStr(const std::span<const uint8_t> s)
 {
     std::string rv(s.size() * 2, '\0');
     static constexpr auto byte_to_hex = CreateByteToHexMap();

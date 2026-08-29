@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2021 The BitcoinII Core developers
+// Copyright (c) 2009-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -8,13 +8,13 @@
 
 #include <cstdint>
 
-/** Amount in satoshis (Can be negative) */
+/** Amount in satooshis (Can be negative) */
 typedef int64_t CAmount;
 
-/** The amount of satoshis in one BC2. */
+/** The amount of satooshis in one BC2. */
 static constexpr CAmount COIN = 100000000;
 
-/** No amount larger than this (in satoshi) is valid.
+/** No amount larger than this (in satooshi) is valid.
  *
  * Note that this constant is *not* the total money supply, which in BitcoinII
  * currently happens to be less than 21,000,000 BC2 for various reasons, but

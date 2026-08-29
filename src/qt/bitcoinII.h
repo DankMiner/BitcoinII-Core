@@ -1,16 +1,16 @@
-// Copyright (c) 2011-2022 The BitcoinII Core developers
+// Copyright (c) 2011-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOINII_QT_BITCOIN_H
-#define BITCOINII_QT_BITCOIN_H
+#ifndef BITCOINII_QT_BITCOINII_H
+#define BITCOINII_QT_BITCOINII_H
 
 #include <bitcoinII-build-config.h> // IWYU pragma: keep
 
 #include <interfaces/node.h>
 #include <qt/initexecutor.h>
 
-#include <assert.h>
+#include <cassert>
 #include <memory>
 #include <optional>
 
@@ -109,4 +109,4 @@ private:
 
 int GuiMain(int argc, char* argv[]);
 
-#endif // BITCOINII_QT_BITCOIN_H
+#endif // BITCOINII_QT_BITCOINII_H

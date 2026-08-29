@@ -1,4 +1,4 @@
-# Copyright (c) 2023-present The BitcoinII Core developers
+# Copyright (c) 2023-present The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://opensource.org/license/mit/.
 
@@ -18,32 +18,16 @@ function(setup_split_debug_script)
   endif()
 endfunction()
 
-function(add_maintenance_targets)
-  if(NOT PYTHON_COMMAND)
-    return()
-  endif()
-
-  foreach(target IN ITEMS bitcoinIId bitcoinII-qt bitcoinII-cli bitcoinII-tx bitcoinII-util bitcoinII-wallet test_bitcoinII bench_bitcoinII)
-    if(TARGET ${target})
-      list(APPEND executables $<TARGET_FILE:${target}>)
-    endif()
-  endforeach()
-
-  add_custom_target(check-symbols
-    COMMAND ${CMAKE_COMMAND} -E echo "Running symbol and dynamic library checks..."
-    COMMAND ${PYTHON_COMMAND} ${PROJECT_SOURCE_DIR}/contrib/devtools/symbol-check.py ${executables}
-    VERBATIM
-  )
-
-  add_custom_target(check-security
-    COMMAND ${CMAKE_COMMAND} -E echo "Checking binary security..."
-    COMMAND ${PYTHON_COMMAND} ${PROJECT_SOURCE_DIR}/contrib/devtools/security-check.py ${executables}
-    VERBATIM
-  )
-endfunction()
-
 function(add_windows_deploy_target)
-  if(MINGW AND TARGET bitcoinII-qt AND TARGET bitcoinIId AND TARGET bitcoinII-cli AND TARGET bitcoinII-tx AND TARGET bitcoinII-wallet AND TARGET bitcoinII-util AND TARGET test_bitcoinII)
+  if(MINGW AND TARGET bitcoinII AND TARGET bitcoinII-qt AND TARGET bitcoinII-d AND TARGET bitcoinII-cli AND TARGET bitcoinII-tx AND TARGET bitcoinII-wallet AND TARGET bitcoinII-util AND TARGET test_bitcoinII)
+    find_program(MAKENSIS_EXECUTABLE makensis)
+    if(NOT MAKENSIS_EXECUTABLE)
+      add_custom_target(deploy
+        COMMAND ${CMAKE_COMMAND} -E echo "Error: NSIS not found"
+      )
+      return()
+    endif()
+
     # TODO: Consider replacing this code with the CPack NSIS Generator.
     #       See https://cmake.org/cmake/help/latest/cpack_gen/nsis.html
     include(GenerateSetupNsi)
@@ -51,14 +35,15 @@ function(add_windows_deploy_target)
     add_custom_command(
       OUTPUT ${PROJECT_BINARY_DIR}/bitcoinII-win64-setup.exe
       COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/release
+      COMMAND ${CMAKE_STRIP} $<TARGET_FILE:bitcoinII> -o ${PROJECT_BINARY_DIR}/release/$<TARGET_FILE_NAME:bitcoinII>
       COMMAND ${CMAKE_STRIP} $<TARGET_FILE:bitcoinII-qt> -o ${PROJECT_BINARY_DIR}/release/$<TARGET_FILE_NAME:bitcoinII-qt>
-      COMMAND ${CMAKE_STRIP} $<TARGET_FILE:bitcoinIId> -o ${PROJECT_BINARY_DIR}/release/$<TARGET_FILE_NAME:bitcoinIId>
+      COMMAND ${CMAKE_STRIP} $<TARGET_FILE:bitcoinII-d> -o ${PROJECT_BINARY_DIR}/release/$<TARGET_FILE_NAME:bitcoinII-d>
       COMMAND ${CMAKE_STRIP} $<TARGET_FILE:bitcoinII-cli> -o ${PROJECT_BINARY_DIR}/release/$<TARGET_FILE_NAME:bitcoinII-cli>
       COMMAND ${CMAKE_STRIP} $<TARGET_FILE:bitcoinII-tx> -o ${PROJECT_BINARY_DIR}/release/$<TARGET_FILE_NAME:bitcoinII-tx>
       COMMAND ${CMAKE_STRIP} $<TARGET_FILE:bitcoinII-wallet> -o ${PROJECT_BINARY_DIR}/release/$<TARGET_FILE_NAME:bitcoinII-wallet>
       COMMAND ${CMAKE_STRIP} $<TARGET_FILE:bitcoinII-util> -o ${PROJECT_BINARY_DIR}/release/$<TARGET_FILE_NAME:bitcoinII-util>
       COMMAND ${CMAKE_STRIP} $<TARGET_FILE:test_bitcoinII> -o ${PROJECT_BINARY_DIR}/release/$<TARGET_FILE_NAME:test_bitcoinII>
-      COMMAND makensis -V2 ${PROJECT_BINARY_DIR}/bitcoinII-win64-setup.nsi
+      COMMAND ${MAKENSIS_EXECUTABLE} -V2 ${PROJECT_BINARY_DIR}/bitcoinII-win64-setup.nsi
       VERBATIM
     )
     add_custom_target(deploy DEPENDS ${PROJECT_BINARY_DIR}/bitcoinII-win64-setup.exe)
@@ -87,24 +72,24 @@ function(add_macos_deploy_target)
       VERBATIM
     )
 
-    string(REPLACE " " "-" osx_volname ${CLIENT_NAME})
+    set(macos_zip "bitcoinII-macos-app")
     if(CMAKE_HOST_APPLE)
       add_custom_command(
-        OUTPUT ${PROJECT_BINARY_DIR}/${osx_volname}.zip
-        COMMAND ${PYTHON_COMMAND} ${PROJECT_SOURCE_DIR}/contrib/macdeploy/macdeployqtplus ${macos_app} ${osx_volname} -translations-dir=${QT_TRANSLATIONS_DIR} -zip
+        OUTPUT ${PROJECT_BINARY_DIR}/${macos_zip}.zip
+        COMMAND Python3::Interpreter ${PROJECT_SOURCE_DIR}/contrib/macdeploy/macdeployqtplus ${macos_app} -translations-dir=${QT_TRANSLATIONS_DIR} -zip=${macos_zip}
         DEPENDS ${PROJECT_BINARY_DIR}/${macos_app}/Contents/MacOS/BitcoinII-Qt
         VERBATIM
       )
       add_custom_target(deploydir
-        DEPENDS ${PROJECT_BINARY_DIR}/${osx_volname}.zip
+        DEPENDS ${PROJECT_BINARY_DIR}/${macos_zip}.zip
       )
       add_custom_target(deploy
-        DEPENDS ${PROJECT_BINARY_DIR}/${osx_volname}.zip
+        DEPENDS ${PROJECT_BINARY_DIR}/${macos_zip}.zip
       )
     else()
       add_custom_command(
         OUTPUT ${PROJECT_BINARY_DIR}/dist/${macos_app}/Contents/MacOS/BitcoinII-Qt
-        COMMAND OBJDUMP=${CMAKE_OBJDUMP} ${PYTHON_COMMAND} ${PROJECT_SOURCE_DIR}/contrib/macdeploy/macdeployqtplus ${macos_app} ${osx_volname} -translations-dir=${QT_TRANSLATIONS_DIR}
+        COMMAND ${CMAKE_COMMAND} -E env OBJDUMP=${CMAKE_OBJDUMP} $<TARGET_FILE:Python3::Interpreter> ${PROJECT_SOURCE_DIR}/contrib/macdeploy/macdeployqtplus ${macos_app} -translations-dir=${QT_TRANSLATIONS_DIR}
         DEPENDS ${PROJECT_BINARY_DIR}/${macos_app}/Contents/MacOS/BitcoinII-Qt
         VERBATIM
       )
@@ -112,16 +97,22 @@ function(add_macos_deploy_target)
         DEPENDS ${PROJECT_BINARY_DIR}/dist/${macos_app}/Contents/MacOS/BitcoinII-Qt
       )
 
-      find_program(ZIP_COMMAND zip REQUIRED)
-      add_custom_command(
-        OUTPUT ${PROJECT_BINARY_DIR}/dist/${osx_volname}.zip
-        WORKING_DIRECTORY dist
-        COMMAND ${PROJECT_SOURCE_DIR}/cmake/script/macos_zip.sh ${ZIP_COMMAND} ${osx_volname}.zip
-        VERBATIM
-      )
-      add_custom_target(deploy
-        DEPENDS ${PROJECT_BINARY_DIR}/dist/${osx_volname}.zip
-      )
+      find_program(ZIP_EXECUTABLE zip)
+      if(NOT ZIP_EXECUTABLE)
+        add_custom_target(deploy
+          COMMAND ${CMAKE_COMMAND} -E echo "Error: ZIP not found"
+        )
+      else()
+        add_custom_command(
+          OUTPUT ${PROJECT_BINARY_DIR}/dist/${macos_zip}.zip
+          WORKING_DIRECTORY dist
+          COMMAND ${PROJECT_SOURCE_DIR}/cmake/script/macos_zip.sh ${ZIP_EXECUTABLE} ${macos_zip}.zip
+          VERBATIM
+        )
+        add_custom_target(deploy
+          DEPENDS ${PROJECT_BINARY_DIR}/dist/${macos_zip}.zip
+        )
+      endif()
     endif()
     add_dependencies(deploydir bitcoinII-qt)
     add_dependencies(deploy deploydir)

@@ -1,13 +1,13 @@
 BitcoinII Core version 27.0 is now available from:
 
-  <https://bitcoincore.org/bin/bitcoinII-core-27.0/>
+  <https://bitcoincore.org/bin/bitcoin-core-27.0/>
 
 This release includes new features, various bug fixes and performance
 improvements, as well as updated translations.
 
 Please report bugs using the issue tracker at GitHub:
 
-  <https://github.com/bitcoinII/bitcoinII/issues>
+  <https://github.com/bitcoin/bitcoin/issues>
 
 To receive security and update notifications, please subscribe to:
 
@@ -19,7 +19,7 @@ How to Upgrade
 If you are running an older version, shut it down. Wait until it has completely
 shut down (which might take a few minutes in some cases), then run the
 installer (on Windows) or just copy over `/Applications/BitcoinII-Qt` (on macOS)
-or `bitcoinIId`/`bitcoinII-qt` (on Linux).
+or `bitcoinII-d`/`bitcoinII-qt` (on Linux).
 
 Upgrading directly from a version of BitcoinII Core that has reached its EOL is
 possible, but it might take some time if the data directory needs to be migrated. Old
@@ -119,7 +119,7 @@ Wallet
   large input sets and lower transaction costs at high feerates. CoinGrinder
   searches for the input set with minimal weight. Solutions found by
   CoinGrinder will produce a change output. CoinGrinder is only active at
-  elevated feerates (default: 30+ sat/vB, based on `-consolidatefeerate`×3). (#27877)
+  elevated feerates (default: 30+ sat2/vB, based on `-consolidatefeerate`×3). (#27877)
 - The Branch And Bound coin selection algorithm will be disabled when the subtract fee
   from outputs feature is used. (#28994)
 - If the birth time of a descriptor is detected to be later than the first transaction
@@ -193,7 +193,7 @@ Thanks to everyone who directly contributed to this release:
 - naiyoma
 - Nikodemas Tuckus
 - ns-xvrn
-- pablomartin4btc
+- pablomartin4bc2
 - Peter Todd
 - Pieter Wuille
 - Richard Myers
@@ -214,4 +214,4 @@ Thanks to everyone who directly contributed to this release:
 
 
 As well as to everyone that helped with translations on
-[Transifex](https://www.transifex.com/bitcoinII/bitcoinII/).
+[Transifex](https://www.transifex.com/bitcoin/bitcoin/).

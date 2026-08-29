@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2022 The BitcoinII Core developers
+// Copyright (c) 2011-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -151,7 +151,7 @@ public:
 
 private:
     BitcoinIIUnit currentUnit{BitcoinIIUnit::BC2};
-    CAmount singleStep{CAmount(100000)}; // satoshis
+    CAmount singleStep{CAmount(100000)}; // satooshis
     mutable QSize cachedMinimumSizeHint;
     bool m_allow_empty{true};
     CAmount m_min_amount{CAmount(0)};

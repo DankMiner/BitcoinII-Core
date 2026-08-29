@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2022 The BitcoinII Core developers
+# Copyright (c) 2022-present The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test dust limit mempool policy (`-dustrelayfee` parameter)"""
@@ -18,7 +18,6 @@ from test_framework.script_util import (
     key_to_p2pk_script,
     key_to_p2pkh_script,
     key_to_p2wpkh_script,
-    keys_to_multisig_script,
     output_key_to_p2tr_script,
     program_to_witness_script,
     script_to_p2sh_script,
@@ -34,13 +33,12 @@ from test_framework.wallet import MiniWallet
 from test_framework.wallet_util import generate_keypair
 
 
-DUST_RELAY_TX_FEE = 3000  # default setting [sat/kvB]
+DUST_RELAY_TX_FEE = 3000  # default setting [sat2/kvB]
 
 
 class DustRelayFeeTest(BitcoinIITestFramework):
     def set_test_params(self):
         self.num_nodes = 1
-        self.extra_args = [['-permitbaremultisig']]
 
     def test_dust_output(self, node: TestNode, dust_relay_fee: Decimal,
                          output_script: CScript, type_desc: str) -> None:
@@ -79,7 +77,7 @@ class DustRelayFeeTest(BitcoinIITestFramework):
         assert_equal(self.nodes[0].getrawmempool(), [])
 
         # Create two dust outputs. Transaction has zero fees. both dust outputs are unspent, and would have failed individual checks.
-        # The amount is 1 satoshi because create_self_transfer_multi disallows 0.
+        # The amount is 1 satooshi because create_self_transfer_multi disallows 0.
         dusty_tx = self.wallet.create_self_transfer_multi(fee_per_output=1000, amount_per_output=1, num_outputs=2)
         dust_txid = self.nodes[0].sendrawtransaction(hexstring=dusty_tx["hex"], maxfeerate=0)
 
@@ -120,22 +118,21 @@ class DustRelayFeeTest(BitcoinIITestFramework):
             (program_to_witness_script(2,  b'\x66' * 2),       "P2?? (future witness version 2)"),
             (program_to_witness_script(16, b'\x77' * 40),      "P2?? (future witness version 16)"),
             # largest possible output script considered standard
-            (keys_to_multisig_script([uncompressed_pubkey]*3), "bare multisig (m-of-3)"),
             (CScript([OP_RETURN, b'superimportanthash']),      "null data (OP_RETURN)"),
         )
 
-        # test default (no parameter), disabled (=0) and a bunch of arbitrary dust fee rates [sat/kvB]
-        for dustfee_sat_kvb in (DUST_RELAY_TX_FEE, 0, 1, 66, 500, 1337, 12345, 21212, 333333):
-            dustfee_btc_kvb = dustfee_sat_kvb / Decimal(COIN)
-            if dustfee_sat_kvb == DUST_RELAY_TX_FEE:
-                self.log.info(f"Test default dust limit setting ({dustfee_sat_kvb} sat/kvB)...")
+        # test default (no parameter), disabled (=0) and a bunch of arbitrary dust fee rates [sat2/kvB]
+        for dustfee_sat2_kvb in (DUST_RELAY_TX_FEE, 0, 1, 66, 500, 1337, 12345, 21212, 333333):
+            dustfee_bc2_kvb = dustfee_sat2_kvb / Decimal(COIN)
+            if dustfee_sat2_kvb == DUST_RELAY_TX_FEE:
+                self.log.info(f"Test default dust limit setting ({dustfee_sat2_kvb} sat2/kvB)...")
             else:
-                dust_parameter = f"-dustrelayfee={dustfee_btc_kvb:.8f}"
-                self.log.info(f"Test dust limit setting {dust_parameter} ({dustfee_sat_kvb} sat/kvB)...")
-                self.restart_node(0, extra_args=[dust_parameter, "-permitbaremultisig"])
+                dust_parameter = f"-dustrelayfee={dustfee_bc2_kvb:.8f}"
+                self.log.info(f"Test dust limit setting {dust_parameter} ({dustfee_sat2_kvb} sat2/kvB)...")
+                self.restart_node(0, extra_args=[dust_parameter])
 
             for output_script, description in output_scripts:
-                self.test_dust_output(self.nodes[0], dustfee_btc_kvb, output_script, description)
+                self.test_dust_output(self.nodes[0], dustfee_bc2_kvb, output_script, description)
             self.generate(self.nodes[0], 1)
 
 

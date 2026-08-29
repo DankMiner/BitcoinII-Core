@@ -8,8 +8,8 @@ The `TestShell` submodule extends the `BitcoinIITestFramework` functionality to
 external interactive environments for prototyping and educational purposes. Just
 like `BitcoinIITestFramework`, the `TestShell` allows the user to:
 
-* Manage regtest bitcoinIId subprocesses.
-* Access RPC interfaces of the underlying bitcoinIId instances.
+* Manage regtest bitcoinII-d subprocesses.
+* Access RPC interfaces of the underlying bitcoinII-d instances.
 * Log events to the functional test logging utility.
 
 The `TestShell` can be useful in interactive environments where it is necessary
@@ -20,7 +20,7 @@ user inputs. Such environments include the Python3 command line interpreter or
 ## 1. Requirements
 
 * Python3
-* `bitcoinIId` built in the same repository as the `TestShell`.
+* `bitcoinII-d` built in the same repository as the `TestShell`.
 
 ## 2. Importing `TestShell` from the BitcoinII Core repository
 
@@ -37,7 +37,7 @@ must be used.
 >>> from test_framework.test_shell import TestShell
 ```
 
-The following `TestShell` methods manage the lifetime of the underlying bitcoinIId
+The following `TestShell` methods manage the lifetime of the underlying bitcoinII-d
 processes and logging utilities.
 
 * `TestShell().setup()`
@@ -64,7 +64,7 @@ used to initialize the `TestShell` can be found in [section
 
 **Note: Running multiple instances of `TestShell` is not allowed.** Running a
 single process also ensures that logging remains consolidated in the same
-temporary folder. If you need more bitcoinIId nodes than set by default (1),
+temporary folder. If you need more bitcoinII-d nodes than set by default (1),
 simply increase the `num_nodes` parameter during setup.
 
 ```
@@ -78,7 +78,7 @@ Unlike the `BitcoinIITestFramework` class, the `TestShell` keeps the underlying
 BitcoinIId subprocesses (nodes) and logging utilities running until the user
 explicitly shuts down the `TestShell` object.
 
-During the time between the `setup` and `shutdown` calls, all `bitcoinIId` node
+During the time between the `setup` and `shutdown` calls, all `bitcoinII-d` node
 processes and `BitcoinIITestFramework` convenience methods can be accessed
 interactively.
 
@@ -97,7 +97,7 @@ rewards to a wallet address owned by the mining node.
 
 ```
 >>> test.nodes[0].createwallet('default')
-{'name': 'default', 'warning': 'Empty string given as passphrase, wallet will not be encrypted.'}
+{'name': 'default'}
 >>> address = test.nodes[0].getnewaddress()
 >>> test.generatetoaddress(test.nodes[0], 101, address)
 ['2b98dd0044aae6f1cca7f88a0acf366a4bfe053c7f7b00da3c0d115f03d67efb', ...
@@ -131,12 +131,12 @@ test-framework**. Modules such as
 [key.py](/test/functional/test_framework/key.py),
 [script.py](/test/functional/test_framework/script.py) and
 [messages.py](/test/functional/test_framework/messages.py) are particularly
-useful in constructing objects which can be passed to the bitcoinIId nodes managed
+useful in constructing objects which can be passed to the bitcoinII-d nodes managed
 by a running `TestShell` object.
 
 ## 5. Shutting the `TestShell` down
 
-Shutting down the `TestShell` will safely tear down all running bitcoinIId
+Shutting down the `TestShell` will safely tear down all running bitcoinII-d
 instances and remove all temporary data and logging directories.
 
 ```
@@ -155,7 +155,7 @@ To prevent the logs from being removed after a shutdown, simply set the
 20XX-XX-XXTXX:XX:XX.XXXXXXX TestFramework (INFO): Tests successful
 ```
 
-The following utility consolidates logs from the bitcoinIId nodes and the
+The following utility consolidates logs from the bitcoinII-d nodes and the
 underlying `BitcoinIITestFramework`:
 
 * `/path/to/bitcoinII/build/test/functional/combine_logs.py
@@ -172,20 +172,19 @@ can be called after the TestShell is shut down.
 
 | Test parameter key | Default Value | Description |
 |---|---|---|
-| `bind_to_localhost_only` | `True` | Binds bitcoinIId P2P services to `127.0.0.1` if set to `True`.|
-| `cachedir` | `"/path/to/bitcoinII/build/test/cache"` | Sets the bitcoinIId datadir directory. |
-| `chain`  | `"regtest"` | Sets the chain-type for the underlying test bitcoinIId processes. |
+| `bind_to_localhost_only` | `True` | Binds bitcoinII-d P2P services to `127.0.0.1` if set to `True`.|
+| `cachedir` | `"/path/to/bitcoinII/build/test/cache"` | Sets the bitcoinII-d datadir directory. |
+| `chain`  | `"regtest"` | Sets the chain-type for the underlying test bitcoinII-d processes. |
 | `configfile` | `"/path/to/bitcoinII/build/test/config.ini"` | Sets the location of the test framework config file. |
-| `coveragedir` | `None` | Records bitcoinIId RPC test coverage into this directory if set. |
+| `coveragedir` | `None` | Records bitcoinII-d RPC test coverage into this directory if set. |
 | `loglevel` | `INFO` | Logs events at this level and higher. Can be set to `DEBUG`, `INFO`, `WARNING`, `ERROR` or `CRITICAL`. |
 | `nocleanup` | `False` | Cleans up temporary test directory if set to `True` during `shutdown`. |
-| `noshutdown` | `False` | Does not stop bitcoinIId instances after `shutdown` if set to `True`. |
-| `num_nodes` | `1` | Sets the number of initialized bitcoinIId processes. |
+| `num_nodes` | `1` | Sets the number of initialized bitcoinII-d processes. |
 | `perf` | False | Profiles running nodes with `perf` for the duration of the test if set to `True`. |
-| `rpc_timeout` | `60` | Sets the RPC server timeout for the underlying bitcoinIId processes. |
+| `rpc_timeout` | `60` | Sets the RPC server timeout for the underlying bitcoinII-d processes. |
 | `setup_clean_chain` | `False` | A 200-block-long chain is initialized from cache by default. Instead, `setup_clean_chain` initializes an empty blockchain if set to `True`. |
 | `randomseed` | Random Integer | `TestShell().options.randomseed` is a member of `TestShell` which can be accessed during a test to seed a random generator. User can override default with a constant value for reproducible test runs. |
 | `supports_cli` | `False` | Whether the bitcoinII-cli utility is compiled and available for the test. |
 | `tmpdir` | `"/var/folders/.../"` | Sets directory for test logs. Will be deleted upon a successful test run unless `nocleanup` is set to `True` |
 | `trace_rpc` | `False` | Logs all RPC calls if set to `True`. |
-| `usecli` | `False` | Uses the bitcoinII-cli interface for all bitcoinIId commands instead of directly calling the RPC server. Requires `supports_cli`. |
+| `usecli` | `False` | Uses the bitcoinII-cli interface for all bitcoinII-d commands instead of directly calling the RPC server. Requires `supports_cli`. |

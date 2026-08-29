@@ -21,7 +21,7 @@ Release Process
 
 * On both the master branch and the new release branch:
   - update `CLIENT_VERSION_MAJOR` in [`CMakeLists.txt`](../CMakeLists.txt)
-* On the new release branch in [`CMakeLists.txt`](../CMakeLists.txt)(see [this commit](https://github.com/bitcoinII/bitcoinII/commit/742f7dd)):
+* On the new release branch in [`CMakeLists.txt`](../CMakeLists.txt)(see [this commit](https://github.com/bitcoin/bitcoin/commit/742f7dd)):
   - set `CLIENT_VERSION_MINOR` to `0`
   - set `CLIENT_VERSION_BUILD` to `0`
   - set `CLIENT_VERSION_IS_RELEASE` to `true`
@@ -29,7 +29,8 @@ Release Process
 #### Before branch-off
 
 * Update translations see [translation_process.md](/doc/translation_process.md#synchronising-translations).
-* Update hardcoded [seeds](/contrib/seeds/README.md), see [this pull request](https://github.com/bitcoinII/bitcoinII/pull/27488) for an example.
+* Update hardcoded [seeds](/contrib/seeds/README.md), see [this pull request](https://github.com/bitcoin/bitcoin/pull/27488) for an example.
+* Update embedded asmap data at `/src/node/data/ip_asn.dat`, see [asmap data documentation](./asmap-data.md).
 * Update the following variables in [`src/kernel/chainparams.cpp`](/src/kernel/chainparams.cpp) for mainnet, testnet, and signet:
   - `m_assumed_blockchain_size` and `m_assumed_chain_state_size` with the current size plus some overhead (see
     [this](#how-to-calculate-assumed-blockchain-and-chain-state-size) for information on how to calculate them).
@@ -37,7 +38,7 @@ Release Process
     that causes rejection of blocks in the past history.
   - `chainTxData` with statistics about the transaction count and rate. Use the output of the `getchaintxstats` RPC with an
     `nBlocks` of 4096 (28 days) and a `bestblockhash` of RPC `getbestblockhash`; see
-    [this pull request](https://github.com/bitcoinII/bitcoinII/pull/28591) for an example. Reviewers can verify the results by running
+    [this pull request](https://github.com/bitcoin/bitcoin/pull/28591) for an example. Reviewers can verify the results by running
     `getchaintxstats <window_block_count> <window_final_block_hash>` with the `window_block_count` and `window_final_block_hash` from your output.
   - `defaultAssumeValid` with the output of RPC `getblockhash` using the `height` of `window_final_block_height` above
     (and update the block height comment with that height), taking into account the following:
@@ -53,37 +54,37 @@ Release Process
     - Set `MINCHAINWORK_HEADERS` to the height used for the `nMinimumChainWork` calculation above.
     - Check that the other variables still look reasonable.
   - Run the script. It works fine in CPython, but PyPy is much faster (seconds instead of minutes): `pypy3 contrib/devtools/headerssync-params.py`.
-  - Paste the output defining `HEADER_COMMITMENT_PERIOD` and `REDOWNLOAD_BUFFER_SIZE` into the top of [`src/headerssync.cpp`](/src/headerssync.cpp).
+  - Paste the output defining the header `commitment_period` and `redownload_buffer_size` into the mainnet section of [`src/kernel/chainparams.cpp`](/src/kernel/chainparams.cpp).
 - Clear the release notes and move them to the wiki (see "Write the release notes" below).
 - Translations on Transifex:
     - Pull translations from Transifex into the master branch.
-    - Create [a new resource](https://www.transifex.com/bitcoinII/bitcoinII/content/) named after the major version with the slug `qt-translation-<RRR>x`, where `RRR` is the major branch number padded with zeros. Use `src/qt/locale/bitcoinII_en.xlf` to create it.
+    - Create [a new resource](https://app.transifex.com/bitcoin/bitcoin/content/) named after the major version with the slug `qt-translation-<RRR>x`, where `RRR` is the major branch number padded with zeros. Use `src/qt/locale/bitcoin_en.xlf` to create it.
     - In the project workflow settings, ensure that [Translation Memory Fill-up](https://help.transifex.com/en/articles/6224817-setting-up-translation-memory-fill-up) is enabled and that [Translation Memory Context Matching](https://help.transifex.com/en/articles/6224753-translation-memory-with-context) is disabled.
     - Update the Transifex slug in [`.tx/config`](/.tx/config) to the slug of the resource created in the first step. This identifies which resource the translations will be synchronized from.
-    - Make an announcement that translators can start translating for the new version. You can use one of the [previous announcements](https://www.transifex.com/bitcoinII/communication/) as a template.
-    - Change the auto-update URL for the resource to `master`, e.g. `https://raw.githubusercontent.com/bitcoinII/bitcoinII/master/src/qt/locale/bitcoinII_en.xlf`. (Do this only after the previous steps, to prevent an auto-update from interfering.)
+    - Make an announcement that translators can start translating for the new version. You can use one of the [previous announcements](https://app.transifex.com/bitcoin/communication/) as a template.
+    - Change the auto-update URL for the resource to `master`, e.g. `https://raw.githubusercontent.com/bitcoin/bitcoin/master/src/qt/locale/bitcoin_en.xlf`. (Do this only after the previous steps, to prevent an auto-update from interfering.)
 
 #### After branch-off (on the major release branch)
 
 - Update the versions.
-- Create the draft, named "*version* Release Notes Draft", as a [collaborative wiki](https://github.com/bitcoinII-core/bitcoinII-devwiki/wiki/_new).
+- Create the draft, named "*version* Release Notes Draft", as a [collaborative wiki](https://github.com/bitcoin-core/bitcoin-devwiki/wiki/_new).
 - Clear the release notes: `cp doc/release-notes-empty-template.md doc/release-notes.md`
-- Create a pinned meta-issue for testing the release candidate (see [this issue](https://github.com/bitcoinII/bitcoinII/issues/27621) for an example) and provide a link to it in the release announcements where useful.
+- Create a pinned meta-issue for testing the release candidate (see [this issue](https://github.com/bitcoin/bitcoin/issues/27621) for an example) and provide a link to it in the release announcements where useful.
 - Translations on Transifex
-    - Change the auto-update URL for the new major version's resource away from `master` and to the branch, e.g. `https://raw.githubusercontent.com/bitcoinII/bitcoinII/<branch>/src/qt/locale/bitcoinII_en.xlf`. Do not forget this or it will keep tracking the translations on master instead, drifting away from the specific major release.
+    - Change the auto-update URL for the new major version's resource away from `master` and to the branch, e.g. `https://raw.githubusercontent.com/bitcoin/bitcoin/<branch>/src/qt/locale/bitcoin_en.xlf`. Do not forget this or it will keep tracking the translations on master instead, drifting away from the specific major release.
 - Prune inputs from the qa-assets repo (See [pruning
-  inputs](https://github.com/bitcoinII-core/qa-assets#pruning-inputs)).
+  inputs](https://github.com/bitcoin-core/qa-assets#pruning-inputs)).
 
 #### Before final release
 
-- Merge the release notes from [the wiki](https://github.com/bitcoinII-core/bitcoinII-devwiki/wiki/) into the branch.
+- Merge the release notes from [the wiki](https://github.com/bitcoin-core/bitcoin-devwiki/wiki/) into the branch.
 - Ensure the "Needs release note" label is removed from all relevant pull
   requests and issues:
-  https://github.com/bitcoinII/bitcoinII/issues?q=label%3A%22Needs+release+note%22
+  https://github.com/bitcoin/bitcoin/issues?q=label%3A%22Needs+release+note%22
 
 #### Tagging a release (candidate)
 
-To tag the version (or release candidate) in git, use the `make-tag.py` script from [bitcoinII-maintainer-tools](https://github.com/bitcoinII-core/bitcoinII-maintainer-tools). From the root of the repository run:
+To tag the version (or release candidate) in git, use the `make-tag.py` script from [bitcoin-maintainer-tools](https://github.com/bitcoin-core/bitcoin-maintainer-tools). From the root of the repository run:
 
     ../bitcoinII-maintainer-tools/make-tag.py v(new version, e.g. 25.0)
 
@@ -99,13 +100,13 @@ Install Guix using one of the installation methods detailed in
 Check out the source code in the following directory hierarchy.
 
     cd /path/to/your/toplevel/build
-    git clone https://github.com/bitcoinII-core/guix.sigs.git
-    git clone https://github.com/bitcoinII-core/bitcoinII-detached-sigs.git
-    git clone https://github.com/bitcoinII/bitcoinII.git
+    git clone https://github.com/bitcoin-core/guix.sigs.git
+    git clone https://github.com/bitcoin-core/bitcoin-detached-sigs.git
+    git clone https://github.com/bitcoin/bitcoin.git
 
 ### Write the release notes
 
-Open a draft of the release notes for collaborative editing at https://github.com/bitcoinII-core/bitcoinII-devwiki/wiki.
+Open a draft of the release notes for collaborative editing at https://github.com/bitcoin-core/bitcoin-devwiki/wiki.
 
 For the period during which the notes are being edited on the wiki, the version on the branch should be wiped and replaced with a link to the wiki which should be used for all announcements until `-final`.
 
@@ -158,7 +159,7 @@ git commit -m "Add attestations by ${SIGNER} for ${VERSION} non-codesigned"
 popd
 ```
 
-Then open a Pull Request to the [guix.sigs repository](https://github.com/bitcoinII-core/guix.sigs).
+Then open a Pull Request to the [guix.sigs repository](https://github.com/bitcoin-core/guix.sigs).
 
 ## Codesigning
 
@@ -206,7 +207,7 @@ popd
 ### Non-codesigners: wait for Windows and macOS detached signatures
 
 - Once the Windows and macOS builds each have 3 matching signatures, they will be signed with their respective release keys.
-- Detached signatures will then be committed to the [bitcoinII-detached-sigs](https://github.com/bitcoinII-core/bitcoinII-detached-sigs) repository, which can be combined with the unsigned apps to create signed binaries.
+- Detached signatures will then be committed to the [bitcoin-detached-sigs](https://github.com/bitcoin-core/bitcoin-detached-sigs) repository, which can be combined with the unsigned apps to create signed binaries.
 
 ### Create the codesigned build outputs
 
@@ -225,7 +226,7 @@ git commit -m "Add attestations by ${SIGNER} for ${VERSION} codesigned"
 popd
 ```
 
-Then open a Pull Request to the [guix.sigs repository](https://github.com/bitcoinII-core/guix.sigs).
+Then open a Pull Request to the [guix.sigs repository](https://github.com/bitcoin-core/guix.sigs).
 
 ## After 6 or more people have guix-built and their results match
 
@@ -274,34 +275,34 @@ cat "$VERSION"/*/all.SHA256SUMS.asc > SHA256SUMS.asc
 
   - blog post
 
-  - maintained versions [table](https://github.com/bitcoinII-core/bitcoincore.org/commits/master/_includes/posts/maintenance-table.md)
+  - maintained versions [table](https://github.com/bitcoin-core/bitcoincore.org/commits/master/_includes/posts/maintenance-table.md)
 
   - RPC documentation update
 
-      - See https://github.com/bitcoinII-core/bitcoincore.org/blob/master/contrib/doc-gen/
+      - See https://github.com/bitcoin-core/bitcoincore.org/blob/master/contrib/doc-gen/
 
 
 - Update repositories
 
-  - Delete post-EOL [release branches](https://github.com/bitcoinII/bitcoinII/branches/all) and create a tag `v${branch_name}-final`.
+  - Delete post-EOL [release branches](https://github.com/bitcoin/bitcoin/branches/all) and create a tag `v${branch_name}-final`.
 
-  - Delete ["Needs backport" labels](https://github.com/bitcoinII/bitcoinII/labels?q=backport) for non-existing branches.
+  - Delete ["Needs backport" labels](https://github.com/bitcoin/bitcoin/labels?q=backport) for non-existing branches.
 
   - Update packaging repo
 
-      - Push the flatpak to flathub, e.g. https://github.com/flathub/org.bitcoinIIcore.bitcoinII-qt/pull/2
+      - Push the flatpak to flathub, e.g. https://github.com/flathub/org.bitcoincore.bitcoin-qt/pull/2
 
-      - Push the snap, see https://github.com/bitcoinII-core/packaging/blob/main/snap/local/build.md
+      - Push the snap, see https://github.com/bitcoin-core/packaging/blob/main/snap/local/build.md
 
-  - Create a [new GitHub release](https://github.com/bitcoinII/bitcoinII/releases/new) with a link to the archived release notes
+  - Create a [new GitHub release](https://github.com/bitcoin/bitcoin/releases/new) with a link to the archived release notes
 
 - Announce the release:
 
   - bitcoinII-dev and bitcoinII-core-dev mailing list
 
-  - BitcoinII Core announcements list https://bitcoincore.org/en/list/announcements/join/
+  - Bitcoin Core announcements list https://bitcoincore.org/en/list/announcements/join/
 
-  - BitcoinII Core Twitter https://twitter.com/bitcoinIIcoreorg
+  - Bitcoin Core Twitter https://twitter.com/bitcoincoreorg
 
   - Celebrate
 

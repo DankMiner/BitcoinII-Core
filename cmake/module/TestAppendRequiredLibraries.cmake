@@ -1,4 +1,4 @@
-# Copyright (c) 2023-present The BitcoinII Core developers
+# Copyright (c) 2023-present The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://opensource.org/license/mit/.
 
@@ -7,7 +7,7 @@ include_guard(GLOBAL)
 # Illumos/SmartOS requires linking with -lsocket if
 # using getifaddrs & freeifaddrs.
 # See:
-# - https://github.com/bitcoinII/bitcoinII/pull/21486
+# - https://github.com/bitcoin/bitcoin/pull/21486
 # - https://smartos.org/man/3socket/getifaddrs
 function(test_append_socket_library target)
   if (NOT TARGET ${target})
@@ -38,8 +38,7 @@ function(test_append_socket_library target)
       message(FATAL_ERROR "Cannot figure out how to use getifaddrs/freeifaddrs.")
     endif()
   endif()
-  set(HAVE_DECL_GETIFADDRS TRUE PARENT_SCOPE)
-  set(HAVE_DECL_FREEIFADDRS TRUE PARENT_SCOPE)
+  set(HAVE_IFADDRS TRUE PARENT_SCOPE)
 endfunction()
 
 # Clang, when building for 32-bit,

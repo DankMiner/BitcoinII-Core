@@ -1,4 +1,4 @@
-// Copyright (c) 2021-2022 The BitcoinII Core developers
+// Copyright (c) 2021-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -24,7 +24,7 @@ class Ipc;
 //! and get access to other interfaces (Node, Chain, Wallet, etc).
 //!
 //! There is a different Init interface implementation for each process
-//! (bitcoinII-gui, bitcoinII-node, bitcoinII-wallet, bitcoinIId, bitcoinII-qt) and each
+//! (bitcoinII-gui, bitcoinII-node, bitcoinII-wallet, bitcoinII-d, bitcoinII-qt) and each
 //! implementation can implement the make methods for interfaces it supports.
 //! The default make methods all return null.
 class Init
@@ -38,6 +38,8 @@ public:
     virtual std::unique_ptr<Echo> makeEcho() { return nullptr; }
     virtual Ipc* ipc() { return nullptr; }
     virtual bool canListenIpc() { return false; }
+    virtual const char* exeName() { return nullptr; }
+    virtual void makeMiningOld2() { throw std::runtime_error("Old mining interface (@2) not supported. Please update your client!"); }
 };
 
 //! Return implementation of Init interface for the node process. If the argv

@@ -3,14 +3,14 @@
 
 BitcoinII Core version 25.0 is now available from:
 
-  <https://bitcoincore.org/bin/bitcoinII-core-25.0/>
+  <https://bitcoincore.org/bin/bitcoin-core-25.0/>
 
 This release includes new features, various bug fixes and performance
 improvements, as well as updated translations.
 
 Please report bugs using the issue tracker at GitHub:
 
-  <https://github.com/bitcoinII/bitcoinII/issues>
+  <https://github.com/bitcoin/bitcoin/issues>
 
 To receive security and update notifications, please subscribe to:
 
@@ -22,7 +22,7 @@ How to Upgrade
 If you are running an older version, shut it down. Wait until it has completely
 shut down (which might take a few minutes in some cases), then run the
 installer (on Windows) or just copy over `/Applications/BitcoinII-Qt` (on macOS)
-or `bitcoinIId`/`bitcoinII-qt` (on Linux).
+or `bitcoinII-d`/`bitcoinII-qt` (on Linux).
 
 Upgrading directly from a version of BitcoinII Core that has reached its EOL is
 possible, but it might take some time if the data directory needs to be migrated. Old
@@ -60,7 +60,7 @@ Updated RPCs
 ------------
 
 - All JSON-RPC methods accept a new [named
-  parameter](https://github.com/bitcoinII/bitcoinII/blob/master/doc/JSON-RPC-interface.md#parameter-passing) called `args` that can
+  parameter](https://github.com/bitcoin/bitcoin/blob/master/doc/JSON-RPC-interface.md#parameter-passing) called `args` that can
   contain positional parameter values. This is a convenience to allow some
   parameter values to be passed by name without having to name every value. The
   python test framework and `bitcoinII-cli` tool both take advantage of this, so
@@ -182,7 +182,7 @@ added to the following RPCs in #25375:
   returns a JSON array of strings to better handle multiple warning messages and
   for consistency with other wallet RPCs. The "warning" field will be fully
   removed from these RPCs in v26. It can be temporarily re-enabled during the
-  deprecation period by launching bitcoinIId with the configuration option
+  deprecation period by launching bitcoinII-d with the configuration option
   `-deprecatedrpc=walletwarningfield`. (#27279)
 
 - Descriptor wallets can now spend coins sent to P2WSH Miniscript descriptors. (#24149)
@@ -208,7 +208,7 @@ Binary verification
   In this release and moving forward it will verify that the binaries are
   signed by a _threshold of trusted keys_. For more details and
   examples, see:
-  https://github.com/bitcoinII/bitcoinII/blob/master/contrib/verify-binaries/README.md
+  https://github.com/bitcoin/bitcoin/blob/master/contrib/verify-binaries/README.md
   (#27358)
 
 Low-level changes
@@ -306,7 +306,7 @@ Thanks to everyone who directly contributed to this release:
 - Murray Nesbitt
 - muxator
 - omahs
-- pablomartin4btc
+- pablomartin4bc2
 - Pasta
 - Pieter Wuille
 - Pttn
@@ -337,4 +337,4 @@ Thanks to everyone who directly contributed to this release:
 - Yusuf Sahin HAMZA
 
 As well as to everyone that helped with translations on
-[Transifex](https://www.transifex.com/bitcoinII/bitcoinII/).
+[Transifex](https://www.transifex.com/bitcoin/bitcoin/).

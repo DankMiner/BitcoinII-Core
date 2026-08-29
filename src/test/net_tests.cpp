@@ -1,12 +1,12 @@
-// Copyright (c) 2012-2022 The BitcoinII Core developers
+// Copyright (c) 2012-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include <addrman.h>
 #include <chainparams.h>
 #include <clientversion.h>
 #include <common/args.h>
 #include <compat/compat.h>
-#include <cstdint>
 #include <net.h>
 #include <net_processing.h>
 #include <netaddress.h>
@@ -16,6 +16,8 @@
 #include <serialize.h>
 #include <span.h>
 #include <streams.h>
+#include <test/util/common.h>
+#include <test/util/net.h>
 #include <test/util/random.h>
 #include <test/util/setup_common.h>
 #include <test/util/validation.h>
@@ -26,6 +28,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include <algorithm>
+#include <cstdint>
 #include <ios>
 #include <memory>
 #include <optional>
@@ -67,7 +70,8 @@ BOOST_AUTO_TEST_CASE(cnode_simple_test)
                                                             CAddress(),
                                                             pszDest,
                                                             ConnectionType::OUTBOUND_FULL_RELAY,
-                                                            /*inbound_onion=*/false);
+                                                            /*inbound_onion=*/false,
+                                                            /*network_key=*/0);
     BOOST_CHECK(pnode1->IsFullOutboundConn() == true);
     BOOST_CHECK(pnode1->IsManualConn() == false);
     BOOST_CHECK(pnode1->IsBlockOnlyConn() == false);
@@ -85,7 +89,8 @@ BOOST_AUTO_TEST_CASE(cnode_simple_test)
                                                             CAddress(),
                                                             pszDest,
                                                             ConnectionType::INBOUND,
-                                                            /*inbound_onion=*/false);
+                                                            /*inbound_onion=*/false,
+                                                            /*network_key=*/1);
     BOOST_CHECK(pnode2->IsFullOutboundConn() == false);
     BOOST_CHECK(pnode2->IsManualConn() == false);
     BOOST_CHECK(pnode2->IsBlockOnlyConn() == false);
@@ -103,7 +108,8 @@ BOOST_AUTO_TEST_CASE(cnode_simple_test)
                                                             CAddress(),
                                                             pszDest,
                                                             ConnectionType::OUTBOUND_FULL_RELAY,
-                                                            /*inbound_onion=*/false);
+                                                            /*inbound_onion=*/false,
+                                                            /*network_key=*/2);
     BOOST_CHECK(pnode3->IsFullOutboundConn() == true);
     BOOST_CHECK(pnode3->IsManualConn() == false);
     BOOST_CHECK(pnode3->IsBlockOnlyConn() == false);
@@ -121,7 +127,8 @@ BOOST_AUTO_TEST_CASE(cnode_simple_test)
                                                             CAddress(),
                                                             pszDest,
                                                             ConnectionType::INBOUND,
-                                                            /*inbound_onion=*/true);
+                                                            /*inbound_onion=*/true,
+                                                            /*network_key=*/3);
     BOOST_CHECK(pnode4->IsFullOutboundConn() == false);
     BOOST_CHECK(pnode4->IsManualConn() == false);
     BOOST_CHECK(pnode4->IsBlockOnlyConn() == false);
@@ -613,7 +620,8 @@ BOOST_AUTO_TEST_CASE(ipv4_peer_with_ipv6_addrMe_test)
                                                            CAddress{},
                                                            /*pszDest=*/std::string{},
                                                            ConnectionType::OUTBOUND_FULL_RELAY,
-                                                           /*inbound_onion=*/false);
+                                                           /*inbound_onion=*/false,
+                                                           /*network_key=*/0);
     pnode->fSuccessfullyConnected.store(true);
 
     // the peer claims to be reaching us via IPv6
@@ -667,7 +675,8 @@ BOOST_AUTO_TEST_CASE(get_local_addr_for_peer_port)
                    /*addrBindIn=*/CService{},
                    /*addrNameIn=*/std::string{},
                    /*conn_type_in=*/ConnectionType::OUTBOUND_FULL_RELAY,
-                   /*inbound_onion=*/false};
+                   /*inbound_onion=*/false,
+                   /*network_key=*/0};
     peer_out.fSuccessfullyConnected = true;
     peer_out.SetAddrLocal(peer_us);
 
@@ -688,7 +697,8 @@ BOOST_AUTO_TEST_CASE(get_local_addr_for_peer_port)
                   /*addrBindIn=*/CService{},
                   /*addrNameIn=*/std::string{},
                   /*conn_type_in=*/ConnectionType::INBOUND,
-                  /*inbound_onion=*/false};
+                  /*inbound_onion=*/false,
+                  /*network_key=*/1};
     peer_in.fSuccessfullyConnected = true;
     peer_in.SetAddrLocal(peer_us);
 
@@ -795,6 +805,7 @@ BOOST_AUTO_TEST_CASE(LocalAddress_BasicLifecycle)
 BOOST_AUTO_TEST_CASE(initial_advertise_from_version_message)
 {
     LOCK(NetEventsInterface::g_msgproc_mutex);
+    auto& connman{static_cast<ConnmanTestMsg&>(*m_node.connman)};
 
     // Tests the following scenario:
     // * -bind=3.4.5.6:20001 is specified
@@ -807,7 +818,7 @@ BOOST_AUTO_TEST_CASE(initial_advertise_from_version_message)
     // Pretend that we bound to this port.
     const uint16_t bind_port = 20001;
     m_node.args->ForceSetArg("-bind", strprintf("3.4.5.6:%u", bind_port));
-    m_node.args->ForceSetArg("-capturemessages", "1");
+    m_node.connman->SetCaptureMessages(true);
 
     // Our address:port as seen from the peer - 2.3.4.5:20002 (different from the above).
     in_addr peer_us_addr;
@@ -825,7 +836,8 @@ BOOST_AUTO_TEST_CASE(initial_advertise_from_version_message)
                /*addrBindIn=*/CService{},
                /*addrNameIn=*/std::string{},
                /*conn_type_in=*/ConnectionType::OUTBOUND_FULL_RELAY,
-               /*inbound_onion=*/false};
+               /*inbound_onion=*/false,
+               /*network_key=*/2};
 
     const uint64_t services{NODE_NETWORK | NODE_WITNESS};
     const int64_t time{0};
@@ -837,22 +849,24 @@ BOOST_AUTO_TEST_CASE(initial_advertise_from_version_message)
 
     m_node.peerman->InitializeNode(peer, NODE_NETWORK);
 
-    std::atomic<bool> interrupt_dummy{false};
-    std::chrono::microseconds time_received_dummy{0};
+    m_node.peerman->SendMessages(peer);
+    connman.FlushSendBuffer(peer); // Drop sent version message
 
-    const auto msg_version =
+    auto msg_version_receive =
         NetMsg::Make(NetMsgType::VERSION, PROTOCOL_VERSION, services, time, services, CAddress::V1_NETWORK(peer_us));
-    DataStream msg_version_stream{msg_version.data};
+    Assert(connman.ReceiveMsgFrom(peer, std::move(msg_version_receive)));
+    peer.fPauseSend = false;
+    bool more_work{connman.ProcessMessagesOnce(peer)};
+    Assert(!more_work);
 
-    m_node.peerman->ProcessMessage(
-        peer, NetMsgType::VERSION, msg_version_stream, time_received_dummy, interrupt_dummy);
+    m_node.peerman->SendMessages(peer);
+    connman.FlushSendBuffer(peer); // Drop sent verack message
 
-    const auto msg_verack = NetMsg::Make(NetMsgType::VERACK);
-    DataStream msg_verack_stream{msg_verack.data};
-
+    Assert(connman.ReceiveMsgFrom(peer, NetMsg::Make(NetMsgType::VERACK)));
+    peer.fPauseSend = false;
     // Will set peer.fSuccessfullyConnected to true (necessary in SendMessages()).
-    m_node.peerman->ProcessMessage(
-        peer, NetMsgType::VERACK, msg_verack_stream, time_received_dummy, interrupt_dummy);
+    more_work = connman.ProcessMessagesOnce(peer);
+    Assert(!more_work);
 
     // Ensure that peer_us_addr:bind_port is sent to the peer.
     const CService expected{peer_us_addr, bind_port};
@@ -861,13 +875,12 @@ BOOST_AUTO_TEST_CASE(initial_advertise_from_version_message)
     const auto CaptureMessageOrig = CaptureMessage;
     CaptureMessage = [&sent, &expected](const CAddress& addr,
                                         const std::string& msg_type,
-                                        Span<const unsigned char> data,
+                                        std::span<const unsigned char> data,
                                         bool is_incoming) -> void {
         if (!is_incoming && msg_type == "addr") {
-            DataStream s{data};
             std::vector<CAddress> addresses;
 
-            s >> CAddress::V1_NETWORK(addresses);
+            SpanReader{data} >> CAddress::V1_NETWORK(addresses);
 
             for (const auto& addr : addresses) {
                 if (addr == expected) {
@@ -878,13 +891,13 @@ BOOST_AUTO_TEST_CASE(initial_advertise_from_version_message)
         }
     };
 
-    m_node.peerman->SendMessages(&peer);
+    m_node.peerman->SendMessages(peer);
 
     BOOST_CHECK(sent);
 
     CaptureMessage = CaptureMessageOrig;
     chainman.ResetIbd();
-    m_node.args->ForceSetArg("-capturemessages", "0");
+    m_node.connman->SetCaptureMessages(false);
     m_node.args->ForceSetArg("-bind", "");
 }
 
@@ -900,7 +913,8 @@ BOOST_AUTO_TEST_CASE(advertise_local_address)
                                        CAddress{},
                                        /*pszDest=*/std::string{},
                                        ConnectionType::OUTBOUND_FULL_RELAY,
-                                       /*inbound_onion=*/false);
+                                       /*inbound_onion=*/false,
+                                       /*network_key=*/0);
     };
     g_reachable_nets.Add(NET_CJDNS);
 
@@ -1054,7 +1068,7 @@ public:
             bool progress{false};
             // Send bytes from m_to_send to the transport.
             if (!m_to_send.empty()) {
-                Span<const uint8_t> to_send = Span{m_to_send}.first(1 + m_rng.randrange(m_to_send.size()));
+                std::span<const uint8_t> to_send = std::span{m_to_send}.first(1 + m_rng.randrange(m_to_send.size()));
                 size_t old_len = to_send.size();
                 if (!m_transport.ReceivedBytes(to_send)) {
                     return std::nullopt; // transport error occurred
@@ -1099,7 +1113,7 @@ public:
     BIP324Cipher& GetCipher() { return m_cipher; }
 
     /** Schedule bytes to be sent to the transport. */
-    void Send(Span<const uint8_t> data)
+    void Send(std::span<const uint8_t> data)
     {
         m_to_send.insert(m_to_send.end(), data.begin(), data.end());
     }
@@ -1114,13 +1128,13 @@ public:
     }
 
     /** Schedule bytes to be sent to the transport. */
-    void Send(Span<const std::byte> data) { Send(MakeUCharSpan(data)); }
+    void Send(std::span<const std::byte> data) { Send(MakeUCharSpan(data)); }
 
     /** Schedule our ellswift key to be sent to the transport. */
     void SendKey() { Send(m_cipher.GetOurPubKey()); }
 
     /** Schedule specified garbage to be sent to the transport. */
-    void SendGarbage(Span<const uint8_t> garbage)
+    void SendGarbage(std::span<const uint8_t> garbage)
     {
         // Remember the specified garbage (so we can use it as AAD).
         m_sent_garbage.assign(garbage.begin(), garbage.end());
@@ -1167,7 +1181,7 @@ public:
 
     /** Schedule an encrypted packet with specified content/aad/ignore to be sent to transport
      *  (only after ReceiveKey). */
-    void SendPacket(Span<const uint8_t> content, Span<const uint8_t> aad = {}, bool ignore = false)
+    void SendPacket(std::span<const uint8_t> content, std::span<const uint8_t> aad = {}, bool ignore = false)
     {
         // Use cipher to construct ciphertext.
         std::vector<std::byte> ciphertext;
@@ -1189,9 +1203,9 @@ public:
     }
 
     /** Schedule version packet to be sent to the transport (only after ReceiveKey). */
-    void SendVersion(Span<const uint8_t> version_data = {}, bool vers_ignore = false)
+    void SendVersion(std::span<const uint8_t> version_data = {}, bool vers_ignore = false)
     {
-        Span<const std::uint8_t> aad;
+        std::span<const std::uint8_t> aad;
         // Set AAD to garbage only for first packet.
         if (!m_sent_aad) aad = m_sent_garbage;
         SendPacket(/*content=*/version_data, /*aad=*/aad, /*ignore=*/vers_ignore);
@@ -1201,7 +1215,7 @@ public:
     /** Expect a packet to have been received from transport, process it, and return its contents
      *  (only after ReceiveKey). Decoys are skipped. Optional associated authenticated data (AAD) is
      *  expected in the first received packet, no matter if that is a decoy or not. */
-    std::vector<uint8_t> ReceivePacket(Span<const std::byte> aad = {})
+    std::vector<uint8_t> ReceivePacket(std::span<const std::byte> aad = {})
     {
         std::vector<uint8_t> contents;
         // Loop as long as there are ignored packets that are to be skipped.
@@ -1209,7 +1223,7 @@ public:
             // When processing a packet, at least enough bytes for its length descriptor must be received.
             BOOST_REQUIRE(m_received.size() >= BIP324Cipher::LENGTH_LEN);
             // Decrypt the content length.
-            size_t size = m_cipher.DecryptLength(MakeByteSpan(Span{m_received}.first(BIP324Cipher::LENGTH_LEN)));
+            size_t size = m_cipher.DecryptLength(MakeByteSpan(std::span{m_received}.first(BIP324Cipher::LENGTH_LEN)));
             // Check that the full packet is in the receive buffer.
             BOOST_REQUIRE(m_received.size() >= size + BIP324Cipher::EXPANSION);
             // Decrypt the packet contents.
@@ -1217,7 +1231,7 @@ public:
             bool ignore{false};
             bool ret = m_cipher.Decrypt(
                 /*input=*/MakeByteSpan(
-                    Span{m_received}.first(size + BIP324Cipher::EXPANSION).subspan(BIP324Cipher::LENGTH_LEN)),
+                    std::span{m_received}.first(size + BIP324Cipher::EXPANSION).subspan(BIP324Cipher::LENGTH_LEN)),
                 /*aad=*/aad,
                 /*ignore=*/ignore,
                 /*contents=*/MakeWritableByteSpan(contents));
@@ -1240,7 +1254,7 @@ public:
         size_t garblen;
         for (garblen = 0; garblen <= V2Transport::MAX_GARBAGE_LEN; ++garblen) {
             BOOST_REQUIRE(m_received.size() >= garblen + BIP324Cipher::GARBAGE_TERMINATOR_LEN);
-            auto term_span = MakeByteSpan(Span{m_received}.subspan(garblen, BIP324Cipher::GARBAGE_TERMINATOR_LEN));
+            auto term_span = MakeByteSpan(std::span{m_received}.subspan(garblen, BIP324Cipher::GARBAGE_TERMINATOR_LEN));
             if (std::ranges::equal(term_span, m_cipher.GetReceiveGarbageTerminator())) break;
         }
         // Copy the garbage to a buffer.
@@ -1261,17 +1275,17 @@ public:
 
     /** Expect application packet to have been received, with specified short id and payload.
      *  (only after ReceiveKey). */
-    void ReceiveMessage(uint8_t short_id, Span<const uint8_t> payload)
+    void ReceiveMessage(uint8_t short_id, std::span<const uint8_t> payload)
     {
         auto ret = ReceivePacket();
         BOOST_CHECK(ret.size() == payload.size() + 1);
         BOOST_CHECK(ret[0] == short_id);
-        BOOST_CHECK(std::ranges::equal(Span{ret}.subspan(1), payload));
+        BOOST_CHECK(std::ranges::equal(std::span{ret}.subspan(1), payload));
     }
 
     /** Expect application packet to have been received, with specified 12-char message type and
      *  payload (only after ReceiveKey). */
-    void ReceiveMessage(const std::string& m_type, Span<const uint8_t> payload)
+    void ReceiveMessage(const std::string& m_type, std::span<const uint8_t> payload)
     {
         auto ret = ReceivePacket();
         BOOST_REQUIRE(ret.size() == payload.size() + 1 + CMessageHeader::MESSAGE_TYPE_SIZE);
@@ -1283,16 +1297,16 @@ public:
                 BOOST_CHECK(ret[1 + i] == 0);
             }
         }
-        BOOST_CHECK(std::ranges::equal(Span{ret}.subspan(1 + CMessageHeader::MESSAGE_TYPE_SIZE), payload));
+        BOOST_CHECK(std::ranges::equal(std::span{ret}.subspan(1 + CMessageHeader::MESSAGE_TYPE_SIZE), payload));
     }
 
     /** Schedule an encrypted packet with specified message type and payload to be sent to
      *  transport (only after ReceiveKey). */
-    void SendMessage(std::string mtype, Span<const uint8_t> payload)
+    void SendMessage(std::string mtype, std::span<const uint8_t> payload)
     {
         // Construct contents consisting of 0x00 + 12-byte message type + payload.
         std::vector<uint8_t> contents(1 + CMessageHeader::MESSAGE_TYPE_SIZE + payload.size());
-        std::copy(mtype.begin(), mtype.end(), reinterpret_cast<char*>(contents.data() + 1));
+        std::copy(mtype.begin(), mtype.end(), contents.begin() + 1);
         std::copy(payload.begin(), payload.end(), contents.begin() + 1 + CMessageHeader::MESSAGE_TYPE_SIZE);
         // Send a packet with that as contents.
         SendPacket(contents);
@@ -1300,7 +1314,7 @@ public:
 
     /** Schedule an encrypted packet with specified short message id and payload to be sent to
      *  transport (only after ReceiveKey). */
-    void SendMessage(uint8_t short_id, Span<const uint8_t> payload)
+    void SendMessage(uint8_t short_id, std::span<const uint8_t> payload)
     {
         // Construct contents consisting of short_id + payload.
         std::vector<uint8_t> contents(1 + payload.size());
@@ -1544,6 +1558,36 @@ BOOST_AUTO_TEST_CASE(v2transport_test)
         auto ret = tester.Interact();
         BOOST_CHECK(!ret);
     }
+}
+
+BOOST_AUTO_TEST_CASE(private_broadcast_version_does_not_update_addrman_services)
+{
+    LOCK(NetEventsInterface::g_msgproc_mutex);
+
+    const CNetAddr source{LookupHost("2.3.4.5", /*fAllowLookup=*/false).value()};
+    const CAddress addr{Lookup("1.2.3.4", 8333, /*fAllowLookup=*/false).value(), NODE_NONE};
+    BOOST_REQUIRE(m_node.addrman->Add({addr}, source));
+    CNode node{/*id=*/0,
+               /*sock=*/nullptr,
+               /*addrIn=*/addr,
+               /*nKeyedNetGroupIn=*/0,
+               /*nLocalHostNonceIn=*/0,
+               /*addrBindIn=*/CService{},
+               /*addrNameIn=*/"",
+               /*conn_type_in=*/ConnectionType::PRIVATE_BROADCAST,
+               /*inbound_onion=*/false,
+               /*network_key=*/0};
+
+    auto& connman = static_cast<ConnmanTestMsg&>(*m_node.connman);
+    connman.Handshake(node,
+                      /*successfully_connected=*/false,
+                      /*remote_services=*/NODE_NETWORK,
+                      /*local_services=*/NODE_NONE,
+                      /*version=*/PROTOCOL_VERSION,
+                      /*relay_txs=*/true);
+
+    BOOST_CHECK_EQUAL(m_node.addrman->Select().first.nServices, NODE_NONE);
+    m_node.peerman->FinalizeNode(node);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -1,13 +1,13 @@
 BitcoinII Core version 28.0 is now available from:
 
-  <https://bitcoincore.org/bin/bitcoinII-core-28.0/>
+  <https://bitcoincore.org/bin/bitcoin-core-28.0/>
 
 This release includes new features, various bug fixes and performance
 improvements, as well as updated translations.
 
 Please report bugs using the issue tracker at GitHub:
 
-  <https://github.com/bitcoinII/bitcoinII/issues>
+  <https://github.com/bitcoin/bitcoin/issues>
 
 To receive security and update notifications, please subscribe to:
 
@@ -19,7 +19,7 @@ How to Upgrade
 If you are running an older version, shut it down. Wait until it has completely
 shut down (which might take a few minutes in some cases), then run the
 installer (on Windows) or just copy over `/Applications/BitcoinII-Qt` (on macOS)
-or `bitcoinIId`/`bitcoinII-qt` (on Linux).
+or `bitcoinII-d`/`bitcoinII-qt` (on Linux).
 
 Upgrading directly from a version of BitcoinII Core that has reached its EOL is
 possible, but it might take some time if the data directory needs to be migrated. Old
@@ -28,8 +28,8 @@ wallet versions of BitcoinII Core are generally supported.
 Running BitcoinII Core binaries on macOS requires self signing.
 ```
 cd /path/to/bitcoinII-28.0/bin
-xattr -d com.apple.quarantine bitcoinII-cli bitcoinII-qt bitcoinII-tx bitcoinII-util bitcoinII-wallet bitcoinIId test_bitcoinII
-codesign -s - bitcoinII-cli bitcoinII-qt bitcoinII-tx bitcoinII-util bitcoinII-wallet bitcoinIId test_bitcoinII
+xattr -d com.apple.quarantine bitcoinII-cli bitcoinII-qt bitcoinII-tx bitcoinII-util bitcoinII-wallet bitcoinII-d test_bitcoinII
+codesign -s - bitcoinII-cli bitcoinII-qt bitcoinII-tx bitcoinII-util bitcoinII-wallet bitcoinII-d test_bitcoinII
 ```
 
 Compatibility
@@ -47,7 +47,7 @@ Notable changes
 Testnet4/BIP94 support
 -----
 
-Support for Testnet4 as specified in [BIP94](https://github.com/bitcoinII/bips/blob/master/bip-0094.mediawiki)
+Support for Testnet4 as specified in [BIP94](https://github.com/bitcoin/bips/blob/master/bip-0094.mediawiki)
 has been added. The network can be selected with the `-testnet4` option and
 the section header is also named `[testnet4]`.
 
@@ -68,7 +68,7 @@ JSON-RPC 2.0 Support
 
 The JSON-RPC server now recognizes JSON-RPC 2.0 requests and responds with
 strict adherence to the [specification](https://www.jsonrpc.org/specification).
-See [JSON-RPC-interface.md](https://github.com/bitcoinII/bitcoinII/blob/master/doc/JSON-RPC-interface.md#json-rpc-11-vs-20) for details. (#27101)
+See [JSON-RPC-interface.md](https://github.com/bitcoin/bitcoin/blob/master/doc/JSON-RPC-interface.md#json-rpc-11-vs-20) for details. (#27101)
 
 JSON-RPC clients may need to be updated to be compatible with the JSON-RPC server.
 Please open an issue on GitHub if any compatibility issues are found.
@@ -122,7 +122,7 @@ Mempool Policy Changes
 
 - Transactions with version number set to 3 are now treated as standard on all networks (#29496),
   subject to opt-in Topologically Restricted Until Confirmation (TRUC) transaction policy as
-  described in [BIP 431](https://github.com/bitcoinII/bips/blob/master/bip-0431.mediawiki).  The
+  described in [BIP 431](https://github.com/bitcoin/bips/blob/master/bip-0431.mediawiki).  The
   policy includes limits on spending unconfirmed outputs (#28948), eviction of a previous descendant
   if a more incentive-compatible one is submitted (#29306), and a maximum transaction size of 10,000vB
   (#29873). These restrictions simplify the assessment of incentive compatibility of accepting or
@@ -240,7 +240,7 @@ The default value is 4,000,000 WU. (#29523)
   for the resulting transaction to bump the unconfirmed transactions' feerates to the specified feerate. (#28979)
 
 - In RPC `bumpfee`, if a `fee_rate` is specified, the feerate is no longer restricted
-  to following the wallet's incremental feerate of 5 sat/vb. The feerate must still be
+  to following the wallet's incremental feerate of 5 sat2/vb. The feerate must still be
   at least the sum of the original fee and the mempool's incremental feerate. (#27969)
 
 GUI Changes
@@ -344,7 +344,7 @@ Thanks to everyone who directly contributed to this release:
 - Michael Dietz
 - Murch
 - nanlour
-- pablomartin4btc
+- pablomartin4bc2
 - Peter Todd
 - Pieter Wuille
 - @RandyMcMillan
@@ -368,4 +368,4 @@ Thanks to everyone who directly contributed to this release:
 - willcl-ark
 
 As well as to everyone that helped with translations on
-[Transifex](https://www.transifex.com/bitcoinII/bitcoinII/).
+[Transifex](https://www.transifex.com/bitcoin/bitcoin/).

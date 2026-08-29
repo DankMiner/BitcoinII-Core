@@ -1,36 +1,36 @@
-Sample init scripts and service configuration for bitcoinIId
+Sample init scripts and service configuration for bitcoinII-d
 ==========================================================
 
 Sample scripts and configuration files for systemd, Upstart and OpenRC
 can be found in the contrib/init folder.
 
-    contrib/init/bitcoinIId.service:    systemd service unit configuration
-    contrib/init/bitcoinIId.openrc:     OpenRC compatible SysV style init script
-    contrib/init/bitcoinIId.openrcconf: OpenRC conf.d file
-    contrib/init/bitcoinIId.conf:       Upstart service configuration file
-    contrib/init/bitcoinIId.init:       CentOS compatible SysV style init script
+    contrib/init/bitcoinII-d.service:    systemd service unit configuration
+    contrib/init/bitcoinII-d.openrc:     OpenRC compatible SysV style init script
+    contrib/init/bitcoinII-d.openrcconf: OpenRC conf.d file
+    contrib/init/bitcoinII-d.conf:       Upstart service configuration file
+    contrib/init/bitcoinII-d.init:       CentOS compatible SysV style init script
 
 Service User
 ---------------------------------
 
 All three Linux startup configurations assume the existence of a "bitcoinII" user
 and group.  They must be created before attempting to use these scripts.
-The macOS configuration assumes bitcoinIId will be set up for the current user.
+The macOS configuration assumes bitcoinII-d will be set up for the current user.
 
 Configuration
 ---------------------------------
 
-Running bitcoinIId as a daemon does not require any manual configuration. You may
+Running bitcoinII-d as a daemon does not require any manual configuration. You may
 set the `rpcauth` setting in the `bitcoinII.conf` configuration file to override
 the default behaviour of using a special cookie for authentication.
 
 This password does not have to be remembered or typed as it is mostly used
-as a fixed token that bitcoinIId and client programs read from the configuration
+as a fixed token that bitcoinII-d and client programs read from the configuration
 file, however it is recommended that a strong and secure password be used
 as this password is security critical to securing the wallet should the
 wallet be enabled.
 
-If bitcoinIId is run with the "-server" flag (set by default), and no rpcpassword is set,
+If bitcoinII-d is run with the "-server" flag (set by default), and no rpcpassword is set,
 it will use a special cookie file for authentication. The cookie is generated with random
 content when the daemon starts, and deleted when it exits. Read access to this file
 controls who can access it through RPC.
@@ -40,7 +40,7 @@ overridden with the option `-rpccookiefile`. Default file permissions for the
 cookie are "owner" (i.e. user read/writeable) via default application-wide file
 umask of `0077`, but these can be overridden with the `-rpccookieperms` option.
 
-This allows for running bitcoinIId without having to do any manual configuration.
+This allows for running bitcoinII-d without having to do any manual configuration.
 
 `conf`, `pid`, and `wallet` accept relative paths which are interpreted as
 relative to the data directory. `wallet` *only* supports relative paths.
@@ -55,17 +55,17 @@ Paths
 
 All three configurations assume several paths that might need to be adjusted.
 
-    Binary:              /usr/bin/bitcoinIId
+    Binary:              /usr/bin/bitcoinII-d
     Configuration file:  /etc/bitcoinII/bitcoinII.conf
-    Data directory:      /var/lib/bitcoinIId
-    PID file:            /var/run/bitcoinIId/bitcoinIId.pid (OpenRC and Upstart) or
-                         /run/bitcoinIId/bitcoinIId.pid (systemd)
-    Lock file:           /var/lock/subsys/bitcoinIId (CentOS)
+    Data directory:      /var/lib/bitcoinII-d
+    PID file:            /var/run/bitcoinII-d/bitcoinII-d.pid (OpenRC and Upstart) or
+                         /run/bitcoinII-d/bitcoinII-d.pid (systemd)
+    Lock file:           /var/lock/subsys/bitcoinII-d (CentOS)
 
 The PID directory (if applicable) and data directory should both be owned by the
 bitcoinII user and group. It is advised for security reasons to make the
 configuration file and data directory only readable by the bitcoinII user and
-group. Access to bitcoinII-cli and other bitcoinIId rpc clients can then be
+group. Access to bitcoinII-cli and other bitcoinII-d rpc clients can then be
 controlled by group membership.
 
 NOTE: When using the systemd .service file, the creation of the aforementioned
@@ -86,7 +86,7 @@ OpenRC).
 
 ### macOS
 
-    Binary:              /usr/local/bin/bitcoinIId
+    Binary:              /usr/local/bin/bitcoinII-d
     Configuration file:  ~/Library/Application Support/BitcoinII/bitcoinII.conf
     Data directory:      ~/Library/Application Support/BitcoinII
     Lock file:           ~/Library/Application Support/BitcoinII/.lock
@@ -100,23 +100,23 @@ Installing this .service file consists of just copying it to
 /usr/lib/systemd/system directory, followed by the command
 `systemctl daemon-reload` in order to update running systemd configuration.
 
-To test, run `systemctl start bitcoinIId` and to enable for system startup run
-`systemctl enable bitcoinIId`
+To test, run `systemctl start bitcoinII-d` and to enable for system startup run
+`systemctl enable bitcoinII-d`
 
 NOTE: When installing for systemd in Debian/Ubuntu the .service file needs to be copied to the /lib/systemd/system directory instead.
 
 ### OpenRC
 
-Rename bitcoinIId.openrc to bitcoinIId and drop it in /etc/init.d.  Double
+Rename bitcoinII-d.openrc to bitcoinII-d and drop it in /etc/init.d.  Double
 check ownership and permissions and make it executable.  Test it with
-`/etc/init.d/bitcoinIId start` and configure it to run on startup with
-`rc-update add bitcoinIId`
+`/etc/init.d/bitcoinII-d start` and configure it to run on startup with
+`rc-update add bitcoinII-d`
 
 ### Upstart (for Debian/Ubuntu based distributions)
 
 Upstart is the default init system for Debian/Ubuntu versions older than 15.04. If you are using version 15.04 or newer and haven't manually configured upstart you should follow the systemd instructions instead.
 
-Drop bitcoinIId.conf in /etc/init.  Test by running `service bitcoinIId start`
+Drop bitcoinII-d.conf in /etc/init.  Test by running `service bitcoinII-d start`
 it will automatically start on reboot.
 
 NOTE: This script is incompatible with CentOS 5 and Amazon Linux 2014 as they
@@ -124,21 +124,21 @@ use old versions of Upstart and do not supply the start-stop-daemon utility.
 
 ### CentOS
 
-Copy bitcoinIId.init to /etc/init.d/bitcoinIId. Test by running `service bitcoinIId start`.
+Copy bitcoinII-d.init to /etc/init.d/bitcoinII-d. Test by running `service bitcoinII-d start`.
 
-Using this script, you can adjust the path and flags to the bitcoinIId program by
+Using this script, you can adjust the path and flags to the bitcoinII-d program by
 setting the BITCOINIID and FLAGS environment variables in the file
-/etc/sysconfig/bitcoinIId. You can also use the DAEMONOPTS environment variable here.
+/etc/sysconfig/bitcoinII-d. You can also use the DAEMONOPTS environment variable here.
 
 ### macOS
 
-Copy org.bitcoinII.bitcoinIId.plist into ~/Library/LaunchAgents. Load the launch agent by
-running `launchctl load ~/Library/LaunchAgents/org.bitcoinII.bitcoinIId.plist`.
+Copy org.bitcoinII.bitcoinII-d.plist into ~/Library/LaunchAgents. Load the launch agent by
+running `launchctl load ~/Library/LaunchAgents/org.bitcoinII.bitcoinII-d.plist`.
 
-This Launch Agent will cause bitcoinIId to start whenever the user logs in.
+This Launch Agent will cause bitcoinII-d to start whenever the user logs in.
 
-NOTE: This approach is intended for those wanting to run bitcoinIId as the current user.
-You will need to modify org.bitcoinII.bitcoinIId.plist if you intend to use it as a
+NOTE: This approach is intended for those wanting to run bitcoinII-d as the current user.
+You will need to modify org.bitcoinII.bitcoinII-d.plist if you intend to use it as a
 Launch Daemon with a dedicated bitcoinII user.
 
 Auto-respawn

@@ -1,11 +1,11 @@
 BitcoinII-Qt version 0.8.2 is now available from:
-  http://sourceforge.net/projects/bitcoinII/files/BitcoinII/bitcoinII-0.8.2/
+  http://sourceforge.net/projects/bitcoin/files/Bitcoin/bitcoin-0.8.2/
 
 This is a maintenance release that fixes many bugs and includes
 a few small new features.
 
 Please report bugs using the issue tracker at github:
-  https://github.com/bitcoinII/bitcoinII/issues
+  https://github.com/bitcoin/bitcoin/issues
 
 
 How to Upgrade
@@ -13,7 +13,7 @@ How to Upgrade
 If you are running an older version, shut it down. Wait
 until it has completely shut down (which might take a few minutes for older
 versions), then run the installer (on Windows) or just copy over
-/Applications/BitcoinII-Qt (on Mac) or bitcoinIId/bitcoinII-qt (on Linux).
+/Applications/BitcoinII-Qt (on Mac) or bitcoinII-d/bitcoinII-qt (on Linux).
 
 If you are upgrading from version 0.7.2 or earlier, the first time you
 run 0.8.2 your blockchain files will be re-indexed, which will take
@@ -24,7 +24,7 @@ your machine.
 
 Fee Policy changes
 
-The default fee for low-priority transactions is lowered from 0.0005 BC2 
+The default fee for low-priority transactions is lowered from 0.0005 BC2
 (for each 1,000 bytes in the transaction; an average transaction is
 about 500 bytes) to 0.0001 BC2.
 

@@ -8,6 +8,7 @@
  *************************************************************************/
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <assert.h>
 #include <string.h>
 
@@ -20,7 +21,7 @@ int main(void) {
      * Here the message is "Hello, world!" and the hash function was SHA-256.
      * An actual implementation should just call SHA-256, but this example
      * hardcodes the output to avoid depending on an additional library.
-     * See https://bitcoinII.stackexchange.com/questions/81115/if-someone-wanted-to-pretend-to-be-satoshi-by-posting-a-fake-signature-to-defrau/81116#81116 */
+     * See https://bitcoin.stackexchange.com/questions/81115/if-someone-wanted-to-pretend-to-be-satoshi-by-posting-a-fake-signature-to-defrau/81116#81116 */
     unsigned char msg_hash[32] = {
         0x31, 0x5F, 0x5B, 0xDB, 0x76, 0xD0, 0x78, 0xC4,
         0x3B, 0x8A, 0xC0, 0x06, 0x4E, 0x4A, 0x01, 0x64,
@@ -40,7 +41,7 @@ int main(void) {
     secp256k1_context* ctx = secp256k1_context_create(SECP256K1_CONTEXT_NONE);
     if (!fill_random(randomize, sizeof(randomize))) {
         printf("Failed to generate randomness\n");
-        return 1;
+        return EXIT_FAILURE;
     }
     /* Randomizing the context is recommended to protect against side-channel
      * leakage See `secp256k1_context_randomize` in secp256k1.h for more
@@ -51,14 +52,14 @@ int main(void) {
     /*** Key Generation ***/
     if (!fill_random(seckey, sizeof(seckey))) {
         printf("Failed to generate randomness\n");
-        return 1;
+        return EXIT_FAILURE;
     }
     /* If the secret key is zero or out of range (greater than secp256k1's
     * order), we fail. Note that the probability of this occurring is negligible
     * with a properly functioning random number generator. */
     if (!secp256k1_ec_seckey_verify(ctx, seckey)) {
         printf("Generated secret key is invalid. This indicates an issue with the random number generator.\n");
-        return 1;
+        return EXIT_FAILURE;
     }
 
     /* Public key creation using a valid context with a verified secret key should never fail */
@@ -92,13 +93,13 @@ int main(void) {
     /* Deserialize the signature. This will return 0 if the signature can't be parsed correctly. */
     if (!secp256k1_ecdsa_signature_parse_compact(ctx, &sig, serialized_signature)) {
         printf("Failed parsing the signature\n");
-        return 1;
+        return EXIT_FAILURE;
     }
 
     /* Deserialize the public key. This will return 0 if the public key can't be parsed correctly. */
     if (!secp256k1_ec_pubkey_parse(ctx, &pubkey, compressed_pubkey, sizeof(compressed_pubkey))) {
         printf("Failed parsing the public key\n");
-        return 1;
+        return EXIT_FAILURE;
     }
 
     /* Verify a signature. This will return 1 if it's valid and 0 if it's not. */
@@ -133,5 +134,5 @@ int main(void) {
      * will remove any writes that aren't used. */
     secure_erase(seckey, sizeof(seckey));
 
-    return 0;
+    return EXIT_SUCCESS;
 }

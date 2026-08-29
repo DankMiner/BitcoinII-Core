@@ -1,4 +1,4 @@
-# Copyright (c) 2023-present The BitcoinII Core developers
+# Copyright (c) 2023-present The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://opensource.org/license/mit/.
 
@@ -19,54 +19,12 @@ include(../cmake/crc32c.cmake)
 include(../cmake/leveldb.cmake)
 include(../cmake/minisketch.cmake)
 add_subdirectory(univalue)
-#=============================
-# secp256k1 subtree
-#=============================
-message("")
-message("Configuring secp256k1 subtree...")
-set(SECP256K1_DISABLE_SHARED ON CACHE BOOL "" FORCE)
-set(SECP256K1_ENABLE_MODULE_ECDH OFF CACHE BOOL "" FORCE)
-set(SECP256K1_ENABLE_MODULE_RECOVERY ON CACHE BOOL "" FORCE)
-set(SECP256K1_ENABLE_MODULE_MUSIG OFF CACHE BOOL "" FORCE)
-set(SECP256K1_BUILD_BENCHMARK OFF CACHE BOOL "" FORCE)
-set(SECP256K1_BUILD_TESTS ${BUILD_TESTS} CACHE BOOL "" FORCE)
-set(SECP256K1_BUILD_EXHAUSTIVE_TESTS ${BUILD_TESTS} CACHE BOOL "" FORCE)
-if(NOT BUILD_TESTS)
-  # Always skip the ctime tests, if we are building no other tests.
-  # Otherwise, they are built if Valgrind is available. See SECP256K1_VALGRIND.
-  set(SECP256K1_BUILD_CTIME_TESTS ${BUILD_TESTS} CACHE BOOL "" FORCE)
+if (ENABLE_IPC AND NOT WITH_EXTERNAL_LIBMULTIPROCESS)
+  include(../cmake/libmultiprocess.cmake)
+  add_libmultiprocess(ipc/libmultiprocess)
 endif()
-set(SECP256K1_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-include(GetTargetInterface)
-# -fsanitize and related flags apply to both C++ and C,
-# so we can pass them down to libsecp256k1 as CFLAGS and LDFLAGS.
-get_target_interface(SECP256K1_APPEND_CFLAGS "" sanitize_interface COMPILE_OPTIONS)
-string(STRIP "${SECP256K1_APPEND_CFLAGS} ${APPEND_CPPFLAGS}" SECP256K1_APPEND_CFLAGS)
-string(STRIP "${SECP256K1_APPEND_CFLAGS} ${APPEND_CFLAGS}" SECP256K1_APPEND_CFLAGS)
-set(SECP256K1_APPEND_CFLAGS ${SECP256K1_APPEND_CFLAGS} CACHE STRING "" FORCE)
-get_target_interface(SECP256K1_APPEND_LDFLAGS "" sanitize_interface LINK_OPTIONS)
-string(STRIP "${SECP256K1_APPEND_LDFLAGS} ${APPEND_LDFLAGS}" SECP256K1_APPEND_LDFLAGS)
-set(SECP256K1_APPEND_LDFLAGS ${SECP256K1_APPEND_LDFLAGS} CACHE STRING "" FORCE)
-# We want to build libsecp256k1 with the most tested RelWithDebInfo configuration.
-enable_language(C)
-foreach(config IN LISTS CMAKE_BUILD_TYPE CMAKE_CONFIGURATION_TYPES)
-  if(config STREQUAL "")
-    continue()
-  endif()
-  string(TOUPPER "${config}" config)
-  set(CMAKE_C_FLAGS_${config} "${CMAKE_C_FLAGS_RELWITHDEBINFO}")
-endforeach()
-# If the CFLAGS environment variable is defined during building depends
-# and configuring this build system, its content might be duplicated.
-if(DEFINED ENV{CFLAGS})
-  deduplicate_flags(CMAKE_C_FLAGS)
-endif()
-set(CMAKE_EXPORT_COMPILE_COMMANDS OFF)
-add_subdirectory(secp256k1)
-set_target_properties(secp256k1 PROPERTIES
-  EXCLUDE_FROM_ALL TRUE
-)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+include(../cmake/secp256k1.cmake)
+add_secp256k1(secp256k1)
 
 # Set top-level target output locations.
 if(NOT CMAKE_RUNTIME_OUTPUT_DIRECTORY)
@@ -85,7 +43,7 @@ add_custom_target(generate_build_info
   COMMENT "Generating bitcoinII-build-info.h"
   VERBATIM
 )
-add_library(bitcoinII_clientversion STATIC EXCLUDE_FROM_ALL
+add_library(bitcoinII_clientversion STATIC
   clientversion.cpp
 )
 target_link_libraries(bitcoinII_clientversion
@@ -96,7 +54,7 @@ add_dependencies(bitcoinII_clientversion generate_build_info)
 
 add_subdirectory(crypto)
 add_subdirectory(util)
-if(WITH_MULTIPROCESS)
+if(ENABLE_IPC)
   add_subdirectory(ipc)
 endif()
 
@@ -148,8 +106,7 @@ add_library(bitcoinII_common STATIC EXCLUDE_FROM_ALL
   common/system.cpp
   common/url.cpp
   compressor.cpp
-  core_read.cpp
-  core_write.cpp
+  core_io.cpp
   deploymentinfo.cpp
   external_signer.cpp
   init/common.cpp
@@ -157,6 +114,7 @@ add_library(bitcoinII_common STATIC EXCLUDE_FROM_ALL
   key.cpp
   key_io.cpp
   merkleblock.cpp
+  musig.cpp
   net_permissions.cpp
   net_types.cpp
   netaddress.cpp
@@ -202,6 +160,7 @@ if(ENABLE_WALLET)
       wallet/wallettool.cpp
     )
     add_windows_resources(bitcoinII-wallet bitcoinII-wallet-res.rc)
+    add_windows_application_manifest(bitcoinII-wallet)
     target_link_libraries(bitcoinII-wallet
       core_interface
       bitcoinII_wallet
@@ -214,7 +173,7 @@ if(ENABLE_WALLET)
 endif()
 
 
-# P2P and RPC server functionality used by `bitcoinIId` and `bitcoinII-qt` executables.
+# P2P and RPC server functionality used by `bitcoinII-d` and `bitcoinII-qt` executables.
 add_library(bitcoinII_node STATIC EXCLUDE_FROM_ALL
   addrdb.cpp
   addrman.cpp
@@ -234,6 +193,7 @@ add_library(bitcoinII_node STATIC EXCLUDE_FROM_ALL
   index/blockfilterindex.cpp
   index/coinstatsindex.cpp
   index/txindex.cpp
+  index/txospenderindex.cpp
   init.cpp
   kernel/chain.cpp
   kernel/checks.cpp
@@ -272,17 +232,19 @@ add_library(bitcoinII_node STATIC EXCLUDE_FROM_ALL
   node/timeoffsets.cpp
   node/transaction.cpp
   node/txdownloadman_impl.cpp
+  node/txorphanage.cpp
   node/txreconciliation.cpp
   node/utxo_snapshot.cpp
   node/warnings.cpp
   noui.cpp
   policy/ephemeral_policy.cpp
-  policy/fees.cpp
-  policy/fees_args.cpp
+  policy/fees/block_policy_estimator.cpp
+  policy/fees/block_policy_estimator_args.cpp
   policy/packages.cpp
   policy/rbf.cpp
   policy/settings.cpp
   policy/truc_policy.cpp
+  private_broadcast.cpp
   rest.cpp
   rpc/blockchain.cpp
   rpc/external_signer.cpp
@@ -301,8 +263,8 @@ add_library(bitcoinII_node STATIC EXCLUDE_FROM_ALL
   signet.cpp
   torcontrol.cpp
   txdb.cpp
+  txgraph.cpp
   txmempool.cpp
-  txorphanage.cpp
   txrequest.cpp
   validation.cpp
   validationinterface.cpp
@@ -325,25 +287,41 @@ target_link_libraries(bitcoinII_node
     $<TARGET_NAME_IF_EXISTS:libevent::pthreads>
     $<TARGET_NAME_IF_EXISTS:USDT::headers>
 )
-
-
-# BitcoinII Core bitcoinIId.
-if(BUILD_DAEMON)
-  add_executable(bitcoinIId
-    bitcoinIId.cpp
-    init/bitcoinIId.cpp
+if(WITH_EMBEDDED_ASMAP)
+  target_compile_definitions(bitcoinII_node PRIVATE ENABLE_EMBEDDED_ASMAP=1)
+  include(TargetDataSources)
+  target_raw_data_sources(bitcoinII_node NAMESPACE node::data
+    node/data/ip_asn.dat
   )
-  add_windows_resources(bitcoinIId bitcoinIId-res.rc)
-  target_link_libraries(bitcoinIId
+endif()
+
+# BitcoinII wrapper executable that can call other executables.
+if(BUILD_BITCOINII_BIN)
+  add_executable(bitcoinII bitcoinII.cpp)
+  add_windows_resources(bitcoinII bitcoinII-res.rc)
+  add_windows_application_manifest(bitcoinII)
+  target_link_libraries(bitcoinII core_interface bitcoinII_common bitcoinII_util)
+  install_binary_component(bitcoinII HAS_MANPAGE)
+endif()
+
+# BitcoinII Core bitcoinII-d.
+if(BUILD_DAEMON)
+  add_executable(bitcoinII-d
+    bitcoinII-d.cpp
+    init/bitcoinII-d.cpp
+  )
+  add_windows_resources(bitcoinII-d bitcoinII-d-res.rc)
+  add_windows_application_manifest(bitcoinII-d)
+  target_link_libraries(bitcoinII-d
     core_interface
     bitcoinII_node
     $<TARGET_NAME_IF_EXISTS:bitcoinII_wallet>
   )
-  install_binary_component(bitcoinIId HAS_MANPAGE)
+  install_binary_component(bitcoinII-d HAS_MANPAGE)
 endif()
-if(WITH_MULTIPROCESS AND BUILD_DAEMON)
+if(ENABLE_IPC AND BUILD_DAEMON)
   add_executable(bitcoinII-node
-    bitcoinIId.cpp
+    bitcoinII-d.cpp
     init/bitcoinII-node.cpp
   )
   target_link_libraries(bitcoinII-node
@@ -352,23 +330,7 @@ if(WITH_MULTIPROCESS AND BUILD_DAEMON)
     bitcoinII_ipc
     $<TARGET_NAME_IF_EXISTS:bitcoinII_wallet>
   )
-  install_binary_component(bitcoinII-node)
-endif()
-
-if(WITH_MULTIPROCESS AND BUILD_TESTS)
-    # bitcoinII_ipc_test library target is defined here in src/CMakeLists.txt
-    # instead of src/test/CMakeLists.txt so capnp files in src/test/ are able to
-    # reference capnp files in src/ipc/capnp/ by relative path. The Cap'n Proto
-    # compiler only allows importing by relative path when the importing and
-    # imported files are underneath the same compilation source prefix, so the
-    # source prefix must be src/, not src/test/
-    add_library(bitcoinII_ipc_test STATIC EXCLUDE_FROM_ALL
-      test/ipc_test.cpp
-    )
-    target_capnp_sources(bitcoinII_ipc_test ${PROJECT_SOURCE_DIR}
-      test/ipc_test.capnp
-    )
-    add_dependencies(bitcoinII_ipc_test bitcoinII_ipc_headers)
+  install_binary_component(bitcoinII-node INTERNAL)
 endif()
 
 
@@ -387,6 +349,7 @@ target_link_libraries(bitcoinII_cli
 if(BUILD_CLI)
   add_executable(bitcoinII-cli bitcoinII-cli.cpp)
   add_windows_resources(bitcoinII-cli bitcoinII-cli-res.rc)
+  add_windows_application_manifest(bitcoinII-cli)
   target_link_libraries(bitcoinII-cli
     core_interface
     bitcoinII_cli
@@ -402,6 +365,7 @@ endif()
 if(BUILD_TX)
   add_executable(bitcoinII-tx bitcoinII-tx.cpp)
   add_windows_resources(bitcoinII-tx bitcoinII-tx-res.rc)
+  add_windows_application_manifest(bitcoinII-tx)
   target_link_libraries(bitcoinII-tx
     core_interface
     bitcoinII_common
@@ -415,6 +379,7 @@ endif()
 if(BUILD_UTIL)
   add_executable(bitcoinII-util bitcoinII-util.cpp)
   add_windows_resources(bitcoinII-util bitcoinII-util-res.rc)
+  add_windows_application_manifest(bitcoinII-util)
   target_link_libraries(bitcoinII-util
     core_interface
     bitcoinII_common
@@ -431,26 +396,21 @@ endif()
 
 if(BUILD_KERNEL_LIB)
   add_subdirectory(kernel)
-endif()
-
-if(BUILD_UTIL_CHAINSTATE)
-  add_executable(bitcoinII-chainstate
-    bitcoinII-chainstate.cpp
-  )
-  # TODO: The `SKIP_BUILD_RPATH` property setting can be deleted
-  #       in the future after reordering Guix script commands to
-  #       perform binary checks after the installation step.
-  # Relevant discussions:
-  # - https://github.com/hebasto/bitcoinII/pull/236#issuecomment-2183120953
-  # - https://github.com/bitcoinII/bitcoinII/pull/30312#issuecomment-2191235833
-  set_target_properties(bitcoinII-chainstate PROPERTIES
-    SKIP_BUILD_RPATH OFF
-  )
-  target_link_libraries(bitcoinII-chainstate
-    PRIVATE
-      core_interface
-      bitcoinIIkernel
-  )
+  if (BUILD_KERNEL_TEST)
+    add_subdirectory(test/kernel)
+  endif()
+  if(BUILD_UTIL_CHAINSTATE)
+    add_executable(bitcoinII-chainstate
+      bitcoinII-chainstate.cpp
+    )
+    add_windows_application_manifest(bitcoinII-chainstate)
+    target_link_libraries(bitcoinII-chainstate
+      PRIVATE
+        core_interface
+        bitcoinIIkernel
+    )
+    install_binary_component(bitcoinII-chainstate INTERNAL)
+  endif()
 endif()
 
 
@@ -466,3 +426,50 @@ endif()
 if(BUILD_FUZZ_BINARY)
   add_subdirectory(test/fuzz)
 endif()
+
+# BitcoinII Rocks executable output filenames.
+#
+# Keep internal CMake target names unchanged so existing target
+# dependencies, generated expressions, tests, and install rules continue
+# to work. Only the actual executable filenames are changed.
+function(bitcoinII_set_executable_name target_name output_name)
+  if(TARGET "${target_name}")
+    set_target_properties(
+      "${target_name}"
+      PROPERTIES OUTPUT_NAME "${output_name}"
+    )
+  endif()
+endfunction()
+
+# Runtime and command-line executables.
+bitcoinII_set_executable_name(bitcoinII bitcoinII)
+bitcoinII_set_executable_name(bitcoinII-d bitcoinII-d)
+bitcoinII_set_executable_name(bitcoinII-node bitcoinII-node)
+bitcoinII_set_executable_name(bitcoinII-qt bitcoinII-qt)
+bitcoinII_set_executable_name(bitcoinII-gui bitcoinII-gui)
+bitcoinII_set_executable_name(bitcoinII-cli bitcoinII-cli)
+bitcoinII_set_executable_name(bitcoinII-tx bitcoinII-tx)
+bitcoinII_set_executable_name(bitcoinII-util bitcoinII-util)
+bitcoinII_set_executable_name(bitcoinII-wallet bitcoinII-wallet)
+bitcoinII_set_executable_name(
+  bitcoinII-chainstate
+  bitcoinII-chainstate
+)
+
+# BitcoinII-owned test and development executables.
+bitcoinII_set_executable_name(test_bitcoinII test_bitcoinII)
+bitcoinII_set_executable_name(
+  test_bitcoinII-qt
+  test_bitcoinII-qt
+)
+bitcoinII_set_executable_name(
+  bench_bitcoinII
+  bench_bitcoinII
+)
+bitcoinII_set_executable_name(fuzz bitcoinII-fuzz)
+bitcoinII_set_executable_name(
+  kernel-test
+  bitcoinII-kernel-test
+)
+
+unset(bitcoinII_set_executable_name)

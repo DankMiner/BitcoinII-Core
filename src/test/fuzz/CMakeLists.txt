@@ -1,4 +1,4 @@
-# Copyright (c) 2023-present The BitcoinII Core developers
+# Copyright (c) 2023-present The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://opensource.org/license/mit/.
 
@@ -19,6 +19,7 @@ add_executable(fuzz
   block.cpp
   block_header.cpp
   block_index.cpp
+  block_index_tree.cpp
   blockfilter.cpp
   bloom_filter.cpp
   buffered_file.cpp
@@ -41,6 +42,7 @@ add_executable(fuzz
   decode_tx.cpp
   descriptor_parse.cpp
   deserialize.cpp
+  difference_formatter.cpp
   eval_script.cpp
   feefrac.cpp
   fee_rate.cpp
@@ -59,6 +61,7 @@ add_executable(fuzz
   kitchen_sink.cpp
   load_external_block_file.cpp
   locale.cpp
+  merkle.cpp
   merkleblock.cpp
   message.cpp
   miniscript.cpp
@@ -117,6 +120,7 @@ add_executable(fuzz
   string.cpp
   strprintf.cpp
   system.cpp
+  threadpool.cpp
   timeoffsets.cpp
   torcontrol.cpp
   transaction.cpp
@@ -124,25 +128,26 @@ add_executable(fuzz
   tx_in.cpp
   tx_out.cpp
   tx_pool.cpp
+  txgraph.cpp
   txorphan.cpp
   txrequest.cpp
-  # Visual Studio 2022 version 17.12 introduced a bug
-  # that causes an internal compiler error.
-  # See: https://github.com/bitcoinII/bitcoinII/issues/31303
-  $<$<VERSION_LESS:${MSVC_VERSION},1942>:utxo_snapshot.cpp>
+  utxo_snapshot.cpp
   utxo_total_supply.cpp
   validation_load_mempool.cpp
   vecdeque.cpp
   versionbits.cpp
 )
+
+add_windows_application_manifest(fuzz)
+
 target_link_libraries(fuzz
   core_interface
+  fuzzer_interface
   test_fuzz
   bitcoinII_cli
   bitcoinII_common
   bitcoinII_util
   minisketch
-  leveldb
   univalue
   secp256k1
   Boost::headers

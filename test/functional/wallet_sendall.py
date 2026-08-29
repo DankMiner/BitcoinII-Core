@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
-# Copyright (c) 2022 The BitcoinII Core developers
+# Copyright (c) 2022-present The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test the sendall RPC command."""
 
 from decimal import Decimal, getcontext
 
+from test_framework.messages import SEQUENCE_FINAL
 from test_framework.test_framework import BitcoinIITestFramework
 from test_framework.util import (
     assert_equal,
     assert_greater_than,
+    assert_greater_than_or_equal,
     assert_raises_rpc_error,
 )
 
@@ -25,10 +27,6 @@ def cleanup(func):
     return wrapper
 
 class SendallTest(BitcoinIITestFramework):
-    # Setup and helpers
-    def add_options(self, parser):
-        self.add_wallet_options(parser)
-
     def skip_test_if_missing_module(self):
         self.skip_if_no_wallet()
 
@@ -287,7 +285,7 @@ class SendallTest(BitcoinIITestFramework):
     @cleanup
     def sendall_fails_on_low_fee(self):
         self.log.info("Test sendall fails if the transaction fee is lower than the minimum fee rate setting")
-        assert_raises_rpc_error(-8, "Fee rate (0.999 sat/vB) is lower than the minimum fee rate setting (1.000 sat/vB)",
+        assert_raises_rpc_error(-8, "Fee rate (0.999 sat2/vB) is lower than the minimum fee rate setting (1.000 sat2/vB)",
         self.wallet.sendall, recipients=[self.recipient], fee_rate=0.999)
 
     @cleanup
@@ -303,10 +301,7 @@ class SendallTest(BitcoinIITestFramework):
             "desc": utxo["desc"],
             "timestamp": 0,
         }]
-        if self.options.descriptors:
-            watchonly.importdescriptors(import_req)
-        else:
-            watchonly.importmulti(import_req)
+        watchonly.importdescriptors(import_req)
 
         sendall_tx_receipt = watchonly.sendall(recipients=[self.remainder_target], inputs=[utxo])
         psbt = sendall_tx_receipt["psbt"]
@@ -437,6 +432,28 @@ class SendallTest(BitcoinIITestFramework):
 
         assert_greater_than(higher_parent_feerate_amount, lower_parent_feerate_amount)
 
+    @cleanup
+    def sendall_anti_fee_sniping(self):
+        self.log.info("Testing sendall does anti-fee-sniping when locktime is not specified")
+        self.add_utxos([10,11])
+        tx_from_wallet = self.test_sendall_success(sendall_args = [self.remainder_target])
+
+        # the locktime should be within 100 blocks of the
+        # block height
+        assert_greater_than_or_equal(tx_from_wallet["decoded"]["locktime"], tx_from_wallet["blockheight"] - 100)
+
+        self.log.info("Testing sendall does not do anti-fee-sniping when locktime is specified")
+        self.add_utxos([10,11])
+        txid = self.wallet.sendall(recipients=[self.remainder_target], options={"locktime":0})["txid"]
+        assert_equal(self.wallet.gettransaction(txid=txid, verbose=True)["decoded"]["locktime"], 0)
+
+        self.log.info("Testing sendall does not do anti-fee-sniping when even one of the sequences is final")
+        self.add_utxos([10, 11])
+        utxos = self.wallet.listunspent()
+        utxos[0]["sequence"] = SEQUENCE_FINAL
+        txid = self.wallet.sendall(recipients=[self.remainder_target], inputs=utxos)["txid"]
+        assert_equal(self.wallet.gettransaction(txid=txid, verbose=True)["decoded"]["locktime"], 0)
+
     # This tests needs to be the last one otherwise @cleanup will fail with "Transaction too large" error
     def sendall_fails_with_transaction_too_large(self):
         self.log.info("Test that sendall fails if resulting transaction is too large")
@@ -517,6 +534,9 @@ class SendallTest(BitcoinIITestFramework):
 
         # Sendall only uses outputs with less than a given number of confirmation when using minconf
         self.sendall_with_maxconf()
+
+        # Sendall discourages fee-sniping when a locktime is not specified
+        self.sendall_anti_fee_sniping()
 
         # Sendall spends unconfirmed change
         self.sendall_spends_unconfirmed_change()

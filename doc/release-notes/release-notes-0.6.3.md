@@ -1,10 +1,10 @@
 BitcoinII version 0.6.3 is now available for download at:
-  http://sourceforge.net/projects/bitcoinII/files/BitcoinII/bitcoinII-0.6.3/
+  http://sourceforge.net/projects/bitcoin/files/Bitcoin/bitcoin-0.6.3/
 
 This is a bug-fix release, with no new features.
 
 Please report bugs using the issue tracker at github:
-  https://github.com/bitcoinII/bitcoinII/issues
+  https://github.com/bitcoin/bitcoin/issues
 
 CHANGE SUMMARY
 

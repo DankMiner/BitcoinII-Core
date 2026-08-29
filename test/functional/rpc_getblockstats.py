@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2017-2021 The BitcoinII Core developers
+# Copyright (c) 2017-present The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -8,10 +8,11 @@
 #
 
 from test_framework.blocktools import COINBASE_MATURITY
-from test_framework.test_framework import BitcoinIITestFramework
+from test_framework.test_framework import BitcoinIITestFramework, SkipTest
 from test_framework.util import (
     assert_equal,
     assert_raises_rpc_error,
+    wallet_importprivkey,
 )
 import json
 import os
@@ -35,7 +36,9 @@ class GetblockstatsTest(BitcoinIITestFramework):
     def set_test_params(self):
         self.num_nodes = 1
         self.setup_clean_chain = True
-        self.supports_cli = False
+
+    def skip_test_if_missing_module(self):
+        raise SkipTest("Bitcoin Core pregenerated getblockstats fixtures are not valid for BitcoinII")
 
     def get_stats(self):
         return [self.nodes[0].getblockstats(hash_or_height=self.start_height + i) for i in range(self.max_stat_pos+1)]
@@ -45,7 +48,7 @@ class GetblockstatsTest(BitcoinIITestFramework):
         self.nodes[0].setmocktime(mocktime)
         self.nodes[0].createwallet(wallet_name='test')
         privkey = self.nodes[0].get_deterministic_priv_key().key
-        self.nodes[0].importprivkey(privkey)
+        wallet_importprivkey(self.nodes[0], privkey, 0)
 
         self.generate(self.nodes[0], COINBASE_MATURITY + 1)
 
@@ -55,10 +58,10 @@ class GetblockstatsTest(BitcoinIITestFramework):
 
         self.nodes[0].sendtoaddress(address=address, amount=10, subtractfeefromamount=True)
         self.nodes[0].sendtoaddress(address=address, amount=10, subtractfeefromamount=False)
-        self.nodes[0].settxfee(amount=0.003)
-        self.nodes[0].sendtoaddress(address=address, amount=1, subtractfeefromamount=True)
+        self.fee_rate=300
+        self.nodes[0].sendtoaddress(address=address, amount=1, subtractfeefromamount=True, fee_rate=self.fee_rate)
         # Send to OP_RETURN output to test its exclusion from statistics
-        self.nodes[0].send(outputs={"data": "21"})
+        self.nodes[0].send(outputs={"data": "21"}, fee_rate=self.fee_rate)
         self.sync_all()
         self.generate(self.nodes[0], 1)
 
@@ -78,11 +81,11 @@ class GetblockstatsTest(BitcoinIITestFramework):
             'mocktime': int(mocktime),
             'stats': self.expected_stats,
         }
-        with open(filename, 'w', encoding="utf8") as f:
+        with open(filename, 'w') as f:
             json.dump(to_dump, f, sort_keys=True, indent=2)
 
     def load_test_data(self, filename):
-        with open(filename, 'r', encoding="utf8") as f:
+        with open(filename, 'r') as f:
             d = json.load(f)
             blocks = d['blocks']
             mocktime = d['mocktime']
@@ -169,7 +172,7 @@ class GetblockstatsTest(BitcoinIITestFramework):
 
         self.log.info('Test block height 0')
         genesis_stats = self.nodes[0].getblockstats(0)
-        assert_equal(genesis_stats["blockhash"], "0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206")
+        assert_equal(genesis_stats["blockhash"], "5ac3b379cfa0600d059b007cb2b6b1b293832f6e398af62ec4e009b369e532b6")
         assert_equal(genesis_stats["utxo_increase"], 1)
         assert_equal(genesis_stats["utxo_size_inc"], 117)
         assert_equal(genesis_stats["utxo_increase_actual"], 0)

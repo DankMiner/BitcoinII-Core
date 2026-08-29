@@ -1,16 +1,16 @@
 BitcoinII Core version *0.15.0.1* is now available from:
 
-  <https://bitcoin.org/bin/bitcoinII-core-0.15.0.1/>
+  <https://bitcoin.org/bin/bitcoin-core-0.15.0.1/>
 
 and
 
-  <https://bitcoincore.org/bin/bitcoinII-core-0.15.0.1/>
+  <https://bitcoincore.org/bin/bitcoin-core-0.15.0.1/>
 
 This is a minor bug fix for 0.15.0.
 
 Please report bugs using the issue tracker at GitHub:
 
-  <https://github.com/bitcoinII/bitcoinII/issues>
+  <https://github.com/bitcoin/bitcoin/issues>
 
 To receive security and update notifications, please subscribe to:
 
@@ -22,7 +22,7 @@ How to Upgrade
 If you are running an older version, shut it down. Wait until it has completely
 shut down (which might take a few minutes for older versions), then run the 
 installer (on Windows) or just copy over `/Applications/BitcoinII-Qt` (on Mac)
-or `bitcoinIId`/`bitcoinII-qt` (on Linux).
+or `bitcoinII-d`/`bitcoinII-qt` (on Linux).
 
 The first time you run version 0.15.0 or higher, your chainstate database will
 be converted to a new format, which will take anywhere from a few minutes to
@@ -84,4 +84,4 @@ Thanks to everyone who directly contributed to this release:
 - Jonas Schnelli
 - Wladimir J. van der Laan
 
-As well as everyone that helped translating on [Transifex](https://www.transifex.com/projects/p/bitcoinII/).
+As well as everyone that helped translating on [Transifex](https://www.transifex.com/projects/p/bitcoin/).

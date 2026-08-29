@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2021 The BitcoinII Core developers
+// Copyright (c) 2009-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -14,6 +14,7 @@
 #include <util/hash_type.h>
 #include <util/vector.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <iterator>
 #include <map>
@@ -21,7 +22,6 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
-#include <utility>
 #include <vector>
 
 typedef std::map<int, uint256> MapCheckpoints;
@@ -73,6 +73,15 @@ struct ChainTxData {
     double dTxRate;   //!< estimated number of transactions per second after that timestamp
 };
 
+//! Configuration for headers sync memory usage.
+struct HeadersSyncParams {
+    //! Distance in blocks between header commitments.
+    size_t commitment_period{0};
+    //! Minimum number of validated headers to accumulate in the redownload
+    //! buffer before feeding them into the permanent block index.
+    size_t redownload_buffer_size{0};
+};
+
 /**
  * CChainParams defines various tweakable parameters of a given instance of the
  * BitcoinII system.
@@ -118,6 +127,7 @@ public:
     const std::vector<unsigned char>& Base58Prefix(Base58Type type) const { return base58Prefixes[type]; }
     const std::string& Bech32HRP() const { return bech32_hrp; }
     const std::vector<uint8_t>& FixedSeeds() const { return vFixedSeeds; }
+    const HeadersSyncParams& HeadersSync() const { return m_headers_sync_params; }
     const CCheckpointData& Checkpoints() const { return checkpointData; }
 
     std::optional<AssumeutxoData> AssumeutxoForHeight(int height) const
@@ -184,6 +194,7 @@ protected:
     CCheckpointData checkpointData;
     std::vector<AssumeutxoData> m_assumeutxo_data;
     ChainTxData chainTxData;
+    HeadersSyncParams m_headers_sync_params;
 };
 
 std::optional<ChainType> GetNetworkForMagic(const MessageStartChars& pchMessageStart);

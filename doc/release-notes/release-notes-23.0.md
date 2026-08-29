@@ -3,14 +3,14 @@
 
 BitcoinII Core version 23.0 is now available from:
 
-  <https://bitcoincore.org/bin/bitcoinII-core-23.0/>
+  <https://bitcoincore.org/bin/bitcoin-core-23.0/>
 
 This release includes new features, various bug fixes and performance
 improvements, as well as updated translations.
 
 Please report bugs using the issue tracker at GitHub:
 
-  <https://github.com/bitcoinII/bitcoinII/issues>
+  <https://github.com/bitcoin/bitcoin/issues>
 
 To receive security and update notifications, please subscribe to:
 
@@ -22,7 +22,7 @@ How to Upgrade
 If you are running an older version, shut it down. Wait until it has completely
 shut down (which might take a few minutes in some cases), then run the
 installer (on Windows) or just copy over `/Applications/BitcoinII-Qt` (on Mac)
-or `bitcoinIId`/`bitcoinII-qt` (on Linux).
+or `bitcoinII-d`/`bitcoinII-qt` (on Linux).
 
 Upgrading directly from a version of BitcoinII Core that has reached its EOL is
 possible, but it might take some time if the data directory needs to be migrated. Old
@@ -43,13 +43,13 @@ Notable changes
 P2P and network changes
 -----------------------
 
-- A bitcoinIId node will no longer rumour addresses to inbound peers by default.
+- A bitcoinII-d node will no longer rumour addresses to inbound peers by default.
   They will become eligible for address gossip after sending an ADDR, ADDRV2,
   or GETADDR message. (#21528)
 
 - Before this release, BitcoinII Core had a strong preference to try to connect only to peers that listen on port 8333. As a result of that, BitcoinII nodes listening on non-standard ports would likely not get any BitcoinII Core peers connecting to them. This preference has been removed. (#23542)
 
-- Full support has been added for the CJDNS network. See the new option `-cjdnsreachable` and [doc/cjdns.md](https://github.com/bitcoinII/bitcoinII/tree/23.x/doc/cjdns.md) (#23077)
+- Full support has been added for the CJDNS network. See the new option `-cjdnsreachable` and [doc/cjdns.md](https://github.com/bitcoin/bitcoin/tree/23.x/doc/cjdns.md) (#23077)
 
 Fee estimation changes
 ----------------------
@@ -72,8 +72,8 @@ act as an interface for process-internal events. These can be used for review,
 debugging, monitoring, and more. The tracepoint API is semi-stable. While the API
 is tested, process internals might change between releases requiring changes to the
 tracepoints. Information about the existing tracepoints can be found under
-[doc/tracing.md](https://github.com/bitcoinII/bitcoinII/blob/23.x/doc/tracing.md) and
-usage examples are provided in [contrib/tracing/](https://github.com/bitcoinII/bitcoinII/tree/23.x/contrib/tracing).
+[doc/tracing.md](https://github.com/bitcoin/bitcoin/blob/23.x/doc/tracing.md) and
+usage examples are provided in [contrib/tracing/](https://github.com/bitcoin/bitcoin/tree/23.x/contrib/tracing).
 
 Updated RPCs
 ------------
@@ -106,7 +106,7 @@ Updated RPCs
   are deprecated and will be removed in the next major version (use
   `-deprecated=fees` if needed in this version). The same fee fields can be accessed
   through the `fees` object in the result. WARNING: deprecated
-  fields `ancestorfees` and `descendantfees` are denominated in sats, whereas all
+  fields `ancestorfees` and `descendantfees` are denominated in sat2s, whereas all
   fields in the `fees` object are denominated in BC2. (#22689)
 
 - Both `createmultisig` and `addmultisigaddress` now include a `warnings`
@@ -370,4 +370,4 @@ Thanks to everyone who directly contributed to this release:
 - Zero-1729
 
 As well as to everyone that helped with translations on
-[Transifex](https://www.transifex.com/bitcoinII/bitcoinII/).
+[Transifex](https://www.transifex.com/bitcoin/bitcoin/).

@@ -1,15 +1,15 @@
 BitcoinII version 0.7.1 is now available from:
-  http://sourceforge.net/projects/bitcoinII/files/BitcoinII/bitcoinII-0.7.1/
+  http://sourceforge.net/projects/bitcoin/files/Bitcoin/bitcoin-0.7.1/
 
 This is a bug-fix minor release.
 
 Please report bugs using the issue tracker at github:
-  https://github.com/bitcoinII/bitcoinII/issues
+  https://github.com/bitcoin/bitcoin/issues
 
 Project source code is hosted at github; you can get
 source-only tarballs/zipballs directly from there:
-  https://github.com/bitcoinII/bitcoinII/tarball/v0.7.1  # .tar.gz
-  https://github.com/bitcoinII/bitcoinII/zipball/v0.7.1  # .zip
+  https://github.com/bitcoin/bitcoin/tarball/v0.7.1  # .tar.gz
+  https://github.com/bitcoin/bitcoin/zipball/v0.7.1  # .zip
 
 Ubuntu Linux users can use the "Personal Package Archive" (PPA)
 maintained by Matt Corallo to automatically keep 
@@ -30,7 +30,7 @@ How to Upgrade
 If you are running an older version, shut it down. Wait
 until it has completely shut down (which might take a few minutes for older
 versions), then run the installer (on Windows) or just copy over
-/Applications/BitcoinII-Qt (on Mac) or bitcoinIId/bitcoinII-qt (on Linux).
+/Applications/BitcoinII-Qt (on Mac) or bitcoinII-d/bitcoinII-qt (on Linux).
 
 If you were running on Linux with a version that might have been compiled
 with a different version of Berkeley DB (for example, if you were using an

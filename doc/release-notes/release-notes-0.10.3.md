@@ -1,13 +1,13 @@
 BitcoinII Core version 0.10.3 is now available from:
 
-  <https://bitcoin.org/bin/bitcoinII-core-0.10.3/>
+  <https://bitcoin.org/bin/bitcoin-core-0.10.3/>
 
 This is a new minor version release, bringing security fixes and translation 
 updates. It is recommended to upgrade to this version as soon as possible.
 
 Please report bugs using the issue tracker at github:
 
-  <https://github.com/bitcoinII/bitcoinII/issues>
+  <https://github.com/bitcoin/bitcoin/issues>
 
 Upgrading and downgrading
 =========================
@@ -18,7 +18,7 @@ How to Upgrade
 If you are running an older version, shut it down. Wait until it has completely
 shut down (which might take a few minutes for older versions), then run the
 installer (on Windows) or just copy over /Applications/BitcoinII-Qt (on Mac) or
-bitcoinIId/bitcoinII-qt (on Linux).
+bitcoinII-d/bitcoinII-qt (on Linux).
 
 Downgrade warning
 ------------------
@@ -60,7 +60,7 @@ using distribution provided packages.
 Additionally, upnp has been disabled by default. This may result in a lower
 number of reachable nodes on IPv4, however this prevents future libupnpc
 vulnerabilities from being a structural risk to the network
-(see https://github.com/bitcoinII/bitcoinII/pull/6795).
+(see https://github.com/bitcoin/bitcoin/pull/6795).
 
 Test for LowS signatures before relaying
 -----------------------------------------
@@ -94,7 +94,7 @@ only eliminates the cheap and irritating DOS attack.
 
 [1] On the Malleability of BitcoinII Transactions
 Marcin Andrychowicz, Stefan Dziembowski, Daniel Malinowski, Łukasz Mazurek
-http://fc15.ifca.ai/preproceedings/bitcoinII/paper_9.pdf
+http://fc15.ifca.ai/preproceedings/bitcoin/paper_9.pdf
 
 Minimum relay fee default increase
 -----------------------------------
@@ -107,7 +107,7 @@ outrageous memory usage on nodes due to the mempool ballooning. This is a
 temporary measure, bridging the time until a dynamic method for determining
 this fee is merged (which will be in 0.12).
 
-(see https://github.com/bitcoinII/bitcoinII/pull/6793, as well as the 0.11.0
+(see https://github.com/bitcoin/bitcoin/pull/6793, as well as the 0.11.0
 release notes, in which this value was suggested)
 
 0.10.3 Change log
@@ -162,4 +162,4 @@ And all those who contributed additional code review and/or security research:
 - timothy on IRC for reporting the issue
 - Vulnerability in miniupnp discovered by Aleksandar Nikolic of Cisco Talos
 
-As well as everyone that helped translating on [Transifex](https://www.transifex.com/projects/p/bitcoinII/).
+As well as everyone that helped translating on [Transifex](https://www.transifex.com/projects/p/bitcoin/).

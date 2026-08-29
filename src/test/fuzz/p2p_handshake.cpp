@@ -1,4 +1,4 @@
-// Copyright (c) 2020-present The BitcoinII Core developers
+// Copyright (c) 2020-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -42,14 +42,14 @@ FUZZ_TARGET(p2p_handshake, .init = ::initialize)
     SeedRandomStateForTest(SeedRand::ZEROS);
     FuzzedDataProvider fuzzed_data_provider(buffer.data(), buffer.size());
 
-    ConnmanTestMsg& connman = static_cast<ConnmanTestMsg&>(*g_setup->m_node.connman);
+    auto& connman = static_cast<ConnmanTestMsg&>(*g_setup->m_node.connman);
     auto& chainman = static_cast<TestChainstateManager&>(*g_setup->m_node.chainman);
     SetMockTime(1610000000); // any time to successfully reset ibd
     chainman.ResetIbd();
 
     node::Warnings warnings{};
-    NetGroupManager netgroupman{{}};
-    AddrMan addrman{netgroupman, /*deterministic=*/true, 0};
+    auto netgroupman{NetGroupManager::NoAsmap()};
+    AddrMan addrman{netgroupman, /*deterministic=*/true, /*consistency_check_ratio=*/0};
     auto peerman = PeerManager::make(connman, addrman,
                                      /*banman=*/nullptr, chainman,
                                      *g_setup->m_node.mempool, warnings,
@@ -100,7 +100,7 @@ FUZZ_TARGET(p2p_handshake, .init = ::initialize)
                 more_work = connman.ProcessMessagesOnce(connection);
             } catch (const std::ios_base::failure&) {
             }
-            peerman->SendMessages(&connection);
+            peerman->SendMessages(connection);
         }
     }
 

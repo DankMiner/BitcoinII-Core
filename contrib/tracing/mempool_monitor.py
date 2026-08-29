@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2022 The BitcoinII Core developers
+# Copyright (c) 2022-present The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -17,9 +17,9 @@ from bcc import BPF, USDT
 PROGRAM = """
 # include <uapi/linux/ptrace.h>
 
-// The longest rejection reason is 118 chars and is generated in case of SCRIPT_ERR_EVAL_FALSE by
-// strprintf("mandatory-script-verify-flag-failed (%s)", ScriptErrorString(check.GetScriptError()))
-#define MAX_REJECT_REASON_LENGTH        118
+// The longest rejection reason is 114 chars and is generated in case of SCRIPT_ERR_EVAL_FALSE by
+// strprintf("block-script-verify-flag-failed (%s)", ScriptErrorString(check.GetScriptError()))
+#define MAX_REJECT_REASON_LENGTH        114
 // The longest string returned by RemovalReasonToString() is 'sizelimit'
 #define MAX_REMOVAL_REASON_LENGTH       9
 #define HASH_LENGTH                     32
@@ -66,7 +66,7 @@ BPF_PERF_OUTPUT(replaced_events);
 int trace_added(struct pt_regs *ctx) {
   struct added_event added = {};
   void *phash = NULL;
-  bpf_usdt_readarg(1, ctx, phash);
+  bpf_usdt_readarg(1, ctx, &phash);
   bpf_probe_read_user(&added.hash, sizeof(added.hash), phash);
   bpf_usdt_readarg(2, ctx, &added.vsize);
   bpf_usdt_readarg(3, ctx, &added.fee);
@@ -78,9 +78,9 @@ int trace_added(struct pt_regs *ctx) {
 int trace_removed(struct pt_regs *ctx) {
   struct removed_event removed = {};
   void *phash = NULL, *preason = NULL;
-  bpf_usdt_readarg(1, ctx, phash);
+  bpf_usdt_readarg(1, ctx, &phash);
   bpf_probe_read_user(&removed.hash, sizeof(removed.hash), phash);
-  bpf_usdt_readarg(1, ctx, preason);
+  bpf_usdt_readarg(2, ctx, &preason);
   bpf_probe_read_user_str(&removed.reason, sizeof(removed.reason), preason);
   bpf_usdt_readarg(3, ctx, &removed.vsize);
   bpf_usdt_readarg(4, ctx, &removed.fee);
@@ -93,9 +93,9 @@ int trace_removed(struct pt_regs *ctx) {
 int trace_rejected(struct pt_regs *ctx) {
   struct rejected_event rejected = {};
   void *phash = NULL, *preason = NULL;
-  bpf_usdt_readarg(1, ctx, phash);
+  bpf_usdt_readarg(1, ctx, &phash);
   bpf_probe_read_user(&rejected.hash, sizeof(rejected.hash), phash);
-  bpf_usdt_readarg(1, ctx, preason);
+  bpf_usdt_readarg(2, ctx, &preason);
   bpf_probe_read_user_str(&rejected.reason, sizeof(rejected.reason), preason);
   rejected_events.perf_submit(ctx, &rejected, sizeof(rejected));
   return 0;
@@ -104,12 +104,12 @@ int trace_rejected(struct pt_regs *ctx) {
 int trace_replaced(struct pt_regs *ctx) {
   struct replaced_event replaced = {};
   void *phash_replaced = NULL, *phash_replacement = NULL;
-  bpf_usdt_readarg(1, ctx, phash_replaced);
+  bpf_usdt_readarg(1, ctx, &phash_replaced);
   bpf_probe_read_user(&replaced.replaced_hash, sizeof(replaced.replaced_hash), phash_replaced);
   bpf_usdt_readarg(2, ctx, &replaced.replaced_vsize);
   bpf_usdt_readarg(3, ctx, &replaced.replaced_fee);
   bpf_usdt_readarg(4, ctx, &replaced.replaced_entry_time);
-  bpf_usdt_readarg(5, ctx, phash_replacement);
+  bpf_usdt_readarg(5, ctx, &phash_replacement);
   bpf_probe_read_user(&replaced.replacement_hash, sizeof(replaced.replacement_hash), phash_replacement);
   bpf_usdt_readarg(6, ctx, &replaced.replacement_vsize);
   bpf_usdt_readarg(7, ctx, &replaced.replacement_fee);
@@ -121,16 +121,16 @@ int trace_replaced(struct pt_regs *ctx) {
 
 
 def main(pid):
-    print(f"Hooking into bitcoinIId with pid {pid}")
-    bitcoinIId_with_usdts = USDT(pid=int(pid))
+    print(f"Hooking into bitcoinII-d with pid {pid}")
+    bitcoinII_d_with_usdts = USDT(pid=int(pid))
 
     # attaching the trace functions defined in the BPF program
     # to the tracepoints
-    bitcoinIId_with_usdts.enable_probe(probe="mempool:added", fn_name="trace_added")
-    bitcoinIId_with_usdts.enable_probe(probe="mempool:removed", fn_name="trace_removed")
-    bitcoinIId_with_usdts.enable_probe(probe="mempool:replaced", fn_name="trace_replaced")
-    bitcoinIId_with_usdts.enable_probe(probe="mempool:rejected", fn_name="trace_rejected")
-    bpf = BPF(text=PROGRAM, usdt_contexts=[bitcoinIId_with_usdts])
+    bitcoinII_d_with_usdts.enable_probe(probe="mempool:added", fn_name="trace_added")
+    bitcoinII_d_with_usdts.enable_probe(probe="mempool:removed", fn_name="trace_removed")
+    bitcoinII_d_with_usdts.enable_probe(probe="mempool:replaced", fn_name="trace_replaced")
+    bitcoinII_d_with_usdts.enable_probe(probe="mempool:rejected", fn_name="trace_rejected")
+    bpf = BPF(text=PROGRAM, usdt_contexts=[bitcoinII_d_with_usdts])
 
     events = []
 
@@ -332,15 +332,15 @@ class Dashboard:
         if type_ == "added":
             return (
                 f"{ts} added {bytes(data.hash)[::-1].hex()}"
-                f" with feerate {data.fee/data.vsize:.2f} sat/vB"
-                f" ({data.fee} sat, {data.vsize} vbytes)"
+                f" with feerate {data.fee/data.vsize:.2f} sat2/vB"
+                f" ({data.fee} sat2, {data.vsize} vbytes)"
             )
 
         if type_ == "removed":
             return (
                 f"{ts} removed {bytes(data.hash)[::-1].hex()}"
-                f" with feerate {data.fee/data.vsize:.2f} sat/vB"
-                f" ({data.fee} sat, {data.vsize} vbytes)"
+                f" with feerate {data.fee/data.vsize:.2f} sat2/vB"
+                f" ({data.fee} sat2, {data.vsize} vbytes)"
                 f" received {ts_dt.timestamp()-data.entry_time:.1f} seconds ago"
                 f": {data.reason.decode('UTF-8')}"
             )
@@ -354,12 +354,12 @@ class Dashboard:
         if type_ == "replaced":
             return (
                 f"{ts} replaced {bytes(data.replaced_hash)[::-1].hex()}"
-                f" with feerate {data.replaced_fee/data.replaced_vsize:.2f} sat/vB"
+                f" with feerate {data.replaced_fee/data.replaced_vsize:.2f} sat2/vB"
                 f" received {ts_dt.timestamp()-data.replaced_entry_time:.1f} seconds ago"
-                f" ({data.replaced_fee} sat, {data.replaced_vsize} vbytes)"
+                f" ({data.replaced_fee} sat2, {data.replaced_vsize} vbytes)"
                 f" with {bytes(data.replacement_hash)[::-1].hex()}"
-                f" with feerate {data.replacement_fee/data.replacement_vsize:.2f} sat/vB"
-                f" ({data.replacement_fee} sat, {data.replacement_vsize} vbytes)"
+                f" with feerate {data.replacement_fee/data.replacement_vsize:.2f} sat2/vB"
+                f" ({data.replacement_fee} sat2, {data.replacement_vsize} vbytes)"
             )
 
         raise NotImplementedError("Unsupported event type: {type_}")
@@ -372,7 +372,7 @@ class Dashboard:
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("USAGE: ", sys.argv[0], "<pid of bitcoinIId>")
+        print("USAGE: ", sys.argv[0], "<pid of bitcoinII-d>")
         exit(1)
 
     pid = sys.argv[1]

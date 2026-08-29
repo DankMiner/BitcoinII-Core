@@ -1,14 +1,17 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2022 The BitcoinII Core developers
+// Copyright (c) 2009-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #ifndef BITCOINII_CONSENSUS_PARAMS_H
 #define BITCOINII_CONSENSUS_PARAMS_H
 
+#include <script/verify_flags.h>
 #include <uint256.h>
 
+#include <array>
 #include <chrono>
+#include <cstdint>
 #include <limits>
 #include <map>
 #include <vector>
@@ -52,6 +55,14 @@ struct BIP9Deployment {
      *  boundary.
      */
     int min_activation_height{0};
+    /** Period of blocks to check signalling in (usually retarget period, ie params.DifficultyAdjustmentInterval()) */
+    uint32_t period{2016};
+    /**
+     * Minimum blocks including miner confirmation of the total of 2016 blocks in a retargeting period,
+     * which is also used for BIP9 deployments.
+     * Examples: 1916 for 95%, 1512 for testchains.
+     */
+    uint32_t threshold{1916};
 
     /** Constant for nTimeout very far in the future. */
     static constexpr int64_t NO_TIMEOUT = std::numeric_limits<int64_t>::max();
@@ -80,7 +91,7 @@ struct Params {
      * - buried in the chain, and
      * - fail if the default script verify flags are applied.
      */
-    std::map<uint256, uint32_t> script_flag_exceptions;
+    std::map<uint256, script_verify_flags> script_flag_exceptions;
     /** Block height and hash at which BIP34 becomes active */
     int BIP34Height;
     uint256 BIP34Hash;
@@ -94,17 +105,35 @@ struct Params {
      * Note that segwit v0 script rules are enforced on all blocks except the
      * BIP 16 exception blocks. */
     int SegwitHeight;
-    /** Don't warn about unknown BIP 9 activations below this height.
-     * This prevents us from warning about the CSV and segwit activations. */
-    int MinBIP9WarningHeight;
     /**
-     * Minimum blocks including miner confirmation of the total of 2016 blocks in a retargeting period,
-     * (nPowTargetTimespan / nPowTargetSpacing) which is also used for BIP9 deployments.
-     * Examples: 1916 for 95%, 1512 for testchains.
+     * Height at which BitcoinII transaction data restrictions become
+     * consensus rules. Disabled unless explicitly configured by chainparams.
      */
-    uint32_t nRuleChangeActivationThreshold;
-    uint32_t nMinerConfirmationWindow;
-    BIP9Deployment vDeployments[MAX_VERSION_BITS_DEPLOYMENTS];
+    int nDataRestrictionsHeight{std::numeric_limits<int>::max()};
+
+    /**
+     * Height at which ShockWave becomes the consensus difficulty
+     * adjustment algorithm. Disabled unless explicitly configured by chainparams.
+     */
+    int nShockWaveActivationHeight{std::numeric_limits<int>::max()};
+
+    /**
+     * Height at which transaction signature hashes are domain-separated from
+     * legacy BitcoinII. Disabled unless explicitly configured by chainparams.
+     * Historical blocks below this height always use the legacy sighash domain.
+     */
+    int nReplayProtectionHeight{std::numeric_limits<int>::max()};
+
+    /** Non-zero 32-bit domain identifier committed to post-fork signature hashes. */
+    uint32_t nReplayProtectionForkId{0};
+
+    [[nodiscard]] uint32_t SighashForkId(int height) const
+    {
+        return height >= nReplayProtectionHeight ? nReplayProtectionForkId : 0;
+    }
+
+    int MinBIP9WarningHeight;
+    std::array<BIP9Deployment,MAX_VERSION_BITS_DEPLOYMENTS> vDeployments;
     /** Proof of work parameters */
     uint256 powLimit;
     bool fPowAllowMinDifficultyBlocks;

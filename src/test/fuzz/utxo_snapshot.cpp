@@ -1,4 +1,4 @@
-// Copyright (c) 2021-present The BitcoinII Core developers
+// Copyright (c) 2021-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -7,6 +7,7 @@
 #include <coins.h>
 #include <consensus/consensus.h>
 #include <consensus/validation.h>
+#include <kernel/coinstats.h>
 #include <node/blockstorage.h>
 #include <node/utxo_snapshot.h>
 #include <primitives/block.h>
@@ -39,7 +40,31 @@ using node::SnapshotMetadata;
 namespace {
 
 const std::vector<std::shared_ptr<CBlock>>* g_chain;
-TestingSetup* g_setup;
+TestingSetup* g_setup{nullptr};
+
+/** Sanity check the assumeutxo values hardcoded in chainparams for the fuzz target. */
+void sanity_check_snapshot()
+{
+    Assert(g_chain && g_setup == nullptr);
+
+    // Create a temporary chainstate manager to connect the chain to.
+    const auto tmp_setup{MakeNoLogFileContext<TestingSetup>(ChainType::REGTEST, TestOpts{.setup_net = false})};
+    const auto& node{tmp_setup->m_node};
+    for (auto& block: *g_chain) {
+        ProcessBlock(node, block);
+    }
+
+    // Connect the chain to the tmp chainman and sanity check the chainparams snapshot values.
+    LOCK(cs_main);
+    auto& cs{node.chainman->ActiveChainstate()};
+    cs.ForceFlushStateToDisk(/*wipe_cache=*/false);
+    const auto stats{*Assert(kernel::ComputeUTXOStats(kernel::CoinStatsHashType::HASH_SERIALIZED, &cs.CoinsDB(), node.chainman->m_blockman))};
+    const auto cp_au_data{*Assert(node.chainman->GetParams().AssumeutxoForHeight(2 * COINBASE_MATURITY))};
+    Assert(stats.nHeight == cp_au_data.height);
+    Assert(stats.nTransactions + 1 == cp_au_data.m_chain_tx_count); // +1 for the genesis tx.
+    Assert(stats.hashBlock == cp_au_data.blockhash);
+    Assert(AssumeutxoHash{stats.hashSerialized} == cp_au_data.hash_serialized);
+}
 
 template <bool INVALID>
 void initialize_chain()
@@ -47,6 +72,11 @@ void initialize_chain()
     const auto params{CreateChainParams(ArgsManager{}, ChainType::REGTEST)};
     static const auto chain{CreateBlockChain(2 * COINBASE_MATURITY, *params)};
     g_chain = &chain;
+    SetMockTime(chain.back()->Time());
+
+    // Make sure we can generate a valid snapshot.
+    sanity_check_snapshot();
+
     static const auto setup{
         MakeNoLogFileContext<TestingSetup>(ChainType::REGTEST,
                                            TestOpts{
@@ -59,7 +89,7 @@ void initialize_chain()
         auto& chainman{*setup->m_node.chainman};
         for (const auto& block : chain) {
             BlockValidationState dummy;
-            bool processed{chainman.ProcessNewBlockHeaders({{block->GetBlockHeader()}}, true, dummy)};
+            bool processed{chainman.ProcessNewBlockHeaders({{*block}}, true, dummy)};
             Assert(processed);
             const auto* index{WITH_LOCK(::cs_main, return chainman.m_blockman.LookupBlockIndex(block->GetHash()))};
             Assert(index);
@@ -75,19 +105,19 @@ void utxo_snapshot_fuzz(FuzzBufferType buffer)
     FuzzedDataProvider fuzzed_data_provider(buffer.data(), buffer.size());
     SetMockTime(ConsumeTime(fuzzed_data_provider, /*min=*/1296688602)); // regtest genesis block timestamp
     auto& setup{*g_setup};
-    bool dirty_chainman{false}; // Re-use the global chainman, but reset it when it is dirty
+    bool dirty_chainman{false}; // Reuse the global chainman, but reset it when it is dirty
     auto& chainman{*setup.m_node.chainman};
 
     const auto snapshot_path = gArgs.GetDataDirNet() / "fuzzed_snapshot.dat";
 
-    Assert(!chainman.SnapshotBlockhash());
+    Assert(!chainman.ActiveChainstate().m_from_snapshot_blockhash);
 
     {
         AutoFile outfile{fsbridge::fopen(snapshot_path, "wb")};
         // Metadata
         if (fuzzed_data_provider.ConsumeBool()) {
             std::vector<uint8_t> metadata{ConsumeRandomLengthByteVector(fuzzed_data_provider)};
-            outfile << Span{metadata};
+            outfile << std::span{metadata};
         } else {
             auto msg_start = chainman.GetParams().MessageStart();
             int base_blockheight{fuzzed_data_provider.ConsumeIntegralInRange<int>(1, 2 * COINBASE_MATURITY)};
@@ -99,9 +129,9 @@ void utxo_snapshot_fuzz(FuzzBufferType buffer)
         // Coins
         if (fuzzed_data_provider.ConsumeBool()) {
             std::vector<uint8_t> file_data{ConsumeRandomLengthByteVector(fuzzed_data_provider)};
-            outfile << Span{file_data};
+            outfile << std::span{file_data};
         } else {
-            int height{0};
+            int height{1};
             for (const auto& block : *g_chain) {
                 auto coinbase{block->vtx.at(0)};
                 outfile << coinbase->GetHash();
@@ -121,6 +151,7 @@ void utxo_snapshot_fuzz(FuzzBufferType buffer)
             WriteCompactSize(outfile, 999); // index of coin
             outfile << Coin{coinbase->vout[0], /*nHeightIn=*/999, /*fCoinBaseIn=*/0};
         }
+        assert(outfile.fclose() == 0);
     }
 
     const auto ActivateFuzzedSnapshot{[&] {
@@ -140,7 +171,7 @@ void utxo_snapshot_fuzz(FuzzBufferType buffer)
         if constexpr (!INVALID) {
             for (const auto& block : *g_chain) {
                 BlockValidationState dummy;
-                bool processed{chainman.ProcessNewBlockHeaders({{block->GetBlockHeader()}}, true, dummy)};
+                bool processed{chainman.ProcessNewBlockHeaders({{*block}}, true, dummy)};
                 Assert(processed);
                 const auto* index{WITH_LOCK(::cs_main, return chainman.m_blockman.LookupBlockIndex(block->GetHash()))};
                 Assert(index);
@@ -152,15 +183,13 @@ void utxo_snapshot_fuzz(FuzzBufferType buffer)
     if (ActivateFuzzedSnapshot()) {
         LOCK(::cs_main);
         Assert(!chainman.ActiveChainstate().m_from_snapshot_blockhash->IsNull());
-        Assert(*chainman.ActiveChainstate().m_from_snapshot_blockhash ==
-               *chainman.SnapshotBlockhash());
         const auto& coinscache{chainman.ActiveChainstate().CoinsTip()};
         for (const auto& block : *g_chain) {
             Assert(coinscache.HaveCoin(COutPoint{block->vtx.at(0)->GetHash(), 0}));
             const auto* index{chainman.m_blockman.LookupBlockIndex(block->GetHash())};
             Assert(index);
             Assert(index->nTx == 0);
-            if (index->nHeight == chainman.GetSnapshotBaseHeight()) {
+            if (index->nHeight == chainman.ActiveChainstate().SnapshotBase()->nHeight) {
                 auto params{chainman.GetParams().AssumeutxoForHeight(index->nHeight)};
                 Assert(params.has_value());
                 Assert(params.value().m_chain_tx_count == index->m_chain_tx_count);
@@ -171,7 +200,6 @@ void utxo_snapshot_fuzz(FuzzBufferType buffer)
         Assert(g_chain->size() == coinscache.GetCacheSize());
         dirty_chainman = true;
     } else {
-        Assert(!chainman.SnapshotBlockhash());
         Assert(!chainman.ActiveChainstate().m_from_snapshot_blockhash);
     }
     // Snapshot should refuse to load a second time regardless of validity
@@ -197,6 +225,8 @@ void utxo_snapshot_fuzz(FuzzBufferType buffer)
 //
 // The target 'utxo_snapshot_invalid', which is fast and does not require any
 // expensive state to be reset.
+// BitcoinII does not currently maintain the regtest AssumeUTXO fixture
+// commitments required by these inherited Bitcoin Core fuzz targets.
 FUZZ_TARGET(utxo_snapshot /*valid*/, .init = initialize_chain<false>) { utxo_snapshot_fuzz<false>(buffer); }
 FUZZ_TARGET(utxo_snapshot_invalid, .init = initialize_chain<true>) { utxo_snapshot_fuzz<true>(buffer); }
 

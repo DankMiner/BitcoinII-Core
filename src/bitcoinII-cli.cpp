@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2022 The BitcoinII Core developers
+// Copyright (c) 2009-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -104,7 +104,7 @@ static void SetupCliArgs(ArgsManager& argsman)
     argsman.AddArg("-rpcuser=<user>", "Username for JSON-RPC connections", ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
     argsman.AddArg("-rpcwait", "Wait for RPC server to start", ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
     argsman.AddArg("-rpcwaittimeout=<n>", strprintf("Timeout in seconds to wait for the RPC server to start, or 0 for no timeout. (default: %d)", DEFAULT_WAIT_CLIENT_TIMEOUT), ArgsManager::ALLOW_ANY | ArgsManager::DISALLOW_NEGATION, OptionsCategory::OPTIONS);
-    argsman.AddArg("-rpcwallet=<walletname>", "Send RPC for non-default wallet on RPC server (needs to exactly match corresponding -wallet option passed to bitcoinIId). This changes the RPC endpoint used, e.g. http://127.0.0.1:8333/wallet/<walletname>", ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
+    argsman.AddArg("-rpcwallet=<walletname>", "Send RPC for non-default wallet on RPC server (needs to exactly match corresponding -wallet option passed to bitcoind). This changes the RPC endpoint used, e.g. http://127.0.0.1:8332/wallet/<walletname>", ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
     argsman.AddArg("-stdin", "Read extra arguments from standard input, one per line until EOF/Ctrl-D (recommended for sensitive information such as passphrases). When combined with -stdinrpcpass, the first line from standard input is used for the RPC password.", ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
     argsman.AddArg("-stdinrpcpass", "Read RPC password from standard input as a single line. When combined with -stdin, the first line from standard input is used for the RPC password. When combined with -stdinwalletpassphrase, -stdinrpcpass consumes the first line, and -stdinwalletpassphrase consumes the second.", ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
     argsman.AddArg("-stdinwalletpassphrase", "Read wallet passphrase from standard input as a single line. When combined with -stdin, the first line from standard input is used for the wallet passphrase.", ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
@@ -130,14 +130,10 @@ static void libevent_log_cb(int severity, const char *msg)
 // Exception thrown on connection error.  This error is used to determine
 // when to wait if -rpcwait is given.
 //
-class CConnectionFailed : public std::runtime_error
-{
-public:
-
+struct CConnectionFailed : std::runtime_error {
     explicit inline CConnectionFailed(const std::string& msg) :
         std::runtime_error(msg)
     {}
-
 };
 
 //
@@ -259,30 +255,25 @@ static void http_error_cb(enum evhttp_request_error err, void *ctx)
     reply->error = err;
 }
 
-/** Class that handles the conversion from a command-line to a JSON-RPC request,
+static int8_t NetworkStringToId(const std::string& str)
+{
+    for (size_t i = 0; i < NETWORKS.size(); ++i) {
+        if (str == NETWORKS[i]) return i;
+    }
+    return UNKNOWN_NETWORK;
+}
+
+/** Handle the conversion from a command-line to a JSON-RPC request,
  * as well as converting back to a JSON object that can be shown as result.
  */
-class BaseRequestHandler
-{
-public:
+struct BaseRequestHandler {
     virtual ~BaseRequestHandler() = default;
     virtual UniValue PrepareRequest(const std::string& method, const std::vector<std::string>& args) = 0;
     virtual UniValue ProcessReply(const UniValue &batch_in) = 0;
 };
 
 /** Process addrinfo requests */
-class AddrinfoRequestHandler : public BaseRequestHandler
-{
-private:
-    int8_t NetworkStringToId(const std::string& str) const
-    {
-        for (size_t i = 0; i < NETWORKS.size(); ++i) {
-            if (str == NETWORKS[i]) return i;
-        }
-        return UNKNOWN_NETWORK;
-    }
-
-public:
+struct AddrinfoRequestHandler : BaseRequestHandler {
     UniValue PrepareRequest(const std::string& method, const std::vector<std::string>& args) override
     {
         if (!args.empty()) {
@@ -297,7 +288,7 @@ public:
         if (!reply["error"].isNull()) return reply;
         const std::vector<UniValue>& nodes{reply["result"].getValues()};
         if (!nodes.empty() && nodes.at(0)["network"].isNull()) {
-            throw std::runtime_error("-addrinfo requires bitcoinIId server to be running v22.0 and up");
+            throw std::runtime_error("-addrinfo requires bitcoinII-d server to be running v22.0 and up");
         }
         // Count the number of peers known to our node, by network.
         std::array<uint64_t, NETWORKS.size()> counts{{}};
@@ -321,9 +312,7 @@ public:
 };
 
 /** Process getinfo requests */
-class GetinfoRequestHandler: public BaseRequestHandler
-{
-public:
+struct GetinfoRequestHandler : BaseRequestHandler {
     const int ID_NETWORKINFO = 0;
     const int ID_BLOCKCHAININFO = 1;
     const int ID_WALLETINFO = 2;
@@ -378,7 +367,6 @@ public:
             if (!batch[ID_WALLETINFO]["result"]["unlocked_until"].isNull()) {
                 result.pushKV("unlocked_until", batch[ID_WALLETINFO]["result"]["unlocked_until"]);
             }
-            result.pushKV("paytxfee", batch[ID_WALLETINFO]["result"]["paytxfee"]);
         }
         if (!batch[ID_BALANCES]["result"].isNull()) {
             result.pushKV("balance", batch[ID_BALANCES]["result"]["mine"]["trusted"]);
@@ -396,15 +384,8 @@ private:
     std::array<std::array<uint16_t, NETWORKS.size() + 1>, 3> m_counts{{{}}}; //!< Peer counts by (in/out/total, networks/total)
     uint8_t m_block_relay_peers_count{0};
     uint8_t m_manual_peers_count{0};
-    int8_t NetworkStringToId(const std::string& str) const
-    {
-        for (size_t i = 0; i < NETWORKS.size(); ++i) {
-            if (str == NETWORKS[i]) return i;
-        }
-        return UNKNOWN_NETWORK;
-    }
     uint8_t m_details_level{0}; //!< Optional user-supplied arg to set dashboard details level
-    bool DetailsRequested() const { return m_details_level > 0 && m_details_level < 5; }
+    bool DetailsRequested() const { return m_details_level; }
     bool IsAddressSelected() const { return m_details_level == 2 || m_details_level == 4; }
     bool IsVersionSelected() const { return m_details_level == 3 || m_details_level == 4; }
     bool m_outbound_only_selected{false};
@@ -470,6 +451,7 @@ private:
         if (conn_type == "block-relay-only") return "block";
         if (conn_type == "manual" || conn_type == "feeler") return conn_type;
         if (conn_type == "addr-fetch") return "addr";
+        if (conn_type == "private-broadcast") return "priv";
         return "";
     }
     std::string FormatServices(const UniValue& services)
@@ -478,6 +460,17 @@ private:
         for (size_t i = 0; i < services.size(); ++i) {
             const std::string s{services[i].get_str()};
             str += s == "NETWORK_LIMITED" ? 'l' : s == "P2P_V2" ? '2' : ToLower(s[0]);
+        }
+        return str;
+    }
+    static std::string ServicesList(const UniValue& services)
+    {
+        std::string str{services.size() ? services[0].get_str() : ""};
+        for (size_t i{1}; i < services.size(); ++i) {
+            str += ", " + services[i].get_str();
+        }
+        for (auto& c: str) {
+            c = (c == '_' ? ' ' : ToLower(c));
         }
         return str;
     }
@@ -490,7 +483,8 @@ public:
     {
         if (!args.empty()) {
             uint8_t n{0};
-            if (ParseUInt8(args.at(0), &n)) {
+            if (const auto res{ToIntegral<uint8_t>(args.at(0))}) {
+                n = *res;
                 m_details_level = std::min(n, NETINFO_MAX_LEVEL);
             } else {
                 throw std::runtime_error(strprintf("invalid -netinfo level argument: %s\nFor more information, run: bitcoinII-cli -netinfo help", args.at(0)));
@@ -519,7 +513,7 @@ public:
 
         const UniValue& networkinfo{batch[ID_NETWORKINFO]["result"]};
         if (networkinfo["version"].getInt<int>() < 209900) {
-            throw std::runtime_error("-netinfo requires bitcoinIId server to be running v0.21.0 and up");
+            throw std::runtime_error("-netinfo requires bitcoinII-d server to be running v0.21.0 and up");
         }
         const int64_t time_now{TicksSinceEpoch<std::chrono::seconds>(CliClock::now())};
 
@@ -572,7 +566,8 @@ public:
         }
 
         // Generate report header.
-        std::string result{strprintf("%s client %s%s - server %i%s\n\n", CLIENT_NAME, FormatFullVersion(), ChainToString(), networkinfo["protocolversion"].getInt<int>(), networkinfo["subversion"].get_str())};
+        const std::string services{DetailsRequested() ? strprintf(" - services %s", FormatServices(networkinfo["localservicesnames"])) : ""};
+        std::string result{strprintf("%s client %s%s - server %i%s%s\n\n", CLIENT_NAME, FormatFullVersion(), ChainToString(), networkinfo["protocolversion"].getInt<int>(), networkinfo["subversion"].get_str(), services)};
 
         // Report detailed peer connections list sorted by direction and minimum ping time.
         if (DetailsRequested() && !m_peers.empty()) {
@@ -653,7 +648,10 @@ public:
             }
         }
 
-        // Report local addresses, ports, and scores.
+        // Report local services, addresses, ports, and scores.
+        if (!DetailsRequested()) {
+            result += strprintf("\n\nLocal services: %s", ServicesList(networkinfo["localservicesnames"]));
+        }
         result += "\n\nLocal addresses";
         const std::vector<UniValue>& local_addrs{networkinfo["localaddresses"].getValues()};
         if (local_addrs.empty()) {
@@ -705,6 +703,7 @@ public:
         "           \"manual\" - peer we manually added using RPC addnode or the -addnode/-connect config options\n"
         "           \"feeler\" - short-lived connection for testing addresses\n"
         "           \"addr\"   - address fetch; short-lived connection for requesting addresses\n"
+        "           \"priv\"   - private broadcast; short-lived connection for broadcasting our transactions\n"
         "  net      Network the peer connected through (\"ipv4\", \"ipv6\", \"onion\", \"i2p\", \"cjdns\", or \"npr\" (not publicly routable))\n"
         "  serv     Services offered by the peer\n"
         "           \"n\" - NETWORK: peer can serve the full block chain\n"
@@ -733,7 +732,7 @@ public:
         "           peer selection (only displayed if the -asmap config option is set)\n"
         "  id       Peer index, in increasing order of peer connections since node startup\n"
         "  address  IP address and port of the peer\n"
-        "  version  Peer version and subversion concatenated, e.g. \"70016/Satoshi:21.0.0/\"\n\n"
+        "  version  Peer version and subversion concatenated, e.g. \"70016/Satooshi:21.0.0/\"\n\n"
         "* The peer counts table displays the number of peers for each reachable network as well as\n"
         "  the number of block relay peers and manual peers.\n\n"
         "* The local addresses table lists each local address broadcast by the node, the port, and the score.\n\n"
@@ -775,8 +774,7 @@ protected:
 };
 
 /** Process default single requests */
-class DefaultRequestHandler: public BaseRequestHandler {
-public:
+struct DefaultRequestHandler : BaseRequestHandler {
     UniValue PrepareRequest(const std::string& method, const std::vector<std::string>& args) override
     {
         UniValue params;
@@ -902,8 +900,7 @@ static UniValue CallRPC(BaseRequestHandler* rh, const std::string& strMethod, co
             throw CConnectionFailed("uri-encode failed");
         }
     }
-    int r = evhttp_make_request(evcon.get(), req.get(), EVHTTP_REQ_POST, endpoint.c_str());
-    req.release(); // ownership moved to evcon in above call
+    int r = evhttp_make_request(evcon.get(), req.release(), EVHTTP_REQ_POST, endpoint.c_str());
     if (r != 0) {
         throw CConnectionFailed("send http request failed");
     }
@@ -916,7 +913,7 @@ static UniValue CallRPC(BaseRequestHandler* rh, const std::string& strMethod, co
             responseErrorMessage = strprintf(" (error code %d - \"%s\")", response.error, http_errorstring(response.error));
         }
         throw CConnectionFailed(strprintf("Could not connect to the server %s:%d%s\n\n"
-                    "Make sure the bitcoinIId server is running and that you are connecting to the correct RPC port.\n"
+                    "Make sure the bitcoinII-d server is running and that you are connecting to the correct RPC port.\n"
                     "Use \"bitcoinII-cli -help\" for more info.",
                     host, port, responseErrorMessage));
     } else if (response.status == HTTP_UNAUTHORIZED) {
@@ -1078,7 +1075,7 @@ static void ParseGetInfoResult(UniValue& result)
     }
 #endif
 
-    if (gArgs.IsArgSet("-color")) {
+    {
         const std::string color{gArgs.GetArg("-color", DEFAULT_COLOR_SETTING)};
         if (color == "always") {
             should_colorize = true;
@@ -1132,7 +1129,7 @@ static void ParseGetInfoResult(UniValue& result)
         const std::string proxy = network["proxy"].getValStr();
         if (proxy.empty()) continue;
         // Add proxy to ordered_proxy if has not been processed
-        if (proxy_networks.find(proxy) == proxy_networks.end()) ordered_proxies.push_back(proxy);
+        if (!proxy_networks.contains(proxy)) ordered_proxies.push_back(proxy);
 
         proxy_networks[proxy].push_back(network["name"].getValStr());
     }
@@ -1154,7 +1151,6 @@ static void ParseGetInfoResult(UniValue& result)
         if (!result["unlocked_until"].isNull()) {
             result_string += strprintf("Unlocked until: %s\n", result["unlocked_until"].getValStr());
         }
-        result_string += strprintf("Transaction fee rate (-paytxfee) (%s/kvB): %s\n\n", CURRENCY_UNIT, result["paytxfee"].getValStr());
     }
     if (!result["balance"].isNull()) {
         result_string += strprintf("%sBalance:%s %s\n\n", CYAN, RESET, result["balance"].getValStr());
@@ -1239,7 +1235,7 @@ static int CommandLineRPC(int argc, char *argv[])
         if (gArgs.GetBoolArg("-stdinwalletpassphrase", false)) {
             NO_STDIN_ECHO();
             std::string walletPass;
-            if (args.size() < 1 || args[0].substr(0, 16) != "walletpassphrase") {
+            if (args.size() < 1 || !args[0].starts_with("walletpassphrase")) {
                 throw std::runtime_error("-stdinwalletpassphrase is only applicable for walletpassphrase(change)");
             }
             if (!StdinReady()) {
@@ -1267,7 +1263,7 @@ static int CommandLineRPC(int argc, char *argv[])
         gArgs.CheckMultipleCLIArgs();
         std::unique_ptr<BaseRequestHandler> rh;
         std::string method;
-        if (gArgs.IsArgSet("-getinfo")) {
+        if (gArgs.GetBoolArg("-getinfo", false)) {
             rh.reset(new GetinfoRequestHandler());
         } else if (gArgs.GetBoolArg("-netinfo", false)) {
             if (!args.empty() && (args.at(0) == "h" || args.at(0) == "help")) {
@@ -1331,10 +1327,6 @@ static int CommandLineRPC(int argc, char *argv[])
 
 MAIN_FUNCTION
 {
-#ifdef WIN32
-    common::WinCmdLineArgs winArgs;
-    std::tie(argc, argv) = winArgs.get();
-#endif
     SetupEnvironment();
     if (!SetupNetworking()) {
         tfm::format(std::cerr, "Error: Initializing networking failed\n");

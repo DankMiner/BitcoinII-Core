@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2022 The BitcoinII Core developers
+// Copyright (c) 2011-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -47,7 +47,7 @@ static const int TOOLTIP_WRAP_THRESHOLD = 80;
 #define SPINNER_FRAMES 36
 
 #define QAPP_ORG_NAME "BitcoinII"
-#define QAPP_ORG_DOMAIN "Bitcoin-II.org"
+#define QAPP_ORG_DOMAIN "bitcoinII.org"
 #define QAPP_APP_NAME_DEFAULT "BitcoinII-Qt"
 #define QAPP_APP_NAME_TESTNET "BitcoinII-Qt-testnet"
 #define QAPP_APP_NAME_TESTNET4 "BitcoinII-Qt-testnet4"

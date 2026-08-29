@@ -1,14 +1,14 @@
 BitcoinII version 0.5.3 is now available for download at:
-http://sourceforge.net/projects/bitcoinII/files/BitcoinII/bitcoinII-0.5.3/
+http://sourceforge.net/projects/bitcoin/files/Bitcoin/bitcoin-0.5.3/
 
 This is a bugfix-only release based on 0.5.1.
 It also includes a few protocol updates.
 
 Please report bugs using the issue tracker at github:
-https://github.com/bitcoinII/bitcoinII/issues
+https://github.com/bitcoin/bitcoin/issues
 
 Stable source code is hosted at Gitorious:
-http://gitorious.org/bitcoinII/bitcoinIId-stable/archive-tarball/v0.5.3#.tar.gz
+http://gitorious.org/bitcoin/bitcoind-stable/archive-tarball/v0.5.3#.tar.gz
 
 PROTOCOL UPDATES
 
@@ -33,7 +33,7 @@ Revert to "global progress indication", as starting from zero every time was con
 Check that keys stored in the wallet are valid at startup, and if not, report corruption.
 Enable accessible widgets on Windows, so that people with screen readers such as NVDA can make sense of it.
 Various build fixes.
-If no password is specified to bitcoinIId, recommend a secure password.
+If no password is specified to bitcoinII-d, recommend a secure password.
 Automatically focus and scroll to new "Send coins" entries in BitcoinII-Qt.
 Show a message box for --help on Windows, for BitcoinII-Qt.
 Add missing "About Qt" menu option to show built-in Qt About dialog.

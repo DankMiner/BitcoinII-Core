@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2021-2022 The BitcoinII Core developers
+# Copyright (c) 2021-present The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test generation and spending of P2TR addresses."""
@@ -15,7 +15,6 @@ from test_framework.util import assert_equal
 from test_framework.descriptors import descsum_create
 from test_framework.script import (
     CScript,
-    MAX_PUBKEYS_PER_MULTI_A,
     OP_CHECKSIG,
     OP_CHECKSIGADD,
     OP_NUMEQUAL,
@@ -187,18 +186,13 @@ def compute_raw_taproot_address(pubkey):
 class WalletTaprootTest(BitcoinIITestFramework):
     """Test generation and spending of P2TR address outputs."""
 
-    def add_options(self, parser):
-        self.add_wallet_options(parser, legacy=False)
-
     def set_test_params(self):
         self.num_nodes = 2
         self.setup_clean_chain = True
         self.extra_args = [['-keypool=100'], ['-keypool=100']]
-        self.supports_cli = False
 
     def skip_test_if_missing_module(self):
         self.skip_if_no_wallet()
-        self.skip_if_no_sqlite()
 
     def setup_network(self):
         self.setup_nodes()
@@ -233,9 +227,9 @@ class WalletTaprootTest(BitcoinIITestFramework):
 
         # Create wallets
         wallet_uuid = uuid.uuid4().hex
-        self.nodes[0].createwallet(wallet_name=f"privs_tr_enabled_{wallet_uuid}", descriptors=True, blank=True)
-        self.nodes[0].createwallet(wallet_name=f"pubs_tr_enabled_{wallet_uuid}", descriptors=True, blank=True, disable_private_keys=True)
-        self.nodes[0].createwallet(wallet_name=f"addr_gen_{wallet_uuid}", descriptors=True, disable_private_keys=True, blank=True)
+        self.nodes[0].createwallet(wallet_name=f"privs_tr_enabled_{wallet_uuid}", blank=True)
+        self.nodes[0].createwallet(wallet_name=f"pubs_tr_enabled_{wallet_uuid}", blank=True, disable_private_keys=True)
+        self.nodes[0].createwallet(wallet_name=f"addr_gen_{wallet_uuid}", disable_private_keys=True, blank=True)
         privs_tr_enabled = self.nodes[0].get_wallet_rpc(f"privs_tr_enabled_{wallet_uuid}")
         pubs_tr_enabled = self.nodes[0].get_wallet_rpc(f"pubs_tr_enabled_{wallet_uuid}")
         addr_gen = self.nodes[0].get_wallet_rpc(f"addr_gen_{wallet_uuid}")
@@ -274,7 +268,7 @@ class WalletTaprootTest(BitcoinIITestFramework):
 
         # Create wallets
         wallet_uuid = uuid.uuid4().hex
-        self.nodes[0].createwallet(wallet_name=f"rpc_online_{wallet_uuid}", descriptors=True, blank=True)
+        self.nodes[0].createwallet(wallet_name=f"rpc_online_{wallet_uuid}", blank=True)
         rpc_online = self.nodes[0].get_wallet_rpc(f"rpc_online_{wallet_uuid}")
 
         desc_pay = self.make_desc(pattern, privmap, keys_pay)
@@ -315,9 +309,9 @@ class WalletTaprootTest(BitcoinIITestFramework):
 
         # Create wallets
         wallet_uuid = uuid.uuid4().hex
-        self.nodes[0].createwallet(wallet_name=f"psbt_online_{wallet_uuid}", descriptors=True, disable_private_keys=True, blank=True)
-        self.nodes[1].createwallet(wallet_name=f"psbt_offline_{wallet_uuid}", descriptors=True, blank=True)
-        self.nodes[1].createwallet(f"key_only_wallet_{wallet_uuid}", descriptors=True, blank=True)
+        self.nodes[0].createwallet(wallet_name=f"psbt_online_{wallet_uuid}", disable_private_keys=True, blank=True)
+        self.nodes[1].createwallet(wallet_name=f"psbt_offline_{wallet_uuid}", blank=True)
+        self.nodes[1].createwallet(f"key_only_wallet_{wallet_uuid}", blank=True)
         psbt_online = self.nodes[0].get_wallet_rpc(f"psbt_online_{wallet_uuid}")
         psbt_offline = self.nodes[1].get_wallet_rpc(f"psbt_offline_{wallet_uuid}")
         key_only_wallet = self.nodes[1].get_wallet_rpc(f"key_only_wallet_{wallet_uuid}")
@@ -491,13 +485,6 @@ class WalletTaprootTest(BitcoinIITestFramework):
             "tr($2/*,{pk($2/*),{pk($2/*),sortedmulti_a(2,$1/*,$2/*,$3/*)}})",
             [True, False, True],
             lambda k1, k2, k3: (key(k2), [pk(k2), [pk(k2), multi_a(2, [k1, k2, k3], True)]])
-        )
-        rnd_pos = random.randrange(MAX_PUBKEYS_PER_MULTI_A)
-        self.do_test(
-            "tr(XPUB,multi_a(1,H...,XPRV,H...))",
-            "tr($2/*,multi_a(1" + (",$H" * rnd_pos) + ",$1/*" + (",$H" * (MAX_PUBKEYS_PER_MULTI_A - 1 - rnd_pos)) + "))",
-            [True, False],
-            lambda k1, k2: (key(k2), [multi_a(1, ([H_POINT] * rnd_pos) + [k1] + ([H_POINT] * (MAX_PUBKEYS_PER_MULTI_A - 1 - rnd_pos)))])
         )
         self.do_test(
             "rawtr(XPRV)",

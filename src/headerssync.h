@@ -1,4 +1,4 @@
-// Copyright (c) 2022 The BitcoinII Core developers
+// Copyright (c) 2022-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -8,13 +8,14 @@
 #include <arith_uint256.h>
 #include <chain.h>
 #include <consensus/params.h>
-#include <net.h> // For NodeId
+#include <net.h>
 #include <primitives/block.h>
 #include <uint256.h>
 #include <util/bitdeque.h>
 #include <util/hasher.h>
 
 #include <deque>
+#include <memory>
 #include <vector>
 
 // A compressed CBlockHeader, which leaves out the prevhash
@@ -31,16 +32,17 @@ struct CompressedHeader {
         hashMerkleRoot.SetNull();
     }
 
-    CompressedHeader(const CBlockHeader& header)
+    explicit CompressedHeader(const CBlockHeader& header)
+        : nVersion{header.nVersion},
+          hashMerkleRoot{header.hashMerkleRoot},
+          nTime{header.nTime},
+          nBits{header.nBits},
+          nNonce{header.nNonce}
     {
-        nVersion = header.nVersion;
-        hashMerkleRoot = header.hashMerkleRoot;
-        nTime = header.nTime;
-        nBits = header.nBits;
-        nNonce = header.nNonce;
     }
 
-    CBlockHeader GetFullHeader(const uint256& hash_prev_block) {
+    CBlockHeader GetFullHeader(const uint256& hash_prev_block) const
+    {
         CBlockHeader ret;
         ret.nVersion = nVersion;
         ret.hashPrevBlock = hash_prev_block;
@@ -136,7 +138,8 @@ public:
      * minimum_required_work: amount of chain work required to accept the chain
      */
     HeadersSyncState(NodeId id, const Consensus::Params& consensus_params,
-            const CBlockIndex* chain_start, const arith_uint256& minimum_required_work);
+                     const HeadersSyncParams& params, const CBlockIndex& chain_start,
+                     const arith_uint256& minimum_required_work);
 
     /** Result data structure for ProcessNextHeaders. */
     struct ProcessingResult {
@@ -165,7 +168,7 @@ public:
      * ProcessingResult.request_more: if true, the caller is suggested to call
      *                       NextHeadersRequestLocator and send a getheaders message using it.
      */
-    ProcessingResult ProcessNextHeaders(const std::vector<CBlockHeader>&
+    ProcessingResult ProcessNextHeaders(std::span<const CBlockHeader>
             received_headers, bool full_headers_message);
 
     /** Issue the next GETHEADERS message to our peer.
@@ -179,8 +182,8 @@ protected:
     /** The (secret) offset on the heights for which to create commitments.
      *
      * m_header_commitments entries are created at any height h for which
-     * (h % HEADER_COMMITMENT_PERIOD) == m_commit_offset. */
-    const unsigned m_commit_offset;
+     * (h % m_params.commitment_period) == m_commit_offset. */
+    const size_t m_commit_offset;
 
 private:
     /** Clear out all download state that might be in progress (freeing any used
@@ -195,7 +198,7 @@ private:
      *  processed headers.
      *  On failure, this invokes Finalize() and returns false.
      */
-    bool ValidateAndStoreHeadersCommitments(const std::vector<CBlockHeader>& headers);
+    bool ValidateAndStoreHeadersCommitments(std::span<const CBlockHeader> headers);
 
     /** In PRESYNC, process and update state for a single header */
     bool ValidateAndProcessSingleHeader(const CBlockHeader& current);
@@ -214,8 +217,11 @@ private:
     /** We use the consensus params in our anti-DoS calculations */
     const Consensus::Params& m_consensus_params;
 
+    /** Parameters that impact memory usage for a given chain, especially when attacked. */
+    const HeadersSyncParams m_params;
+
     /** Store the last block in our block index that the peer's chain builds from */
-    const CBlockIndex* m_chain_start{nullptr};
+    const CBlockIndex& m_chain_start;
 
     /** Minimum work that we're looking for on this chain. */
     const arith_uint256 m_minimum_required_work;
@@ -224,7 +230,7 @@ private:
     arith_uint256 m_current_chain_work;
 
     /** m_hasher is a salted hasher for making our 1-bit commitments to headers we've seen. */
-    const SaltedTxidHasher m_hasher;
+    const SaltedUint256Hasher m_hasher;
 
     /** A queue of commitment bits, created during the 1st phase, and verified during the 2nd. */
     bitdeque<> m_header_commitments;
@@ -238,7 +244,45 @@ private:
 
     /** Store the latest header received while in PRESYNC (initialized to m_chain_start) */
     CBlockHeader m_last_header_received;
+    
+    /**
+     * Rolling temporary CBlockIndex history used to reproduce ShockWave exactly
+     * without inserting untrusted PRESYNC headers into the global block index.
+     */
+    using ShockWaveHistory = std::deque<std::unique_ptr<CBlockIndex>>;
+    
+    /**
+     * Reset a ShockWave history to m_chain_start and the ancestors required for
+     * the 25-block rolling window and MedianTimePast calculations.
+     */
+     void ResetShockWaveHistory(ShockWaveHistory& history) const;
 
+    /**
+     * Verify that a ShockWave-era candidate header has the exact nBits required
+     * by the production GetNextWorkRequired() calculation.
+     */
+    bool ValidateShockWaveHeader(
+        const CBlockHeader& header,
+        int64_t next_height,
+        const ShockWaveHistory& history,
+        const char* phase
+    ) const;
+
+    /**
+     * Append a validated header to the bounded rolling ShockWave history.
+     */
+    void AppendShockWaveHeader(
+        ShockWaveHistory& history,
+        const CBlockHeader& header,
+        int64_t height
+    );
+    
+    /** Exact ShockWave/MTP history for PRESYNC. */
+    ShockWaveHistory m_presync_shockwave_history;
+
+    /** Exact ShockWave/MTP history for REDOWNLOAD. */
+    ShockWaveHistory m_redownload_shockwave_history;
+    
     /** Height of m_last_header_received */
     int64_t m_current_height{0};
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2018-2022 The BitcoinII Core developers
+# Copyright (c) 2018-present The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -15,14 +15,13 @@ from test_framework.blocktools import (
     TIME_GENESIS_BLOCK,
 )
 
+from decimal import Decimal
 
 class CreateTxWalletTest(BitcoinIITestFramework):
-    def add_options(self, parser):
-        self.add_wallet_options(parser)
-
     def set_test_params(self):
         self.setup_clean_chain = True
         self.num_nodes = 1
+        self.extra_args = [[]]
 
     def skip_test_if_missing_module(self):
         self.skip_if_no_wallet()
@@ -56,7 +55,7 @@ class CreateTxWalletTest(BitcoinIITestFramework):
         outputs = {self.nodes[0].getnewaddress(address_type='bech32'): 0.000025 for _ in range(400)}
         raw_tx = self.nodes[0].createrawtransaction(inputs=[], outputs=outputs)
 
-        for fee_setting in ['-minrelaytxfee=0.01', '-mintxfee=0.01', '-paytxfee=0.01']:
+        for fee_setting in ['-minrelaytxfee=0.01', '-mintxfee=0.01']:
             self.log.info('Check maxtxfee in combination with {}'.format(fee_setting))
             self.restart_node(0, extra_args=[fee_setting])
             assert_raises_rpc_error(
@@ -70,20 +69,21 @@ class CreateTxWalletTest(BitcoinIITestFramework):
                 lambda: self.nodes[0].fundrawtransaction(hexstring=raw_tx),
             )
 
-        self.log.info('Check maxtxfee in combination with settxfee')
-        self.restart_node(0)
-        self.nodes[0].settxfee(0.01)
+        # Hit maxtxfee with explicit fee rate
+        self.log.info('Check maxtxfee in combination with explicit fee_rate=1000 sat2/vB')
+
+        fee_rate_sat2s_per_vb = Decimal('0.01') * Decimal(1e8) / 1000  # Convert 0.01 BC2/kvB to sat2/vB
+
         assert_raises_rpc_error(
             -6,
             "Fee exceeds maximum configured by user (e.g. -maxtxfee, maxfeerate)",
-            lambda: self.nodes[0].sendmany(dummy="", amounts=outputs),
+            lambda: self.nodes[0].sendmany(dummy="", amounts=outputs, fee_rate=fee_rate_sat2s_per_vb),
         )
         assert_raises_rpc_error(
             -4,
             "Fee exceeds maximum configured by user (e.g. -maxtxfee, maxfeerate)",
-            lambda: self.nodes[0].fundrawtransaction(hexstring=raw_tx),
+            lambda: self.nodes[0].fundrawtransaction(hexstring=raw_tx, options={'fee_rate': fee_rate_sat2s_per_vb}),
         )
-        self.nodes[0].settxfee(0)
 
     def test_create_too_long_mempool_chain(self):
         self.log.info('Check too-long mempool chain error')

@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2022 The BitcoinII Core developers
+// Copyright (c) 2018-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -43,7 +43,7 @@ static RPCHelpMan enumeratesigners()
         [&](const RPCHelpMan& self, const JSONRPCRequest& request) -> UniValue
         {
             const std::string command = gArgs.GetArg("-signer", "");
-            if (command == "") throw JSONRPCError(RPC_MISC_ERROR, "Error: restart bitcoinIId with -signer=<cmd>");
+            if (command == "") throw JSONRPCError(RPC_MISC_ERROR, "Error: restart bitcoinII-d with -signer=<cmd>");
             const std::string chain = gArgs.GetChainTypeString();
             UniValue signers_res = UniValue::VARR;
             try {

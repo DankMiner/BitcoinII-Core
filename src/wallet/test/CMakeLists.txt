@@ -1,4 +1,4 @@
-# Copyright (c) 2023-present The BitcoinII Core developers
+# Copyright (c) 2023-present The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://opensource.org/license/mit/.
 
@@ -10,6 +10,7 @@ target_sources(test_bitcoinII
     wallet_test_fixture.cpp
     db_tests.cpp
     coinselector_tests.cpp
+    coinselection_tests.cpp
     feebumper_tests.cpp
     group_outputs_tests.cpp
     init_tests.cpp
@@ -18,6 +19,7 @@ target_sources(test_bitcoinII
     scriptpubkeyman_tests.cpp
     spend_tests.cpp
     wallet_crypto_tests.cpp
+    wallet_rpc_tests.cpp
     wallet_tests.cpp
     wallet_transaction_tests.cpp
     walletdb_tests.cpp

@@ -1,4 +1,4 @@
-// Copyright (c) 2022 The BitcoinII Core developers
+// Copyright (c) 2022-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #ifndef BITCOINII_KERNEL_MEMPOOL_OPTIONS_H
@@ -12,6 +12,7 @@
 #include <chrono>
 #include <cstdint>
 #include <optional>
+#include <string>
 
 class ValidationSignals;
 
@@ -44,14 +45,22 @@ struct MemPoolOptions {
     CFeeRate min_relay_feerate{DEFAULT_MIN_RELAY_TX_FEE};
     CFeeRate dust_relay_feerate{DUST_RELAY_TX_FEE};
     /**
+     * Fixed BitcoinII transaction relay rules and their effective
+     * tapscript/logging controls.
+     */
+    std::optional<unsigned> max_tapscript_bytes{MAX_BITCOINII_TAPSCRIPT_BYTES};
+    bool policy_log{true};
+    bool policy_log_details{false};
+
+    /**
      * A data carrying output is an unspendable output containing data. The script
      * type is designated as TxoutType::NULL_DATA.
      *
      * Maximum size of TxoutType::NULL_DATA scripts that this node considers standard.
      * If nullopt, any size is nonstandard.
      */
-    std::optional<unsigned> max_datacarrier_bytes{DEFAULT_ACCEPT_DATACARRIER ? std::optional{MAX_OP_RETURN_RELAY} : std::nullopt};
-    bool permit_bare_multisig{DEFAULT_PERMIT_BAREMULTISIG};
+    std::optional<unsigned> max_datacarrier_bytes{MAX_BITCOINII_OP_RETURN_BYTES};
+    bool permit_bare_multisig{false};
     bool require_standard{true};
     bool persist_v1_dat{DEFAULT_PERSIST_V1_DAT};
     MemPoolLimits limits{};

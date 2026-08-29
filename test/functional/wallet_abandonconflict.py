@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2014-2022 The BitcoinII Core developers
+# Copyright (c) 2014-present The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test the abandontransaction RPC.
@@ -21,9 +21,6 @@ from test_framework.util import (
 
 
 class AbandonConflictTest(BitcoinIITestFramework):
-    def add_options(self, parser):
-        self.add_wallet_options(parser)
-
     def set_test_params(self):
         self.num_nodes = 2
         self.extra_args = [["-minrelaytxfee=0.00001"], []]
@@ -63,13 +60,13 @@ class AbandonConflictTest(BitcoinIITestFramework):
         # Disconnect nodes so node0's transactions don't get into node1's mempool
         self.disconnect_nodes(0, 1)
 
-        # Identify the 10btc outputs
+        # Identify the 10bc2 outputs
         nA = next(tx_out["vout"] for tx_out in alice.gettransaction(txA)["details"] if tx_out["amount"] == Decimal("10"))
         nB = next(tx_out["vout"] for tx_out in alice.gettransaction(txB)["details"] if tx_out["amount"] == Decimal("10"))
         nC = next(tx_out["vout"] for tx_out in alice.gettransaction(txC)["details"] if tx_out["amount"] == Decimal("10"))
 
         inputs = []
-        # spend 10btc outputs from txA and txB
+        # spend 10bc2 outputs from txA and txB
         inputs.append({"txid": txA, "vout": nA})
         inputs.append({"txid": txB, "vout": nB})
         outputs = {}
@@ -79,7 +76,7 @@ class AbandonConflictTest(BitcoinIITestFramework):
         signed = alice.signrawtransactionwithwallet(alice.createrawtransaction(inputs, outputs))
         txAB1 = self.nodes[0].sendrawtransaction(signed["hex"])
 
-        # Identify the 14.99998btc output
+        # Identify the 14.99998bc2 output
         nAB = next(tx_out["vout"] for tx_out in alice.gettransaction(txAB1)["details"] if tx_out["amount"] == Decimal("14.99998"))
 
         #Create a child tx spending AB1 and C
@@ -123,7 +120,7 @@ class AbandonConflictTest(BitcoinIITestFramework):
         balances = alice.getbalances()['mine']
         assert_equal(balances['untrusted_pending'] + balances['trusted'], newbalance)
         # Also shouldn't show up in listunspent
-        assert not txABC2 in [utxo["txid"] for utxo in alice.listunspent(0)]
+        assert txABC2 not in [utxo["txid"] for utxo in alice.listunspent(0)]
         balance = newbalance
 
         # Abandon original transaction and verify inputs are available again

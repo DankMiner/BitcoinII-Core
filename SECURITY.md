@@ -1,8 +1,17 @@
 # Security Policy
 
+Security vulnerabilities discovered in BitcoinII Core-derived code that are not
+specific to BitcoinII should be reported directly to the upstream BitcoinII
+Core project.
+
+Security vulnerabilities introduced by BitcoinII-specific changes,
+including consensus, policy, networking, branding, and application
+integration changes, should be reported to the BitcoinII developers.
+
+
 ## Supported Versions
 
-See our website for versions of BitcoinII Core that are currently supported with
+See the BitcoinII website for versions of BitcoinII Core that are currently supported with
 security updates: https://bitcoincore.org/en/lifecycle/#schedule
 
 ## Reporting a Vulnerability

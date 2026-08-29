@@ -1,4 +1,4 @@
-# Copyright (c) 2024-present The BitcoinII Core developers
+# Copyright (c) 2024-present The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://opensource.org/license/mit/.
 
@@ -25,7 +25,6 @@ add_library(bitcoinIIkernel
   ../consensus/merkle.cpp
   ../consensus/tx_check.cpp
   ../consensus/tx_verify.cpp
-  ../core_read.cpp
   ../dbwrapper.cpp
   ../deploymentinfo.cpp
   ../deploymentstatus.cpp
@@ -58,10 +57,13 @@ add_library(bitcoinIIkernel
   ../support/lockedpool.cpp
   ../sync.cpp
   ../txdb.cpp
+  ../txgraph.cpp
   ../txmempool.cpp
   ../uint256.cpp
   ../util/chaintype.cpp
   ../util/check.cpp
+  ../util/exception.cpp
+  ../util/expected.cpp
   ../util/feefrac.cpp
   ../util/fs.cpp
   ../util/fs_helpers.cpp
@@ -70,68 +72,51 @@ add_library(bitcoinIIkernel
   ../util/rbf.cpp
   ../util/serfloat.cpp
   ../util/signalinterrupt.cpp
-  ../util/strencodings.cpp
-  ../util/string.cpp
   ../util/syserror.cpp
+  ../util/thread.cpp
   ../util/threadnames.cpp
   ../util/time.cpp
   ../util/tokenpipe.cpp
   ../validation.cpp
   ../validationinterface.cpp
   ../versionbits.cpp
+  $<TARGET_OBJECTS:bitcoinII_clientversion>
+  $<TARGET_OBJECTS:bitcoinII_crypto>
+  $<TARGET_OBJECTS:crc32c>
 )
+
+# Compiler warnings that apply only to the kernel and its dependencies.
+# These can be more strict and/or warnings that only apply to shared
+# libs.
+add_library(kernel_warn_interface INTERFACE)
+if(NOT MSVC)
+  try_append_cxx_flags("-Wunique-object-duplication" TARGET kernel_warn_interface SKIP_LINK)
+endif()
+
+# Also manually apply the warnings to the kernel's internal dependencies
+target_link_libraries(bitcoinII_clientversion PRIVATE kernel_warn_interface)
+target_link_libraries(bitcoinII_crypto PRIVATE kernel_warn_interface)
+target_link_libraries(crc32c PRIVATE kernel_warn_interface)
+
 target_link_libraries(bitcoinIIkernel
   PRIVATE
     core_interface
-    bitcoinII_clientversion
-    bitcoinII_crypto
+    kernel_warn_interface
     leveldb
-    secp256k1
+    secp256k1_objs
+    $<$<PLATFORM_ID:Windows>:bcrypt>
     $<TARGET_NAME_IF_EXISTS:USDT::headers>
-  PUBLIC
     Boost::headers
 )
 
-# libbitcoinIIkernel requires default symbol visibility, explicitly
-# specify that here so that things still work even when user
-# configures with -DREDUCE_EXPORTS=ON
-#
-# Note this is a quick hack that will be removed as we
-# incrementally define what to export from the library.
-set_target_properties(bitcoinIIkernel PROPERTIES
-  CXX_VISIBILITY_PRESET default
-)
 
 # Add a convenience libbitcoinIIkernel target as a synonym for bitcoinIIkernel.
 add_custom_target(libbitcoinIIkernel)
 add_dependencies(libbitcoinIIkernel bitcoinIIkernel)
 
-# When building the static library, install all static libraries the
-# bitcoinIIkernel depends on.
-if(NOT BUILD_SHARED_LIBS)
-  # Recursively get all the static libraries a target depends on and put them in libs_out
-  function(get_target_static_link_libs target libs_out)
-    get_target_property(linked_libraries ${target} LINK_LIBRARIES)
-    foreach(dep ${linked_libraries})
-      if(TARGET ${dep})
-        add_dependencies(libbitcoinIIkernel ${dep})
-        get_target_property(dep_type ${dep} TYPE)
-        if(dep_type STREQUAL "STATIC_LIBRARY")
-          list(APPEND ${libs_out} ${dep})
-          get_target_static_link_libs(${dep} ${libs_out})
-        endif()
-      endif()
-    endforeach()
-    set(${libs_out} ${${libs_out}} PARENT_SCOPE)
-  endfunction()
-
-  set(all_kernel_static_link_libs "")
-  get_target_static_link_libs(bitcoinIIkernel all_kernel_static_link_libs)
-
-  install(TARGETS ${all_kernel_static_link_libs} ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT libbitcoinIIkernel)
-  list(TRANSFORM all_kernel_static_link_libs PREPEND "-l")
-  # LIBS_PRIVATE is substituted in the pkg-config file.
-  list(JOIN all_kernel_static_link_libs " " LIBS_PRIVATE)
+get_target_property(bitcoinIIkernel_type bitcoinIIkernel TYPE)
+if(bitcoinIIkernel_type STREQUAL "STATIC_LIBRARY")
+  target_compile_definitions(bitcoinIIkernel PUBLIC BITCOINIIKERNEL_STATIC)
 endif()
 
 configure_file(${PROJECT_SOURCE_DIR}/libbitcoinIIkernel.pc.in ${PROJECT_BINARY_DIR}/libbitcoinIIkernel.pc @ONLY)
@@ -148,3 +133,5 @@ install(TARGETS bitcoinIIkernel
     DESTINATION ${CMAKE_INSTALL_LIBDIR}
     COMPONENT libbitcoinIIkernel
 )
+
+install(FILES bitcoinIIkernel.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} COMPONENT libbitcoinIIkernel)

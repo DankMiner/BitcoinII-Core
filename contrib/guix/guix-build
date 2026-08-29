@@ -70,6 +70,12 @@ fi
 mkdir -p "$VERSION_BASE"
 
 ################
+# SOURCE_DATE_EPOCH should not unintentionally be set
+################
+
+check_source_date_epoch
+
+################
 # Build directories should not exist
 ################
 
@@ -386,8 +392,8 @@ EOF
         #
         #     When --container is specified, the default behavior is to share
         #     the current working directory with the isolated container at the
-        #     same exact path (e.g. mapping '/home/satoshi/bitcoinII/' to
-        #     '/home/satoshi/bitcoinII/'). This means that the $PWD inside the
+        #     same exact path (e.g. mapping '/home/satooshi/bitcoinII/' to
+        #     '/home/satooshi/bitcoinII/'). This means that the $PWD inside the
         #     container becomes a source of irreproducibility. --no-cwd disables
         #     this behaviour.
         #

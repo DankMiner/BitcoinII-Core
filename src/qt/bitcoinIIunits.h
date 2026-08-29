@@ -1,9 +1,9 @@
-// Copyright (c) 2011-2021 The BitcoinII Core developers
+// Copyright (c) 2011-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOINII_QT_BITCOINUNITS_H
-#define BITCOINII_QT_BITCOINUNITS_H
+#ifndef BITCOINII_QT_BITCOINIIUNITS_H
+#define BITCOINII_QT_BITCOINIIUNITS_H
 
 #include <consensus/amount.h>
 
@@ -113,4 +113,4 @@ typedef BitcoinIIUnits::Unit BitcoinIIUnit;
 QDataStream& operator<<(QDataStream& out, const BitcoinIIUnit& unit);
 QDataStream& operator>>(QDataStream& in, BitcoinIIUnit& unit);
 
-#endif // BITCOINII_QT_BITCOINUNITS_H
+#endif // BITCOINII_QT_BITCOINIIUNITS_H

@@ -11,7 +11,7 @@ eBPF and USDT Overview
 ======================
 
                 ┌──────────────────┐            ┌──────────────┐
-                │ tracing script   │            │ bitcoinIId     │
+                │ tracing script   │            │ bitcoinII-d     │
                 │==================│      2.    │==============│
                 │  eBPF  │ tracing │      hooks │              │
                 │  code  │ logic   │      into┌─┤►tracepoint 1─┼───┐ 3.
@@ -45,7 +45,7 @@ The two main eBPF front-ends with support for USDT are [bpftrace] and
 `bpftrace` is preferred for one-liners and shorter scripts. Examples for both can
 be found in [contrib/tracing].
 
-[bpftrace]: https://github.com/iovisor/bpftrace
+[bpftrace]: https://github.com/bpftrace/bpftrace
 [BPF Compiler Collection (BCC)]: https://github.com/iovisor/bcc
 [contrib/tracing]: ../contrib/tracing/
 
@@ -185,8 +185,8 @@ Is called *after* the in-memory UTXO cache is flushed.
 
 Arguments passed:
 1. Time it took to flush the cache microseconds as `int64`
-2. Flush state mode as `uint32`. It's an enumerator class with values `0`
-   (`NONE`), `1` (`IF_NEEDED`), `2` (`PERIODIC`), `3` (`ALWAYS`)
+2. Flush state mode as `uint32`. It's an enumerator class with values
+   `0` (`NONE`), `1` (`IF_NEEDED`), `2` (`PERIODIC`), `3` (`FORCE_FLUSH`), `4` (`FORCE_SYNC`)
 3. Cache size (number of coins) before the flush as `uint64`
 4. Cache memory usage in bytes as `uint64`
 5. If pruning caused the flush as `bool`
@@ -368,7 +368,7 @@ serialization of data structures is probably fine, a `sleep(10s)` not.
 TRACEPOINT_SEMAPHORE(example, gated_expensive_argument);
 …
 if (TRACEPOINT_ACTIVE(example, gated_expensive_argument)) {
-    expensive_argument = expensive_calulation();
+    expensive_argument = expensive_calculation();
     TRACEPOINT(example, gated_expensive_argument, expensive_argument);
 }
 ```
@@ -422,7 +422,7 @@ maximum expected string size if known.
 
 ## Listing available tracepoints
 
-Multiple tools can list the available tracepoints in a `bitcoinIId` binary with
+Multiple tools can list the available tracepoints in a `bitcoinII-d` binary with
 USDT support.
 
 ### GDB - GNU Project Debugger
@@ -430,13 +430,13 @@ USDT support.
 To list probes in BitcoinII Core, use `info probes` in `gdb`:
 
 ```
-$ gdb ./build/bin/bitcoinIId
+$ gdb ./build/bin/bitcoinII-d
 …
 (gdb) info probes
 Type Provider   Name             Where              Semaphore Object
-stap net        inbound_message  0x000000000014419e 0x0000000000d29bd2 /build/bin/bitcoinIId
-stap net        outbound_message 0x0000000000107c05 0x0000000000d29bd0 /build/bin/bitcoinIId
-stap validation block_connected  0x00000000002fb10c 0x0000000000d29bd8 /build/bin/bitcoinIId
+stap net        inbound_message  0x000000000014419e 0x0000000000d29bd2 /build/bin/bitcoinII-d
+stap net        outbound_message 0x0000000000107c05 0x0000000000d29bd0 /build/bin/bitcoinII-d
+stap validation block_connected  0x00000000002fb10c 0x0000000000d29bd8 /build/bin/bitcoinII-d
 …
 ```
 
@@ -446,7 +446,7 @@ The `readelf` tool can be used to display the USDT tracepoints in BitcoinII Core
 Look for the notes with the description `NT_STAPSDT`.
 
 ```
-$ readelf -n ./build/bin/bitcoinIId | grep NT_STAPSDT -A 4 -B 2
+$ readelf -n ./build/bin/bitcoinII-d | grep NT_STAPSDT -A 4 -B 2
 Displaying notes found in: .note.stapsdt
   Owner                 Data size	Description
   stapsdt              0x0000005d	NT_STAPSDT (SystemTap probe descriptors)
@@ -470,7 +470,7 @@ between distributions. For example, on
 [ubuntu binary]: https://github.com/iovisor/bcc/blob/master/INSTALL.md#ubuntu---binary
 
 ```
-$ tplist -l ./build/bin/bitcoinIId -v
+$ tplist -l ./build/bin/bitcoinII-d -v
 b'net':b'outbound_message' [sema 0xd29bd0]
   1 location(s)
   6 argument(s)

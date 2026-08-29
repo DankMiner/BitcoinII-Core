@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-present The BitcoinII Core developers
+// Copyright (c) 2009-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -235,6 +235,13 @@ bool CScript::IsPayToWitnessScriptHash() const
     // Extra-fast test for pay-to-witness-script-hash CScripts:
     return (this->size() == 34 &&
             (*this)[0] == OP_0 &&
+            (*this)[1] == 0x20);
+}
+
+bool CScript::IsPayToTaproot() const
+{
+    return (this->size() == 34 &&
+            (*this)[0] == OP_1 &&
             (*this)[1] == 0x20);
 }
 

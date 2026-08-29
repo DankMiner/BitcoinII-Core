@@ -1,9 +1,9 @@
-// Copyright (c) 2011-2022 The BitcoinII Core developers
+// Copyright (c) 2011-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BITCOINII_QT_BITCOINGUI_H
-#define BITCOINII_QT_BITCOINGUI_H
+#ifndef BITCOINII_QT_BITCOINIIGUI_H
+#define BITCOINII_QT_BITCOINIIGUI_H
 
 #include <bitcoinII-build-config.h> // IWYU pragma: keep
 
@@ -353,4 +353,4 @@ private Q_SLOTS:
     void onMenuSelection(QAction* action);
 };
 
-#endif // BITCOINII_QT_BITCOINGUI_H
+#endif // BITCOINII_QT_BITCOINIIGUI_H

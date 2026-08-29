@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2017-2022 The BitcoinII Core developers
+# Copyright (c) 2017-present The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test that mempool.dat is both backward and forward compatible between versions
@@ -11,7 +11,7 @@ Previous releases are required by this test, see test/README.md.
 """
 
 from test_framework.blocktools import COINBASE_MATURITY
-from test_framework.test_framework import BitcoinIITestFramework
+from test_framework.test_framework import BitcoinIITestFramework, SkipTest
 from test_framework.wallet import (
     MiniWallet,
     MiniWalletMode,
@@ -24,7 +24,7 @@ class MempoolCompatibilityTest(BitcoinIITestFramework):
         self.setup_clean_chain = True
 
     def skip_test_if_missing_module(self):
-        self.skip_if_no_previous_releases()
+        raise SkipTest("Bitcoin Core previous-release binaries are not valid compatibility fixtures for BitcoinII")
 
     def setup_network(self):
         self.add_nodes(self.num_nodes, versions=[
@@ -56,6 +56,7 @@ class MempoolCompatibilityTest(BitcoinIITestFramework):
         self.log.info("Move mempool.dat from old to new node")
         old_node_mempool = old_node.chain_path / "mempool.dat"
         new_node_mempool = new_node.chain_path / "mempool.dat"
+        new_node_mempool.unlink()
         old_node_mempool.rename(new_node_mempool)
 
         self.log.info("Start new node and verify mempool contains the tx")

@@ -1,12 +1,12 @@
 BitcoinII Core version 0.12.0 is now available from:
 
-  <https://bitcoin.org/bin/bitcoinII-core-0.12.0/>
+  <https://bitcoin.org/bin/bitcoin-core-0.12.0/>
 
 This is a new major version release, bringing new features and other improvements.
 
 Please report bugs using the issue tracker at github:
 
-  <https://github.com/bitcoinII/bitcoinII/issues>
+  <https://github.com/bitcoin/bitcoin/issues>
 
 Upgrading and downgrading
 =========================
@@ -17,7 +17,7 @@ How to Upgrade
 If you are running an older version, shut it down. Wait until it has completely
 shut down (which might take a few minutes for older versions), then run the
 installer (on Windows) or just copy over /Applications/BitcoinII-Qt (on Mac) or
-bitcoinIId/bitcoinII-qt (on Linux).
+bitcoinII-d/bitcoinII-qt (on Linux).
 
 Downgrade warning
 -----------------
@@ -61,7 +61,7 @@ Signature validation using libsecp256k1
 ---------------------------------------
 
 ECDSA signatures inside BitcoinII transactions now use validation using
-[libsecp256k1](https://github.com/bitcoinII-core/secp256k1) instead of OpenSSL.
+[libsecp256k1](https://github.com/bitcoin-core/secp256k1) instead of OpenSSL.
 
 Depending on the platform, this means a significant speedup for raw signature
 validation speed. The advantage is largest on x86_64, where validation is over
@@ -98,7 +98,7 @@ Direct headers announcement (BIP 130)
 -------------------------------------
 
 Between compatible peers, [BIP 130]
-(https://github.com/bitcoinII/bips/blob/master/bip-0130.mediawiki)
+(https://github.com/bitcoin/bips/blob/master/bip-0130.mediawiki)
 direct headers announcement is used. This means that blocks are advertised by
 announcing their headers directly, instead of just announcing the hash. In a
 reorganization, all new headers are sent, instead of just the new tip. This
@@ -122,7 +122,7 @@ its maximum size, the transaction that (along with in-mempool descendants) has
 the lowest total feerate (as a package) will be evicted and the node's effective
 minimum relay feerate will be increased to match this feerate plus the initial
 minimum relay feerate. The initial minimum relay feerate is set to
-1000 satoshis per kB.
+1000 satooshis per kB.
 
 BitcoinII Core 0.12 also introduces new default policy limits on the length and
 size of unconfirmed transaction chains that are allowed in the mempool
@@ -138,7 +138,7 @@ BitcoinII Core 0.12 nodes. BitcoinII Core will only allow replacement of
 transactions which have any of their inputs' `nSequence` number set to less
 than `0xffffffff - 1`.  Moreover, a replacement transaction may only be
 accepted when it pays sufficient fee, as described in [BIP 125]
-(https://github.com/bitcoinII/bips/blob/master/bip-0125.mediawiki).
+(https://github.com/bitcoin/bips/blob/master/bip-0125.mediawiki).
 
 Transaction replacement can be disabled with a new command line option,
 `-mempoolreplacement=0`.  Transactions signaling replacement under BIP125 will
@@ -173,7 +173,7 @@ overridden with the option `-rpccookiefile`.
 This is similar to Tor's CookieAuthentication: see
 https://www.torproject.org/docs/tor-manual.html.en
 
-This allows running bitcoinIId without having to do any manual configuration.
+This allows running bitcoinII-d without having to do any manual configuration.
 
 Relay: Any sequence of pushdatas in OP_RETURN outputs now allowed
 -----------------------------------------------------------------
@@ -280,7 +280,7 @@ At all times, BitcoinII Core will cap fees at `-maxtxfee=<x>` (default:
 Furthermore, BitcoinII Core will never create transactions paying less than
 the current minimum relay fee.
 Finally, a user can set the minimum fee rate for all transactions with
-`-mintxfee=<i>`, which defaults to 1000 satoshis per kB.
+`-mintxfee=<i>`, which defaults to 1000 satooshis per kB.
 
 Wallet: Negative confirmations and conflict detection
 -----------------------------------------------------
@@ -331,13 +331,13 @@ practice. In future releases, a higher value may also help the network
 as a whole: stored blocks could be served to other nodes.
 
 For further information about pruning, you may also consult the [release
-notes of v0.11.0](https://github.com/bitcoinII/bitcoinII/blob/v0.11.0/doc/release-notes.md#block-file-pruning).
+notes of v0.11.0](https://github.com/bitcoin/bitcoin/blob/v0.11.0/doc/release-notes.md#block-file-pruning).
 
 `NODE_BLOOM` service bit
 ------------------------
 
 Support for the `NODE_BLOOM` service bit, as described in [BIP
-111](https://github.com/bitcoinII/bips/blob/master/bip-0111.mediawiki), has been
+111](https://github.com/bitcoin/bips/blob/master/bip-0111.mediawiki), has been
 added to the P2P protocol code.
 
 BIP 111 defines a service bit to allow peers to advertise that they support
@@ -369,7 +369,7 @@ RPC: Low-level API changes
 * The `asm` property of each scriptSig now contains the decoded signature hash
   type for each signature that provides a valid defined hash type.
 
-* OP_NOP2 has been renamed to OP_CHECKLOCKTIMEVERIFY by [BIP 65](https://github.com/bitcoinII/bips/blob/master/bip-0065.mediawiki)
+* OP_NOP2 has been renamed to OP_CHECKLOCKTIMEVERIFY by [BIP 65](https://github.com/bitcoin/bips/blob/master/bip-0065.mediawiki)
 
 The following items contain assembly representations of scriptSig signatures
 and are affected by this change:
@@ -436,7 +436,7 @@ caching. A sample config for apache2 could look like:
         # AuthType Digest
         # ...
 
-        # optional bypass bitcoinIId rpc basic auth
+        # optional bypass bitcoinII-d rpc basic auth
         # RequestHeader set Authorization "Basic <hash>"
         # get the <hash> from the shell with: base64 <<< bitcoinIIrpc:<password>
     </Location>
@@ -459,7 +459,7 @@ Other P2P Changes
 -----------------
 
 The list of banned peers is now stored on disk rather than in memory.
-Restarting bitcoinIId will no longer clear out the list of banned peers; instead
+Restarting bitcoinII-d will no longer clear out the list of banned peers; instead
 a new RPC call (`clearbanned`) can be used to manually clear the list.  The new
 `setban` RPC call can also be used to manually ban or unban a peer.
 
@@ -891,4 +891,4 @@ Thanks to everyone who directly contributed to this release:
 - Zak Wilcox
 - zathras-crypto
 
-As well as everyone that helped translating on [Transifex](https://www.transifex.com/projects/p/bitcoinII/).
+As well as everyone that helped translating on [Transifex](https://www.transifex.com/projects/p/bitcoin/).

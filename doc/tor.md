@@ -27,42 +27,66 @@ e.g. for `-onlynet=onion`.
 
 You can use the `getnodeaddresses` RPC to fetch a number of onion peers known to your node; run `bitcoinII-cli help getnodeaddresses` for details.
 
+`bitcoinII rpc` can also be substituted for `bitcoinII-cli`.
+
 ## 1. Run BitcoinII Core behind a Tor proxy
 
 The first step is running BitcoinII Core behind a Tor proxy. This will already anonymize all
 outgoing connections, but more is possible.
 
-    -proxy=ip:port  Set the proxy server. If SOCKS5 is selected (default), this proxy
-                    server will be used to try to reach .onion addresses as well.
-                    You need to use -noonion or -onion=0 to explicitly disable
-                    outbound access to onion services.
+    -proxy=ip[:port]
+        Set the proxy server. It will be used to try to reach .onion addresses
+        as well. You need to use -noonion or -onion=0 to explicitly disable
+        outbound access to onion services.
 
-    -onion=ip:port  Set the proxy server to use for Tor onion services. You do not
-                    need to set this if it's the same as -proxy. You can use -onion=0
-                    to explicitly disable access to onion services.
-                    ------------------------------------------------------------------
-                    Note: Only the -proxy option sets the proxy for DNS requests;
-                    with -onion they will not route over Tor, so use -proxy if you
-                    have privacy concerns.
-                    ------------------------------------------------------------------
+    -proxy=ip[:port]=tor
+    or
+    -onion=ip[:port]
+        Set the proxy server for reaching .onion addresses. You do not need to
+        set this if it's the same as the generic -proxy. You can use -onion=0 to
+        explicitly disable access to onion services.
+        ------------------------------------------------------------------------
+        Note: The proxy for DNS requests is taken from
+        -proxy=addr:port or
+        -proxy=addr:port=ipv4 or
+        -proxy=addr:port=ipv6
+        (last one if multiple options are given). It is not taken from
+        -proxy=addr:port=tor or
+        -onion=addr:port.
+        If no proxy for DNS requests is configured, then they will be done using
+        the functions provided by the operating system, most likely resulting in
+        them being done over the clearnet to the DNS servers of the internet
+        service provider.
+        ------------------------------------------------------------------------
 
-    -listen         When using -proxy, listening is disabled by default. If you want
-                    to manually configure an onion service (see section 3), you'll
-                    need to enable it explicitly.
+If -proxy or -onion is specified multiple times, later occurrences override
+earlier ones and command line overrides the config file. UNIX domain sockets may
+be used for proxy connections. Set `-onion` or `-proxy` to the local socket path
+with the prefix `unix:` (e.g. `-onion=unix:/home/me/torsocket`).
 
-    -connect=X      When behind a Tor proxy, you can specify .onion addresses instead
-    -addnode=X      of IP addresses or hostnames in these parameters. It requires
-    -seednode=X     SOCKS5. In Tor mode, such addresses can also be exchanged with
-                    other P2P nodes.
+    -listen
+        When using -proxy, listening is disabled by default. If you want to
+        manually configure an onion service (see section 3), you'll need to
+        enable it explicitly.
 
-    -onlynet=onion  Make automatic outbound connections only to .onion addresses.
-                    Inbound and manual connections are not affected by this option.
-                    It can be specified multiple times to allow multiple networks,
-                    e.g. onlynet=onion, onlynet=i2p, onlynet=cjdns.
+    -connect=X
+    -addnode=X
+    -seednode=X
+        When behind a Tor proxy, you can specify .onion addresses instead of IP
+        addresses or hostnames in these parameters. Such addresses can also be
+        exchanged with other P2P nodes.
+
+    -onlynet=onion
+        Make automatic outbound connections only to .onion addresses. Inbound
+        and manual connections are not affected by this option. It can be
+        specified multiple times to allow multiple networks, e.g. onlynet=onion,
+        onlynet=i2p, onlynet=cjdns.
 
 In a typical situation, this suffices to run behind a Tor proxy:
 
-    ./bitcoinIId -proxy=127.0.0.1:9050
+    bitcoinII-d -proxy=127.0.0.1:9050
+
+`bitcoinII node` or `bitcoinII gui` can also be substituted for `bitcoinII-d`.
 
 ## 2. Automatically create a BitcoinII Core onion service
 
@@ -77,7 +101,7 @@ it requires a Tor connection to work. It can be explicitly disabled with
 `-listenonion=0`. If it is not disabled, it can be configured using the
 `-torcontrol` and `-torpassword` settings.
 
-To see verbose Tor information in the bitcoinIId debug log, pass `-debug=tor`.
+To see verbose Tor information in the bitcoinII-d debug log, pass `-debug=tor`.
 
 ### Control Port
 
@@ -99,20 +123,20 @@ Debian and Ubuntu, or just restart the computer).
 ### Authentication
 
 Connecting to Tor's control socket API requires one of two authentication
-methods to be configured: cookie authentication or bitcoinIId's `-torpassword`
+methods to be configured: cookie authentication or bitcoinII-d's `-torpassword`
 configuration option.
 
 #### Cookie authentication
 
-For cookie authentication, the user running bitcoinIId must have read access to
+For cookie authentication, the user running bitcoinII-d must have read access to
 the `CookieAuthFile` specified in the Tor configuration. In some cases this is
 preconfigured and the creation of an onion service is automatic. Don't forget to
-use the `-debug=tor` bitcoinIId configuration option to enable Tor debug logging.
+use the `-debug=tor` bitcoinII-d configuration option to enable Tor debug logging.
 
 If a permissions problem is seen in the debug log, e.g. `tor: Authentication
 cookie /run/tor/control.authcookie could not be opened (check permissions)`, it
 can be resolved by adding both the user running Tor and the user running
-bitcoinIId to the same Tor group and setting permissions appropriately.
+bitcoinII-d to the same Tor group and setting permissions appropriately.
 
 On Debian-derived systems, the Tor group will likely be `debian-tor` and one way
 to verify could be to list the groups and grep for a "tor" group name:
@@ -129,14 +153,14 @@ TORGROUP=$(stat -c '%G' /run/tor/control.authcookie)
 ```
 
 Once you have determined the `${TORGROUP}` and selected the `${USER}` that will
-run bitcoinIId, run this as root:
+run bitcoinII-d, run this as root:
 
 ```
 usermod -a -G ${TORGROUP} ${USER}
 ```
 
 Then restart the computer (or log out) and log in as the `${USER}` that will run
-bitcoinIId.
+bitcoinII-d.
 
 #### `torpassword` authentication
 
@@ -159,7 +183,7 @@ Add these lines to your `/etc/tor/torrc` (or equivalent config file):
     HiddenServicePort 8333 127.0.0.1:8334
 
 The directory can be different of course, but virtual port numbers should be equal to
-your bitcoinIId's P2P listen port (8333 by default), and target addresses and ports
+your bitcoinII-d's P2P listen port (8333 by default), and target addresses and ports
 should be equal to binding address and port for inbound Tor connections (127.0.0.1:8334 by default).
 
     -externalip=X   You can tell bitcoinII about its publicly reachable addresses using
@@ -187,25 +211,25 @@ should be equal to binding address and port for inbound Tor connections (127.0.0
 
 In a typical situation, where you're only reachable via Tor, this should suffice:
 
-    ./bitcoinIId -proxy=127.0.0.1:9050 -externalip=7zvj7a2imdgkdbg4f2dryd5rgtrn7upivr5eeij4cicjh65pooxeshid.onion -listen
+    bitcoinII-d -proxy=127.0.0.1:9050 -externalip=7zvj7a2imdgkdbg4f2dryd5rgtrn7upivr5eeij4cicjh65pooxeshid.onion -listen
 
 (obviously, replace the .onion address with your own). It should be noted that you still
 listen on all devices and another node could establish a clearnet connection, when knowing
 your address. To mitigate this, additionally bind the address of your Tor proxy:
 
-    ./bitcoinIId ... -bind=127.0.0.1:8334=onion
+    bitcoinII-d ... -bind=127.0.0.1:8334=onion
 
 If you don't care too much about hiding your node, and want to be reachable on IPv4
 as well, use `discover` instead:
 
-    ./bitcoinIId ... -discover
+    bitcoinII-d ... -discover
 
 and open port 8333 on your firewall (or use port mapping, i.e., `-natpmp`).
 
 If you only want to use Tor to reach .onion addresses, but not use it as a proxy
 for normal IPv4/IPv6 communication, use:
 
-    ./bitcoinIId -onion=127.0.0.1:9050 -externalip=7zvj7a2imdgkdbg4f2dryd5rgtrn7upivr5eeij4cicjh65pooxeshid.onion -discover
+    bitcoinII-d -onion=127.0.0.1:9050 -externalip=7zvj7a2imdgkdbg4f2dryd5rgtrn7upivr5eeij4cicjh65pooxeshid.onion -discover
 
 ## 4. Privacy recommendations
 
@@ -214,3 +238,10 @@ for normal IPv4/IPv6 communication, use:
   Otherwise it is trivial to link them, which may reduce privacy. Onion
   services created automatically (as in section 2) always have only one port
   open.
+- Operating a node that listens on multiple networks (e.g. IPv4 and Tor) can help
+  strengthen the BitcoinII network, as nodes in this configuration (i.e. bridge nodes) increase
+  the cost and complexity of launching eclipse and partition attacks. However, under certain
+  conditions, an adversary that can connect to your node on multiple networks may be
+  able to correlate those identities by observing shared runtime characteristics. It
+  is not recommended to expose your node over multiple networks if you require
+  unlinkability across those identities.

@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2022 The BitcoinII Core developers
+// Copyright (c) 2012-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -9,6 +9,7 @@
 #include <span.h>
 #include <streams.h>
 #include <secp256k1_extrakeys.h>
+#include <test/util/common.h>
 #include <test/util/random.h>
 #include <test/util/setup_common.h>
 #include <uint256.h>
@@ -341,7 +342,7 @@ BOOST_AUTO_TEST_CASE(key_ellswift)
         BOOST_CHECK(key.IsValid());
 
         uint256 ent32 = m_rng.rand256();
-        auto ellswift = key.EllSwiftCreate(AsBytes(Span{ent32}));
+        auto ellswift = key.EllSwiftCreate(std::as_bytes(std::span{ent32}));
 
         CPubKey decoded_pubkey = ellswift.Decode();
         if (!key.IsCompressed()) {
@@ -376,9 +377,9 @@ BOOST_AUTO_TEST_CASE(key_schnorr_tweak_smoke_test)
     secp256k1_keypair keypair;
     BOOST_CHECK(secp256k1_keypair_create(secp256k1_context_sign, &keypair, UCharCast(key.begin())));
     secp256k1_xonly_pubkey xonly_pubkey;
-    BOOST_CHECK(secp256k1_keypair_xonly_pub(secp256k1_context_sign, &xonly_pubkey, nullptr, &keypair));
+    BOOST_CHECK(secp256k1_keypair_xonly_pub(secp256k1_context_static, &xonly_pubkey, nullptr, &keypair));
     unsigned char xonly_bytes[32];
-    BOOST_CHECK(secp256k1_xonly_pubkey_serialize(secp256k1_context_sign, xonly_bytes, &xonly_pubkey));
+    BOOST_CHECK(secp256k1_xonly_pubkey_serialize(secp256k1_context_static, xonly_bytes, &xonly_pubkey));
     uint256 tweak_old = XOnlyPubKey(xonly_bytes).ComputeTapTweakHash(&merkle_root);
 
     // CPubKey

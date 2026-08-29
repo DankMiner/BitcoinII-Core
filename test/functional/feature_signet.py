@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-# Copyright (c) 2019-2022 The BitcoinII Core developers
+# Copyright (c) 2019-present The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test basic signet functionality"""
 
 from decimal import Decimal
 
-from test_framework.test_framework import BitcoinIITestFramework
+from test_framework.test_framework import BitcoinIITestFramework, SkipTest
 from test_framework.util import assert_equal
 
 SIGNET_DEFAULT_CHALLENGE = '512103ad5e0edad18cb1f0fc0d28a3d4f1f3e445640337489abb10404f2d1e086be430210359ef5021964fe22d6f8e05b2463c9540ce96883fe3b278760f048f5189f2e6c452ae'
@@ -60,6 +60,9 @@ class SignetBasicTest(BitcoinIITestFramework):
         self.connect_nodes(0, 1)
         self.connect_nodes(2, 3)
         self.connect_nodes(4, 5)
+
+    def skip_test_if_missing_module(self):
+        raise SkipTest("Bitcoin Core pregenerated Signet block fixtures are not valid for BitcoinII")
 
     def run_test(self):
         self.log.info("basic tests using OP_TRUE challenge")

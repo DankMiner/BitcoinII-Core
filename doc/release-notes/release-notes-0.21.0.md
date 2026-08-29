@@ -3,14 +3,14 @@
 
 BitcoinII Core version 0.21.0 is now available from:
 
-  <https://bitcoincore.org/bin/bitcoinII-core-0.21.0/>
+  <https://bitcoincore.org/bin/bitcoin-core-0.21.0/>
 
 This release includes new features, various bug fixes and performance
 improvements, as well as updated translations.
 
 Please report bugs using the issue tracker at GitHub:
 
-  <https://github.com/bitcoinII/bitcoinII/issues>
+  <https://github.com/bitcoin/bitcoin/issues>
 
 To receive security and update notifications, please subscribe to:
 
@@ -22,7 +22,7 @@ How to Upgrade
 If you are running an older version, shut it down. Wait until it has completely
 shut down (which might take a few minutes in some cases), then run the
 installer (on Windows) or just copy over `/Applications/BitcoinII-Qt` (on Mac)
-or `bitcoinIId`/`bitcoinII-qt` (on Linux).
+or `bitcoinII-d`/`bitcoinII-qt` (on Linux).
 
 Upgrading directly from a version of BitcoinII Core that has reached its EOL is
 possible, but it might take some time if the data directory needs to be migrated. Old
@@ -73,7 +73,7 @@ P2P and network changes
 
 - This release adds support for Tor version 3 hidden services, and rumoring them
   over the network to other peers using
-  [BIP155](https://github.com/bitcoinII/bips/blob/master/bip-0155.mediawiki).
+  [BIP155](https://github.com/bitcoin/bips/blob/master/bip-0155.mediawiki).
   Version 2 hidden services are still fully supported by BitcoinII Core, but the
   Tor network will start
   [deprecating](https://blog.torproject.org/v2-deprecation-timeline) them in the
@@ -98,12 +98,12 @@ P2P and network changes
   eclipse attack. (#17428)
 
 - This release adds support for serving
-  [BIP157](https://github.com/bitcoinII/bips/blob/master/bip-0157.mediawiki) compact
+  [BIP157](https://github.com/bitcoin/bips/blob/master/bip-0157.mediawiki) compact
   filters to peers on the network when enabled using
   `-blockfilterindex=1 -peerblockfilters=1`. (#16442)
 
 - This release adds support for signets
-  ([BIP325](https://github.com/bitcoinII/bips/blob/master/bip-0325.mediawiki)) in
+  ([BIP325](https://github.com/bitcoin/bips/blob/master/bip-0325.mediawiki)) in
   addition to the existing mainnet, testnet, and regtest networks. Signets are
   centrally-controlled test networks, allowing them to be more predictable
   test environments than the older testnet. One public signet is maintained, and
@@ -111,13 +111,13 @@ P2P and network changes
   (#18267).
 
 - This release implements
-  [BIP339](https://github.com/bitcoinII/bips/blob/master/bip-0339.mediawiki)
+  [BIP339](https://github.com/bitcoin/bips/blob/master/bip-0339.mediawiki)
   wtxid relay. When negotiated, transactions are announced using their wtxid
   instead of their txid. (#18044).
 
 - This release implements the proposed Taproot consensus rules
-  ([BIP341](https://github.com/bitcoinII/bips/blob/master/bip-0341.mediawiki) and
-  [BIP342](https://github.com/bitcoinII/bips/blob/master/bip-0342.mediawiki)),
+  ([BIP341](https://github.com/bitcoin/bips/blob/master/bip-0341.mediawiki) and
+  [BIP342](https://github.com/bitcoin/bips/blob/master/bip-0342.mediawiki)),
   without activation on mainnet. Experimentation with Taproot can be done on
   signet, where its rules are already active. (#19553)
 
@@ -340,7 +340,7 @@ create` commands, or the `createwallet` RPC. (#15454, #20186)
 
 Please note that Descriptor Wallets are still experimental and not all expected functionality
 is available. Additionally there may be some bugs and current functions may change in the future.
-Bugs and missing functionality can be reported to the [issue tracker](https://github.com/bitcoinII/bitcoinII/issues).
+Bugs and missing functionality can be reported to the [issue tracker](https://github.com/bitcoin/bitcoin/issues).
 
 0.21 introduces a new type of wallet - Descriptor Wallets. Descriptor Wallets store
 scriptPubKey information using output descriptors. This is in contrast to the Legacy Wallet
@@ -467,24 +467,24 @@ was already being broken by the move to descriptors.
   command line setting. The wallet will already fail to create transactions
   with fees higher than `-maxtxfee`. (#18467)
 
-- A new `fee_rate` parameter/option denominated in satoshis per vbyte (sat/vB)
+- A new `fee_rate` parameter/option denominated in satooshis per vbyte (sat2/vB)
   is introduced to the `sendtoaddress`, `sendmany`, `fundrawtransaction` and
   `walletcreatefundedpsbt` RPCs as well as to the experimental new `send`
   RPC. The legacy `feeRate` option in `fundrawtransaction` and
   `walletcreatefundedpsbt` still exists for setting a fee rate in BC2 per 1,000
   vbytes (BC2/kvB), but it is expected to be deprecated soon to avoid
   confusion. For these RPCs, the fee rate error message is updated from BC2/kB
-  to sat/vB and the help documentation in BC2/kB is updated to BC2/kvB. The
+  to sat2/vB and the help documentation in BC2/kB is updated to BC2/kvB. The
   `send` and `sendtoaddress` RPC examples are updated to aid users in creating
   transactions with explicit fee rates. (#20305, #11413)
 
-- The `bumpfee` RPC `fee_rate` option is changed from BC2/kvB to sat/vB and the
+- The `bumpfee` RPC `fee_rate` option is changed from BC2/kvB to sat2/vB and the
   help documentation is updated. Users are warned that this is a breaking API
   change, but it should be relatively benign: the large (100,000 times)
-  difference between BC2/kvB and sat/vB units means that a transaction with a
-  fee rate mistakenly calculated in BC2/kvB rather than sat/vB should raise an
+  difference between BC2/kvB and sat2/vB units means that a transaction with a
+  fee rate mistakenly calculated in BC2/kvB rather than sat2/vB should raise an
   error due to the fee rate being set too low. In the worst case, the
-  transaction may send at 1 sat/vB, but as Replace-by-Fee (BIP125 RBF) is active
+  transaction may send at 1 sat2/vB, but as Replace-by-Fee (BIP125 RBF) is active
   by default when an explicit fee rate is used, the transaction fee can be
   bumped. (#20305)
 
@@ -712,7 +712,7 @@ Tests
 - #20378 Fix potential division by 0 in WalletLogPrintf (jonasschnelli)
 - #18836 Upgradewallet fixes and additional tests (achow101)
 - #20139 Do not return warnings from UpgradeWallet() (stackman27)
-- #20305 Introduce `fee_rate` sat/vB param/option (jonatack)
+- #20305 Introduce `fee_rate` sat2/vB param/option (jonatack)
 - #20426 Allow zero-fee fundrawtransaction/walletcreatefundedpsbt and other fixes (jonatack)
 - #20573 wallet, bugfix: allow send with string `fee_rate` amounts (jonatack)
 
@@ -1161,7 +1161,7 @@ Tests
 - #19765 Fix getmempoolancestors RPC result doc (MarcoFalke)
 - #19786 Remove label from good first issue template (MarcoFalke)
 - #19646 Updated outdated help command for getblocktemplate (jakeleventhal)
-- #18817 Document differences in bitcoinIId and bitcoinII-qt locale handling (practicalswift)
+- #18817 Document differences in bitcoinII-d and bitcoinII-qt locale handling (practicalswift)
 - #19870 update PyZMQ install instructions, fix `zmq_sub.py` file permissions (jonatack)
 - #19903 Update build-openbsd.md with GUI support (grubles)
 - #19241 help: Generate checkpoint height from chainparams (luke-jr)
@@ -1333,4 +1333,4 @@ Thanks to everyone who directly contributed to this release:
 - Wladimir J. van der Laan
 
 As well as to everyone that helped with translations on
-[Transifex](https://www.transifex.com/bitcoinII/bitcoinII/).
+[Transifex](https://www.transifex.com/bitcoin/bitcoin/).

@@ -8,7 +8,7 @@ Transifex is setup to monitor the GitHub repo for updates, and when code contain
 
 Multiple language support is critical in assisting BitcoinII’s global adoption, and growth. One of BitcoinII’s greatest strengths is cross-border money transfers, any help making that easier is greatly appreciated.
 
-See the [Transifex BitcoinII project](https://www.transifex.com/bitcoinII/bitcoinII/) to assist in translations. You should also join the translation mailing list for announcements - see details below.
+See the [Transifex Bitcoin project](https://explore.transifex.com/bitcoin/bitcoin/) to assist in translations. You should also join the translation mailing list for announcements - see details below.
 
 ### Writing code with translations
 We use automated scripts to help extract translations in both Qt, and non-Qt source files. It is rarely necessary to manually edit the files in `src/qt/locale/`. The translation source files must adhere to the following format:
@@ -18,7 +18,7 @@ We use automated scripts to help extract translations in both Qt, and non-Qt sou
 
 To automatically regenerate the `bitcoinII_en.ts` file, run the following commands:
 ```sh
-cmake --preset dev-mode -DWITH_USDT=OFF -DWITH_MULTIPROCESS=OFF
+cmake --preset dev-mode -DWITH_USDT=OFF -DENABLE_IPC=OFF
 cmake --build build_dev_mode --target translate
 ```
 
@@ -39,9 +39,9 @@ git commit
 ```
 
 ### Creating a Transifex account
-Visit the [Transifex Signup](https://www.transifex.com/signup/) page to create an account. Take note of your username and password, as they will be required to configure the command-line tool.
+Visit the [Transifex Signup](https://app.transifex.com/signup/open-source/) page to create an account. Take note of your username and password, as they will be required to configure the command-line tool.
 
-You can find the BitcoinII translation project at [https://www.transifex.com/bitcoinII/bitcoinII/](https://www.transifex.com/bitcoinII/bitcoinII/).
+You can find the Bitcoin translation project at [https://explore.transifex.com/bitcoin/bitcoin/](https://explore.transifex.com/bitcoin/bitcoin/).
 
 ### Installing the Transifex client command-line tool
 The client is used to fetch updated translations. Please check installation instructions and any other details at https://developers.transifex.com/docs/cli.
@@ -50,7 +50,7 @@ The Transifex BitcoinII project config file is included as part of the repo. It 
 
 ### Synchronising translations
 
-To assist in updating translations, a helper script is available in the [maintainer-tools repo](https://github.com/bitcoinII-core/bitcoinII-maintainer-tools). To use it and commit the result, simply do:
+To assist in updating translations, a helper script is available in the [maintainer-tools repo](https://github.com/bitcoin-core/bitcoin-maintainer-tools). To use it and commit the result, simply do:
 
 ```
 python3 ../bitcoinII-maintainer-tools/update-translations.py
@@ -84,4 +84,4 @@ To create a new language template, you will need to edit the languages manifest 
 
 ### Questions and general assistance
 
-If you are a translator, you should also subscribe to the mailing list, https://groups.google.com/forum/#!forum/bitcoinII-translators. Announcements will be posted during application pre-releases to notify translators to check for updates.
+If you are a translator, you should also subscribe to the mailing list, https://groups.google.com/forum/#!forum/bitcoin-translators. Announcements will be posted during application pre-releases to notify translators to check for updates.

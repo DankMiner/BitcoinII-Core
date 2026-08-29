@@ -1,5 +1,5 @@
 BitcoinII version 0.4.1 is now available for download at:
-http://sourceforge.net/projects/bitcoinII/files/BitcoinII/bitcoinII-0.4.1/
+http://sourceforge.net/projects/bitcoin/files/Bitcoin/bitcoin-0.4.1/
 
 This is a bugfix only release based on 0.4.0.
 
@@ -11,7 +11,7 @@ The wallet encryption feature introduced in BitcoinII version 0.4.0 did not suff
 managed to get a copy of your encrypted wallet.dat file might be able to recover some or all of the unencrypted keys and steal the
 associated coins.
 
-If you have a previously encrypted wallet.dat, the first time you run wxbitcoinII or bitcoinIId the wallet will be rewritten, BitcoinII will
+If you have a previously encrypted wallet.dat, the first time you run wxbitcoinII or bitcoinII-d the wallet will be rewritten, BitcoinII will
 shut down, and you will be prompted to restart it to run with the new, properly encrypted file.
 
 If you had a previously encrypted wallet.dat that might have been copied or stolen (for example, you backed it up to a public
@@ -26,7 +26,7 @@ new private keys are properly backed up you should:
 
 2. Run it again, then ask it for a new bitcoinII address.
 wxBitcoinII: new address visible on main window
-bitcoinIId: run the 'walletpassphrase' RPC command to unlock the wallet,  then run the 'getnewaddress' RPC command.
+bitcoinII-d: run the 'walletpassphrase' RPC command to unlock the wallet,  then run the 'getnewaddress' RPC command.
 
 3. If your encrypted wallet.dat may have been copied or stolen, send all of your bitcoinIIs to the new bitcoinII address.
 

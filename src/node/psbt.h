@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2021 The BitcoinII Core developers
+// Copyright (c) 2009-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -7,6 +7,7 @@
 
 #include <psbt.h>
 
+#include <cstdint>
 #include <optional>
 
 namespace node {
@@ -52,7 +53,7 @@ struct PSBTAnalysis {
  * @param[in] psbtx the PSBT to analyze
  * @return A PSBTAnalysis with information about the provided PSBT.
  */
-PSBTAnalysis AnalyzePSBT(PartiallySignedTransaction psbtx);
+PSBTAnalysis AnalyzePSBT(PartiallySignedTransaction psbtx, uint32_t sighash_fork_id = 0);
 } // namespace node
 
 #endif // BITCOINII_NODE_PSBT_H

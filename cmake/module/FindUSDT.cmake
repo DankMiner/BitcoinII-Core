@@ -1,4 +1,4 @@
-# Copyright (c) 2024-present The BitcoinII Core developers
+# Copyright (c) 2024-present The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://opensource.org/license/mit/.
 
@@ -36,6 +36,10 @@ if(USDT_INCLUDE_DIR)
   include(CheckCXXSourceCompiles)
   set(CMAKE_REQUIRED_INCLUDES ${USDT_INCLUDE_DIR})
   check_cxx_source_compiles("
+    #if defined(__arm__)
+    #  define STAP_SDT_ARG_CONSTRAINT g
+    #endif
+
     // Setting SDT_USE_VARIADIC lets systemtap (sys/sdt.h) know that we want to use
     // the optional variadic macros to define tracepoints.
     #define SDT_USE_VARIADIC 1

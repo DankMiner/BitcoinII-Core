@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+#
+#  bitcoinII-d The bitcoinII core server.
+#
+#
+# chkconfig: 345 80 20
+# description: bitcoinII-d
+# processname: bitcoinII-d
+#
+
+# Source function library.
+. /etc/init.d/functions
+
+# you can override defaults in /etc/sysconfig/bitcoinII-d, see below
+if [ -f /etc/sysconfig/bitcoinII-d ]; then
+        . /etc/sysconfig/bitcoinII-d
+fi
+
+RETVAL=0
+
+prog=bitcoinII-d
+# you can override the lockfile via BITCOINIID_LOCKFILE in /etc/sysconfig/bitcoinII-d
+lockfile=${BITCOINIID_LOCKFILE-/var/lock/subsys/bitcoinII-d}
+
+# bitcoinII-d defaults to /usr/bin/bitcoinII-d, override with BITCOINIID_BIN
+bitcoinII_d=${BITCOINIID_BIN-/usr/bin/bitcoinII-d}
+
+# bitcoinII-d opts default to -disablewallet, override with BITCOINIID_OPTS
+bitcoinII_d_opts=${BITCOINIID_OPTS--disablewallet}
+
+start() {
+    echo -n $"Starting $prog: "
+    daemon $DAEMONOPTS $bitcoinII_d $bitcoinII_d_opts
+    RETVAL=$?
+    echo
+    [ $RETVAL -eq 0 ] && touch $lockfile
+    return $RETVAL
+}
+
+stop() {
+    echo -n $"Stopping $prog: "
+    killproc $prog -t600
+    RETVAL=$?
+    echo
+    [ $RETVAL -eq 0 ] && rm -f $lockfile
+    return $RETVAL
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    status)
+        status $prog
+        ;;
+    restart)
+        stop
+        start
+        ;;
+    *)
+        echo "Usage: service $prog {start|stop|status|restart}"
+        exit 1
+        ;;
+esac

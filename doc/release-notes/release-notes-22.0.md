@@ -3,14 +3,14 @@
 
 BitcoinII Core version 22.0 is now available from:
 
-  <https://bitcoincore.org/bin/bitcoinII-core-22.0/>
+  <https://bitcoincore.org/bin/bitcoin-core-22.0/>
 
 This release includes new features, various bug fixes and performance
 improvements, as well as updated translations.
 
 Please report bugs using the issue tracker at GitHub:
 
-  <https://github.com/bitcoinII/bitcoinII/issues>
+  <https://github.com/bitcoin/bitcoin/issues>
 
 To receive security and update notifications, please subscribe to:
 
@@ -22,7 +22,7 @@ How to Upgrade
 If you are running an older version, shut it down. Wait until it has completely
 shut down (which might take a few minutes in some cases), then run the
 installer (on Windows) or just copy over `/Applications/BitcoinII-Qt` (on Mac)
-or `bitcoinIId`/`bitcoinII-qt` (on Linux).
+or `bitcoinII-d`/`bitcoinII-qt` (on Linux).
 
 Upgrading directly from a version of BitcoinII Core that has reached its EOL is
 possible, but it might take some time if the data directory needs to be migrated. Old
@@ -46,7 +46,7 @@ P2P and network changes
 -----------------------
 - Added support for running BitcoinII Core as an
   [I2P (Invisible Internet Project)](https://en.wikipedia.org/wiki/I2P) service
-  and connect to such services. See [i2p.md](https://github.com/bitcoinII/bitcoinII/blob/22.x/doc/i2p.md) for details. (#20685)
+  and connect to such services. See [i2p.md](https://github.com/bitcoin/bitcoin/blob/22.x/doc/i2p.md) for details. (#20685)
 - This release removes support for Tor version 2 hidden services in favor of Tor
   v3 only, as the Tor network [dropped support for Tor
   v2](https://blog.torproject.org/v2-deprecation-timeline) with the release of
@@ -60,13 +60,13 @@ P2P and network changes
 New and Updated RPCs
 --------------------
 
-- Due to [BIP 350](https://github.com/bitcoinII/bips/blob/master/bip-0350.mediawiki)
+- Due to [BIP 350](https://github.com/bitcoin/bips/blob/master/bip-0350.mediawiki)
   being implemented, behavior for all RPCs that accept addresses is changed when
   a native witness version 1 (or higher) is passed. These now require a Bech32m
   encoding instead of a Bech32 one, and Bech32m encoding will be used for such
   addresses in RPC output as well. No version 1 addresses should be created
   for mainnet until consensus rules are adopted that give them meaning
-  (as will happen through [BIP 341](https://github.com/bitcoinII/bips/blob/master/bip-0341.mediawiki)).
+  (as will happen through [BIP 341](https://github.com/bitcoin/bips/blob/master/bip-0341.mediawiki)).
   Once that happens, Bech32m is expected to be used for them, so this shouldn't
   affect any production systems, but may be observed on other networks where such
   addresses already have meaning (like signet). (#20861)
@@ -152,7 +152,7 @@ Updated settings
 
 Changes to Wallet or GUI related settings can be found in the GUI or Wallet section below.
 
-- Passing an invalid `-rpcauth` argument now cause bitcoinIId to fail to start.  (#20461)
+- Passing an invalid `-rpcauth` argument now cause bitcoinII-d to fail to start.  (#20461)
 
 Tools and Utilities
 -------------------
@@ -170,7 +170,7 @@ Tools and Utilities
 Wallet
 ------
 
-- External signers such as hardware wallets can now be used through the new RPC methods `enumeratesigners` and `displayaddress`. Support is also added to the `send` RPC call. This feature is experimental. See [external-signer.md](https://github.com/bitcoinII/bitcoinII/blob/22.x/doc/external-signer.md) for details. (#16546)
+- External signers such as hardware wallets can now be used through the new RPC methods `enumeratesigners` and `displayaddress`. Support is also added to the `send` RPC call. This feature is experimental. See [external-signer.md](https://github.com/bitcoin/bitcoin/blob/22.x/doc/external-signer.md) for details. (#16546)
 
 - A new `listdescriptors` RPC is available to inspect the contents of descriptor-enabled wallets.
   The RPC returns public versions of all imported descriptors, including their timestamp and flags.
@@ -187,12 +187,12 @@ Wallet
 - We now support up to 20 keys in `multi()` and `sortedmulti()` descriptors
   under `wsh()`. (#20867)
 
-- Taproot descriptors can be imported into the wallet only after activation has occurred on the network (e.g. mainnet, testnet, signet) in use. See [descriptors.md](https://github.com/bitcoinII/bitcoinII/blob/22.x/doc/descriptors.md) for supported descriptors.
+- Taproot descriptors can be imported into the wallet only after activation has occurred on the network (e.g. mainnet, testnet, signet) in use. See [descriptors.md](https://github.com/bitcoin/bitcoin/blob/22.x/doc/descriptors.md) for supported descriptors.
 
 GUI changes
 -----------
 
-- External signers such as hardware wallets can now be used. These require an external tool such as [HWI](https://github.com/bitcoinII-core/HWI) to be installed and configured under Options -> Wallet. When creating a new wallet a new option "External signer" will appear in the dialog. If the device is detected, its name is suggested as the wallet name. The watch-only keys are then automatically imported. Receive addresses can be verified on the device. The send dialog will automatically use the connected device. This feature is experimental and the UI may freeze for a few seconds when performing these actions.
+- External signers such as hardware wallets can now be used. These require an external tool such as [HWI](https://github.com/bitcoin-core/HWI) to be installed and configured under Options -> Wallet. When creating a new wallet a new option "External signer" will appear in the dialog. If the device is detected, its name is suggested as the wallet name. The watch-only keys are then automatically imported. Receive addresses can be verified on the device. The send dialog will automatically use the connected device. This feature is experimental and the UI may freeze for a few seconds when performing these actions.
 
 Low-level changes
 =================
@@ -394,7 +394,7 @@ A detailed list of changes in this version follows. To keep the list to a manage
 - bitcoinII/bitcoinII#21574 Drop JSONRPCRequest constructors after #21366 (ryanofsky)
 - bitcoinII/bitcoinII#21666 Miscellaneous external signer changes (fanquake)
 - bitcoinII/bitcoinII#21759 Document coin selection code (glozow)
-- bitcoinII/bitcoinII#21786 Ensure sat/vB feerates are in range (mantissa of 3) (jonatack)
+- bitcoinII/bitcoinII#21786 Ensure sat2/vB feerates are in range (mantissa of 3) (jonatack)
 - bitcoinII/bitcoinII#21944 Fix issues when `walletdir` is root directory (prayank23)
 - bitcoinII/bitcoinII#22042 Replace size/weight estimate tuple with struct for named fields (instagibbs)
 - bitcoinII/bitcoinII#22051 Basic Taproot derivation support for descriptors (sipa)
@@ -411,7 +411,7 @@ A detailed list of changes in this version follows. To keep the list to a manage
 - bitcoinII/bitcoinII#22686 Use GetSelectionAmount in ApproximateBestSubset (achow101)
 
 ### RPC and other APIs
-- bitcoinII/bitcoinII#18335, bitcoinII/bitcoinII#21484 cli: Print useful error if bitcoinIId rpc work queue exceeded (LarryRuane)
+- bitcoinII/bitcoinII#18335, bitcoinII/bitcoinII#21484 cli: Print useful error if bitcoinII-d rpc work queue exceeded (LarryRuane)
 - bitcoinII/bitcoinII#18466 Fix invalid parameter error codes for `{sign,verify}message` RPCs (theStack)
 - bitcoinII/bitcoinII#18772 Calculate fees in `getblock` using BlockUndo data (robot-visions)
 - bitcoinII/bitcoinII#19033 http: Release work queue after event base finish (promag)
@@ -896,10 +896,10 @@ A detailed list of changes in this version follows. To keep the list to a manage
 - bitcoinII/bitcoinII#20715 util: Add argsmanager::getcommand() and use it in bitcoinII-wallet (MarcoFalke)
 - bitcoinII/bitcoinII#20735 script: Remove outdated extract-osx-sdk.sh (hebasto)
 - bitcoinII/bitcoinII#20817 lint: Update list of spelling linter false positives, bump to codespell 2.0.0 (theStack)
-- bitcoinII/bitcoinII#20884 script: Improve robustness of bitcoinIId.service on startup (hebasto)
+- bitcoinII/bitcoinII#20884 script: Improve robustness of bitcoinII-d.service on startup (hebasto)
 - bitcoinII/bitcoinII#20906 contrib: Embed c++11 patch in `install_db4.sh` (gruve-p)
 - bitcoinII/bitcoinII#21004 contrib: Fix docker args conditional in gitian-build (setpill)
-- bitcoinII/bitcoinII#21007 bitcoinIId: Add -daemonwait option to wait for initialization (laanwj)
+- bitcoinII/bitcoinII#21007 bitcoinII-d: Add -daemonwait option to wait for initialization (laanwj)
 - bitcoinII/bitcoinII#21041 log: Move "Pre-allocating up to position 0x[…] in […].dat" log message to debug category (practicalswift)
 - bitcoinII/bitcoinII#21059 Drop boost/preprocessor dependencies (hebasto)
 - bitcoinII/bitcoinII#21087 guix: Passthrough `BASE_CACHE` into container (dongcarl)
@@ -1160,4 +1160,4 @@ Thanks to everyone who directly contributed to this release:
 - Zero
 
 As well as to everyone that helped with translations on
-[Transifex](https://www.transifex.com/bitcoinII/bitcoinII/).
+[Transifex](https://www.transifex.com/bitcoin/bitcoin/).

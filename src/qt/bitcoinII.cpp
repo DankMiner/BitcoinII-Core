@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2022 The BitcoinII Core developers
+// Copyright (c) 2011-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -90,12 +90,7 @@ static void RegisterMetaTypes()
     qRegisterMetaType<std::function<void()>>("std::function<void()>");
     qRegisterMetaType<QMessageBox::Icon>("QMessageBox::Icon");
     qRegisterMetaType<interfaces::BlockAndHeaderTipInfo>("interfaces::BlockAndHeaderTipInfo");
-
-#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
-    qRegisterMetaTypeStreamOperators<BitcoinIIUnit>("BitcoinIIUnit");
-#else
     qRegisterMetaType<BitcoinIIUnit>("BitcoinIIUnit");
-#endif
 }
 
 static QString GetLangTerritory()
@@ -134,11 +129,7 @@ static void initTranslations(QTranslator &qtTranslatorBase, QTranslator &qtTrans
     // - First load the translator for the base language, without territory
     // - Then load the more specific locale translator
 
-#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
-    const QString translation_path{QLibraryInfo::location(QLibraryInfo::TranslationsPath)};
-#else
     const QString translation_path{QLibraryInfo::path(QLibraryInfo::TranslationsPath)};
-#endif
     // Load e.g. qt_de.qm
     if (qtTranslatorBase.load("qt_" + lang, translation_path)) {
         QApplication::installTranslator(&qtTranslatorBase);
@@ -199,7 +190,7 @@ void DebugMessageHandler(QtMsgType type, const QMessageLogContext& context, cons
     if (type == QtDebugMsg) {
         LogDebug(BCLog::QT, "GUI: %s\n", msg.toStdString());
     } else {
-        LogPrintf("GUI: %s\n", msg.toStdString());
+        LogInfo("GUI: %s", msg.toStdString());
     }
 }
 
@@ -389,53 +380,54 @@ void BitcoinIIApplication::initializeResult(bool success, interfaces::BlockAndHe
 {
     qDebug() << __func__ << ": Initialization result: " << success;
 
-    if (success) {
-        delete m_splash;
-        m_splash = nullptr;
+    if (!success || m_node->shutdownRequested()) {
+        requestShutdown();
+        return;
+    }
 
-        // Log this only after AppInitMain finishes, as then logging setup is guaranteed complete
-        qInfo() << "Platform customization:" << platformStyle->getName();
-        clientModel = new ClientModel(node(), optionsModel);
-        window->setClientModel(clientModel, &tip_info);
+    delete m_splash;
+    m_splash = nullptr;
 
-        // If '-min' option passed, start window minimized (iconified) or minimized to tray
-        bool start_minimized = gArgs.GetBoolArg("-min", false);
+    // Log this only after AppInitMain finishes, as then logging setup is guaranteed complete
+    qInfo() << "Platform customization:" << platformStyle->getName();
+    clientModel = new ClientModel(node(), optionsModel);
+    window->setClientModel(clientModel, &tip_info);
+
+    // If '-min' option passed, start window minimized (iconified) or minimized to tray
+    bool start_minimized = gArgs.GetBoolArg("-min", false);
 #ifdef ENABLE_WALLET
-        if (WalletModel::isWalletEnabled()) {
-            m_wallet_controller = new WalletController(*clientModel, platformStyle, this);
-            window->setWalletController(m_wallet_controller, /*show_loading_minimized=*/start_minimized);
-            if (paymentServer) {
-                paymentServer->setOptionsModel(optionsModel);
-            }
+    if (WalletModel::isWalletEnabled()) {
+        m_wallet_controller = new WalletController(*clientModel, platformStyle, this);
+        window->setWalletController(m_wallet_controller, /*show_loading_minimized=*/start_minimized);
+        if (paymentServer) {
+            paymentServer->setOptionsModel(optionsModel);
         }
+    }
 #endif // ENABLE_WALLET
 
-        // Show or minimize window
-        if (!start_minimized) {
-            window->show();
-        } else if (clientModel->getOptionsModel()->getMinimizeToTray() && window->hasTrayIcon()) {
-            // do nothing as the window is managed by the tray icon
-        } else {
-            window->showMinimized();
-        }
-        Q_EMIT windowShown(window);
+    // Show or minimize window
+    if (!start_minimized) {
+        window->show();
+    } else if (clientModel->getOptionsModel()->getMinimizeToTray() && window->hasTrayIcon()) {
+        // do nothing as the window is managed by the tray icon
+    } else {
+        window->showMinimized();
+    }
+    Q_EMIT windowShown(window);
 
 #ifdef ENABLE_WALLET
-        // Now that initialization/startup is done, process any command-line
-        // bitcoinII: URIs or payment requests:
-        if (paymentServer) {
-            connect(paymentServer, &PaymentServer::receivedPaymentRequest, window, &BitcoinIIGUI::handlePaymentRequest);
-            connect(window, &BitcoinIIGUI::receivedURI, paymentServer, &PaymentServer::handleURIOrFile);
-            connect(paymentServer, &PaymentServer::message, [this](const QString& title, const QString& message, unsigned int style) {
-                window->message(title, message, style);
-            });
-            QTimer::singleShot(100ms, paymentServer, &PaymentServer::uiReady);
-        }
-#endif
-        pollShutdownTimer->start(SHUTDOWN_POLLING_DELAY);
-    } else {
-        requestShutdown();
+    // Now that initialization/startup is done, process any command-line
+    // bitcoinII: URIs or payment requests:
+    if (paymentServer) {
+        connect(paymentServer, &PaymentServer::receivedPaymentRequest, window, &BitcoinIIGUI::handlePaymentRequest);
+        connect(window, &BitcoinIIGUI::receivedURI, paymentServer, &PaymentServer::handleURIOrFile);
+        connect(paymentServer, &PaymentServer::message, [this](const QString& title, const QString& message, unsigned int style) {
+            window->message(title, message, style);
+        });
+        QTimer::singleShot(100ms, paymentServer, &PaymentServer::uiReady);
     }
+#endif
+    pollShutdownTimer->start(SHUTDOWN_POLLING_DELAY);
 }
 
 void BitcoinIIApplication::handleRunawayException(const QString &message)
@@ -487,11 +479,6 @@ static void SetupUIArgs(ArgsManager& argsman)
 
 int GuiMain(int argc, char* argv[])
 {
-#ifdef WIN32
-    common::WinCmdLineArgs winArgs;
-    std::tie(argc, argv) = winArgs.get();
-#endif
-
     std::unique_ptr<interfaces::Init> init = interfaces::MakeGuiInit(argc, argv);
 
     SetupEnvironment();
@@ -507,12 +494,6 @@ int GuiMain(int argc, char* argv[])
     /// 1. Basic Qt initialization (not dependent on parameters or configuration)
     Q_INIT_RESOURCE(bitcoinII);
     Q_INIT_RESOURCE(bitcoinII_locale);
-
-#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
-    // Generate high-dpi pixmaps
-    QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
-    QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-#endif
 
 #if defined(QT_QPA_PLATFORM_ANDROID)
     QApplication::setAttribute(Qt::AA_DontUseNativeMenuBar);

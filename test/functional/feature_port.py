@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2024-present The BitcoinII Core developers
+# Copyright (c) 2024-present The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """
@@ -28,7 +28,7 @@ class PortTest(BitcoinIITestFramework):
         port1 = p2p_port(self.num_nodes)
         port2 = p2p_port(self.num_nodes + 5)
 
-        self.log.info("When starting with -port, bitcoinIId binds to it and uses port + 1 for an onion bind")
+        self.log.info("When starting with -port, bitcoinII-d binds to it and uses port + 1 for an onion bind")
         with node.assert_debug_log(expected_msgs=[f'Bound to 0.0.0.0:{port1}', f'Bound to 127.0.0.1:{port1 + 1}']):
             self.restart_node(0, extra_args=["-listen", f"-port={port1}"])
 

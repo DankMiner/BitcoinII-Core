@@ -1,11 +1,11 @@
 Sample configuration files for:
 ```
-systemd: bitcoinIId.service
-Upstart: bitcoinIId.conf
-OpenRC:  bitcoinIId.openrc
-         bitcoinIId.openrcconf
-CentOS:  bitcoinIId.init
-macOS:   org.bitcoinII.bitcoinIId.plist
+systemd: bitcoinII-d.service
+Upstart: bitcoinII-d.conf
+OpenRC:  bitcoinII-d.openrc
+         bitcoinII-d.openrcconf
+CentOS:  bitcoinII-d.init
+macOS:   org.bitcoinII.bitcoinII-d.plist
 ```
 have been made available to assist packagers in creating node packages here.
 

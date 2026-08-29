@@ -1,24 +1,30 @@
 #!/usr/bin/env bash
 #
-# Copyright (c) 2018-present The BitcoinII Core developers
+# Copyright (c) 2018-present The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 export LC_ALL=C
 
-set -ex
+set -o errexit -o pipefail -o xtrace
 
-if [ -n "$CIRRUS_PR" ]; then
+# Fixes permission issues when there is a container UID/GID mismatch with the owner
+# of the mounted bitcoinII src dir.
+git config --global --add safe.directory /bitcoinII
+
+export PATH="/python_build/bin:${PATH}"
+
+if [ -n "${LINT_CI_IS_PR}" ]; then
   export COMMIT_RANGE="HEAD~..HEAD"
   if [ "$(git rev-list -1 HEAD)" != "$(git rev-list -1 --merges HEAD)" ]; then
-    echo "Error: The top commit must be a merge commit, usually the remote 'pull/${PR_NUMBER}/merge' branch."
+    echo "Error: The top commit must be a merge commit, usually the remote 'pull/<PR_NUMBER>/merge' branch."
     false
   fi
 fi
 
-RUST_BACKTRACE=1 "${LINT_RUNNER_PATH}/test_runner"
+RUST_BACKTRACE=1 cargo run --manifest-path "./test/lint/test_runner/Cargo.toml" -- "$@"
 
-if [ "$CIRRUS_REPO_FULL_NAME" = "bitcoinII/bitcoinII" ] && [ "$CIRRUS_PR" = "" ] ; then
+if [ "${LINT_CI_SANITY_CHECK_COMMIT_SIG}" = "1" ] ; then
     # Sanity check only the last few commits to get notified of missing sigs,
     # missing keys, or expired keys. Usually there is only one new merge commit
     # per push on the master branch and a few commits on release branches, so

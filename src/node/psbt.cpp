@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2022 The BitcoinII Core developers
+// Copyright (c) 2009-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -13,7 +13,7 @@
 #include <numeric>
 
 namespace node {
-PSBTAnalysis AnalyzePSBT(PartiallySignedTransaction psbtx)
+PSBTAnalysis AnalyzePSBT(PartiallySignedTransaction psbtx, uint32_t sighash_fork_id)
 {
     // Go through each input and build status
     PSBTAnalysis result;
@@ -24,7 +24,7 @@ PSBTAnalysis AnalyzePSBT(PartiallySignedTransaction psbtx)
 
     result.inputs.resize(psbtx.tx->vin.size());
 
-    const PrecomputedTransactionData txdata = PrecomputePSBTData(psbtx);
+    const PrecomputedTransactionData txdata = PrecomputePSBTData(psbtx, sighash_fork_id);
 
     for (unsigned int i = 0; i < psbtx.tx->vin.size(); ++i) {
         PSBTInput& input = psbtx.inputs[i];
@@ -64,7 +64,7 @@ PSBTAnalysis AnalyzePSBT(PartiallySignedTransaction psbtx)
 
             // Figure out what is missing
             SignatureData outdata;
-            bool complete = SignPSBTInput(DUMMY_SIGNING_PROVIDER, psbtx, i, &txdata, 1, &outdata);
+            bool complete = SignPSBTInput(DUMMY_SIGNING_PROVIDER, psbtx, i, &txdata, std::nullopt, &outdata) == PSBTError::OK;
 
             // Things are missing
             if (!complete) {
@@ -124,7 +124,7 @@ PSBTAnalysis AnalyzePSBT(PartiallySignedTransaction psbtx)
             PSBTInput& input = psbtx.inputs[i];
             Coin newcoin;
 
-            if (!SignPSBTInput(DUMMY_SIGNING_PROVIDER, psbtx, i, nullptr, 1) || !psbtx.GetInputUTXO(newcoin.out, i)) {
+            if (SignPSBTInput(DUMMY_SIGNING_PROVIDER, psbtx, i, nullptr, std::nullopt) != PSBTError::OK || !psbtx.GetInputUTXO(newcoin.out, i)) {
                 success = false;
                 break;
             } else {

@@ -1,4 +1,4 @@
-# Copyright (c) 2023-present The BitcoinII Core developers
+# Copyright (c) 2023-present The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://opensource.org/license/mit/.
 
@@ -9,6 +9,7 @@ add_library(bitcoinII_util STATIC EXCLUDE_FROM_ALL
   bytevectorhash.cpp
   chaintype.cpp
   check.cpp
+  exec.cpp
   exception.cpp
   feefrac.cpp
   fs.cpp
@@ -43,4 +44,5 @@ target_link_libraries(bitcoinII_util
     bitcoinII_crypto
     $<$<PLATFORM_ID:Windows>:ws2_32>
     $<$<PLATFORM_ID:Windows>:iphlpapi>
+    $<$<PLATFORM_ID:Windows>:bcrypt>
 )

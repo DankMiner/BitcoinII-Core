@@ -10,7 +10,7 @@ A script to call a faucet to get Signet coins.
 Syntax: `getcoins.py [-h|--help] [-c|--cmd=<bitcoinII-cli path>] [-f|--faucet=<faucet URL>] [-a|--addr=<signet bech32 address>] [-p|--password=<faucet password>] [--] [<bitcoinII-cli args>]`
 
 * `--cmd` lets you customize the bitcoinII-cli path. By default it will look for it in the PATH
-* `--faucet` lets you specify which faucet to use; the faucet is assumed to be compatible with https://github.com/kallewoof/bitcoinII-faucet
+* `--faucet` lets you specify which faucet to use; the faucet is assumed to be compatible with https://github.com/kallewoof/bitcoin-faucet
 * `--addr` lets you specify a Signet address; by default, the address must be a bech32 address. This and `--cmd` above complement each other (i.e. you do not need `bitcoinII-cli` if you use `--addr`)
 * `--password` lets you specify a faucet password; this is handy if you are in a classroom and set up your own faucet for your students; (above faucet does not limit by IP when password is enabled)
 
@@ -80,3 +80,4 @@ These steps can instead be done explicitly:
 
 This is intended to allow you to replace part of the pipeline for further experimentation (eg, to sign the block with a hardware wallet).
 
+For custom signets with a trivial challenge such as `OP_TRUE` and `OP_2` the walletprocesspsbt step can be skipped.

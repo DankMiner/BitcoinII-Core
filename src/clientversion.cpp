@@ -1,10 +1,11 @@
-// Copyright (c) 2012-2022 The BitcoinII Core developers
+// Copyright (c) 2012-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <bitcoinII-build-config.h> // IWYU pragma: keep
 
 #include <clientversion.h>
+
 #include <util/string.h>
 #include <util/translation.h>
 
@@ -17,10 +18,10 @@ using util::Join;
 
 /**
  * Name of client reported in the 'version' message. Report the same name
- * for both bitcoinIId and bitcoinII-qt, to make it harder for attackers to
+ * for both bitcoinII-d and bitcoinII-qt, to make it harder for attackers to
  * target servers or GUI users specifically.
  */
-const std::string UA_NAME("Satoshi");
+const std::string UA_NAME("BitcoinII");
 
 
 #include <bitcoinII-build-info.h>
@@ -30,8 +31,8 @@ const std::string UA_NAME("Satoshi");
 //   - "#define BUILD_GIT_COMMIT ...", if the top commit is not tagged
 //   - "// No build information available", if proper git information is not available
 
-//! git will put "#define GIT_COMMIT_ID ..." on the next line inside archives. 
-#define GIT_COMMIT_ID "f490f5562d4b20857ef8d042c050763795fd43da"
+// git will expand the next line to "#define GIT_COMMIT_ID ..." inside archives:
+//$Format:%n#define GIT_COMMIT_ID "%H"$
 
 #ifdef BUILD_GIT_TAG
     #define BUILD_DESC BUILD_GIT_TAG
@@ -61,7 +62,7 @@ std::string FormatFullVersion()
 }
 
 /**
- * Format the subversion field according to BIP 14 spec (https://github.com/bitcoinII/bips/blob/master/bip-0014.mediawiki)
+ * Format the subversion field according to BIP 14 spec (https://github.com/bitcoin/bips/blob/master/bip-0014.mediawiki)
  */
 std::string FormatSubVersion(const std::string& name, int nClientVersion, const std::vector<std::string>& comments)
 {
@@ -75,8 +76,7 @@ std::string CopyrightHolders(const std::string& strPrefix)
     const auto copyright_devs = strprintf(_(COPYRIGHT_HOLDERS), COPYRIGHT_HOLDERS_SUBSTITUTION).translated;
     std::string strCopyrightHolders = strPrefix + copyright_devs;
 
-    // Make sure BitcoinII Core copyright is not removed by accident
-    strCopyrightHolders = strPrefix + " Satoshi Nakamoto\n" + strCopyrightHolders;
+    // Make sure Bitcoin Core copyright is not removed by accident
     if (copyright_devs.find("Bitcoin Core") == std::string::npos) {
         strCopyrightHolders += "\n" + strPrefix + "The Bitcoin Core developers";
     }
@@ -85,19 +85,22 @@ std::string CopyrightHolders(const std::string& strPrefix)
 
 std::string LicenseInfo()
 {
-    const std::string URL_SOURCE_CODE = "<https://github.com/Bitcoin-II/BitcoinII-Core>";
+    const std::string URL_BITCOINII_SOURCE_CODE = "<https://github.com/Bitcoin-II/BitcoinII-Core>";
+    const std::string URL_BITCOIN_CORE_SOURCE_CODE = "<https://github.com/bitcoin/bitcoin>";
 
-    return CopyrightHolders(strprintf(_("Copyright (C) %i-%i"), 2009, COPYRIGHT_YEAR).translated + " ") + "\n" +
+    return strprintf(_("Copyright (C) %i"), COPYRIGHT_YEAR).translated + " The BitcoinII developers\n" +
+           strprintf(_("Copyright (C) %i-%i"), 2009, COPYRIGHT_YEAR).translated + " The Bitcoin Core developers\n" +
            "\n" +
            strprintf(_("Please contribute if you find %s useful. "
                        "Visit %s for further information about the software."),
                      CLIENT_NAME, "<" CLIENT_URL ">")
                .translated +
            "\n" +
-           strprintf(_("The source code is available from %s."), URL_SOURCE_CODE).translated +
+           strprintf(_("The BitcoinII source code is available from %s"), URL_BITCOINII_SOURCE_CODE).translated + "\n" +
+           strprintf(_("The Bitcoin Core source code is available from %s."), URL_BITCOIN_CORE_SOURCE_CODE).translated +
            "\n" +
            "\n" +
            _("This is experimental software.") + "\n" +
-           strprintf(_("Distributed under the MIT software license, see the accompanying file %s or %s"), "COPYING", "<https://opensource.org/licenses/MIT>").translated +
+           strprintf(_("Distributed under the MIT software license, see the accompanying file %s or %s"), "COPYING", "<https://opensource.org/license/MIT>").translated +
            "\n";
 }

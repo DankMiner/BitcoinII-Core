@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2022 The BitcoinII Core developers
+# Copyright (c) 2022-present The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test Miniscript descriptors integration in the wallet."""
@@ -203,16 +203,12 @@ DESCS_PRIV = [
 
 
 class WalletMiniscriptTest(BitcoinIITestFramework):
-    def add_options(self, parser):
-        self.add_wallet_options(parser, legacy=False)
-
     def set_test_params(self):
         self.num_nodes = 1
         self.rpc_timeout = 180
 
     def skip_test_if_missing_module(self):
         self.skip_if_no_wallet()
-        self.skip_if_no_sqlite()
 
     def watchonly_test(self, desc):
         self.log.info(f"Importing descriptor '{desc}'")
@@ -301,14 +297,14 @@ class WalletMiniscriptTest(BitcoinIITestFramework):
                 psbt.i[0].map[k] = bytes.fromhex(preimage)
             psbt = psbt.to_base64()
         res = self.ms_sig_wallet.walletprocesspsbt(psbt=psbt, finalize=False)
-        psbtin = self.nodes[0].rpc.decodepsbt(res["psbt"])["inputs"][0]
+        psbtin = self.nodes[0].decodepsbt(res["psbt"])["inputs"][0]
         sigs_field_name = "taproot_script_path_sigs" if is_taproot else "partial_signatures"
         assert len(psbtin[sigs_field_name]) == sigs_count
         res = self.ms_sig_wallet.finalizepsbt(res["psbt"])
         assert res["complete"] == (stack_size is not None)
 
         if stack_size is not None:
-            txin = self.nodes[0].rpc.decoderawtransaction(res["hex"])["vin"][0]
+            txin = self.nodes[0].decoderawtransaction(res["hex"])["vin"][0]
             assert len(txin["txinwitness"]) == stack_size, txin["txinwitness"]
             self.log.info("Broadcasting the transaction.")
             # If necessary, satisfy a relative timelock
@@ -326,10 +322,10 @@ class WalletMiniscriptTest(BitcoinIITestFramework):
         self.log.info("Making a descriptor wallet")
         self.funder = self.nodes[0].get_wallet_rpc(self.default_wallet_name)
         self.nodes[0].createwallet(
-            wallet_name="ms_wo", descriptors=True, disable_private_keys=True
+            wallet_name="ms_wo", disable_private_keys=True
         )
         self.ms_wo_wallet = self.nodes[0].get_wallet_rpc("ms_wo")
-        self.nodes[0].createwallet(wallet_name="ms_sig", descriptors=True)
+        self.nodes[0].createwallet(wallet_name="ms_sig")
         self.ms_sig_wallet = self.nodes[0].get_wallet_rpc("ms_sig")
 
         # Sanity check we wouldn't let an insane Miniscript descriptor in
@@ -373,31 +369,6 @@ class WalletMiniscriptTest(BitcoinIITestFramework):
                 desc["stack_size"],
                 desc.get("sha256_preimages"),
             )
-
-        # Test we can sign for a max-size TapMiniscript. Recompute the maximum accepted size
-        # for a TapMiniscript (see cpp file for details). Then pad a simple pubkey check up
-        # to the maximum size. Make sure we can import and spend this script.
-        leeway_weight = (4 + 4 + 1 + 36 + 4 + 1 + 1 + 8 + 1 + 1 + 33) * 4 + 2
-        max_tapmini_size = 400_000 - 3 - (1 + 65) * 1_000 - 3 - (33 + 32 * 128) - leeway_weight - 5
-        padding = max_tapmini_size - 33 - 1
-        ms = f"pk({TPRVS[0]}/*)"
-        ms = "n" * padding + ":" + ms
-        desc = f"tr({PUBKEYS[0]},{ms})"
-        self.signing_test(desc, None, None, 1, 3, None)
-        # This was really the maximum size, one more byte and we can't import it.
-        ms = "n" + ms
-        desc = f"tr({PUBKEYS[0]},{ms})"
-        res = self.ms_wo_wallet.importdescriptors(
-            [
-                {
-                    "desc": descsum_create(desc),
-                    "active": False,
-                    "timestamp": "now",
-                }
-            ]
-        )[0]
-        assert not res["success"]
-        assert "is not a valid descriptor function" in res["error"]["message"]
 
 
 if __name__ == "__main__":

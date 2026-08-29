@@ -1,4 +1,4 @@
-# Copyright (c) 2023-present The BitcoinII Core developers
+# Copyright (c) 2023-present The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://opensource.org/license/mit/.
 
@@ -18,6 +18,5 @@ ${formatted_bytes}
 };
 
 inline constexpr std::span ${raw_source_basename}{detail_${raw_source_basename}_raw};
-}
-")
+}")
 file(WRITE ${HEADER_PATH} "${header_content}")

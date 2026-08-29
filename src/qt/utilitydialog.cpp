@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2022 The BitcoinII Core developers
+// Copyright (c) 2011-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -57,7 +57,7 @@ HelpMessageDialog::HelpMessageDialog(QWidget *parent, bool about) :
     } else {
         setWindowTitle(tr("Command-line options"));
         QString header = "The bitcoinII-qt application provides a graphical interface for interacting with " CLIENT_NAME ".\n\n"
-                         "It combines the core functionalities of bitcoinIId with a user-friendly interface for wallet management, transaction history, and network statistics.\n\n"
+                         "It combines the core functionalities of bitcoinII-d with a user-friendly interface for wallet management, transaction history, and network statistics.\n\n"
                          "It is suitable for users who prefer a graphical over a command-line interface.\n\n"
                          "You can optionally specify a payment [URI], in e.g. the BIP21 URI format.\n\n"
                          "Usage: bitcoinII-qt [options] [URI]\n\n";

@@ -1,14 +1,24 @@
 #!/usr/bin/env python3
-# Copyright (c) 2024 The BitcoinII Core developers
+# Copyright (c) 2024-present The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Helpful routines for mempool testing."""
-from decimal import Decimal
+import random
 
 from .blocktools import (
     COINBASE_MATURITY,
 )
-from .messages import CTransaction
+from .messages import (
+    COutPoint,
+    CTransaction,
+    CTxIn,
+    CTxInWitness,
+    CTxOut,
+)
+from .script import (
+    CScript,
+    OP_RETURN,
+)
 from .util import (
     assert_equal,
     assert_greater_than,
@@ -19,7 +29,15 @@ from .wallet import (
     MiniWallet,
 )
 
-ORPHAN_TX_EXPIRE_TIME = 1200
+# Default for -minrelaytxfee in sat2/kvB
+DEFAULT_MIN_RELAY_TX_FEE = 100
+# Default for -incrementalrelayfee in sat2/kvB
+DEFAULT_INCREMENTAL_RELAY_FEE = 100
+DEFAULT_CLUSTER_LIMIT = 64
+DEFAULT_CLUSTER_SIZE_LIMIT_KVB = 101
+
+TRUC_MAX_VSIZE = 10000
+TRUC_CHILD_MAX_VSIZE = 1000
 
 def assert_mempool_contents(test_framework, node, expected=None, sync=True):
     """Assert that all transactions in expected are in the mempool,
@@ -34,29 +52,29 @@ def assert_mempool_contents(test_framework, node, expected=None, sync=True):
     mempool = node.getrawmempool(verbose=False)
     assert_equal(len(mempool), len(expected))
     for tx in expected:
-        assert tx.rehash() in mempool
+        assert tx.txid_hex in mempool
 
 
 def fill_mempool(test_framework, node, *, tx_sync_fun=None):
     """Fill mempool until eviction.
 
     Allows for simpler testing of scenarios with floating mempoolminfee > minrelay
-    Requires -datacarriersize=100000 and -maxmempool=5 and assumes -minrelaytxfee
-    is 1 sat/vbyte.
+    Requires -maxmempool=5.
     To avoid unintentional tx dependencies, the mempool filling txs are created with a
     tagged ephemeral miniwallet instance.
     """
     test_framework.log.info("Fill the mempool until eviction is triggered and the mempoolminfee rises")
     txouts = gen_return_txouts()
-    relayfee = node.getnetworkinfo()['relayfee']
-
-    assert_equal(relayfee, Decimal('0.00001000'))
+    minrelayfee = node.getnetworkinfo()['relayfee']
 
     tx_batch_size = 1
+    # BitcoinII's large-transaction helper uses many ordinary outputs instead of
+    # one oversized OP_RETURN. Continue filling after eviction begins so the
+    # mempool remains close to its configured size limit.
     num_of_batches = 75
     # Generate UTXOs to flood the mempool
     # 1 to create a tx initially that will be evicted from the mempool later
-    # 75 transactions each with a fee rate higher than the previous one
+    # 75 transactions with progressively higher fee rates.
     ephemeral_miniwallet = MiniWallet(node, tag_name="fill_mempool_ephemeral_wallet")
     test_framework.generate(ephemeral_miniwallet, 1 + num_of_batches * tx_batch_size)
 
@@ -70,7 +88,7 @@ def fill_mempool(test_framework, node, *, tx_sync_fun=None):
 
     test_framework.log.debug("Create a mempool tx that will be evicted")
     tx_to_be_evicted_id = ephemeral_miniwallet.send_self_transfer(
-        from_node=node, utxo_to_spend=confirmed_utxos.pop(0), fee_rate=relayfee)["txid"]
+        from_node=node, utxo_to_spend=confirmed_utxos.pop(0), fee_rate=minrelayfee)["txid"]
 
     def send_batch(fee):
         utxos = confirmed_utxos[:tx_batch_size]
@@ -78,31 +96,52 @@ def fill_mempool(test_framework, node, *, tx_sync_fun=None):
         del confirmed_utxos[:tx_batch_size]
 
     # Increase the tx fee rate to give the subsequent transactions a higher priority in the mempool
-    # The tx has an approx. vsize of 65k, i.e. multiplying the previous fee rate (in sats/kvB)
+    # The tx has an approx. vsize of 65k, i.e. multiplying the previous fee rate (in sat2s/kvB)
     # by 130 should result in a fee that corresponds to 2x of that fee rate
-    base_fee = relayfee * 130
+    base_fee = minrelayfee * 130
     batch_fees = [(i + 1) * base_fee for i in range(num_of_batches)]
 
     test_framework.log.debug("Fill up the mempool with txs with higher fee rate")
-    for fee in batch_fees[:-3]:
+    batches_sent = 0
+    eviction_triggered = False
+    for fee in batch_fees:
         send_batch(fee)
-    tx_sync_fun() if tx_sync_fun else test_framework.sync_mempools()  # sync before any eviction
-    assert_equal(node.getmempoolinfo()["mempoolminfee"], Decimal("0.00001000"))
-    for fee in batch_fees[-3:]:
-        send_batch(fee)
-    tx_sync_fun() if tx_sync_fun else test_framework.sync_mempools()  # sync after all evictions
+        batches_sent += 1
+
+        mempool_info = node.getmempoolinfo()
+        if mempool_info["mempoolminfee"] > minrelayfee:
+            eviction_triggered = True
+
+        if eviction_triggered and mempool_info["maxmempool"] - mempool_info["usage"] < 250_000:
+            break
+
+    if not eviction_triggered:
+        raise AssertionError("Failed to trigger mempool eviction")
+
+    tx_sync_fun() if tx_sync_fun else test_framework.sync_mempools()
 
     test_framework.log.debug("The tx should be evicted by now")
-    # The number of transactions created should be greater than the ones present in the mempool
-    assert_greater_than(tx_batch_size * num_of_batches, len(node.getrawmempool()))
+    mempool = node.getrawmempool()
+    # At least one transaction must have been evicted.
+    assert_greater_than(1 + tx_batch_size * batches_sent, len(mempool))
     # Initial tx created should not be present in the mempool anymore as it had a lower fee rate
-    assert tx_to_be_evicted_id not in node.getrawmempool()
+    assert tx_to_be_evicted_id not in mempool
 
     test_framework.log.debug("Check that mempoolminfee is larger than minrelaytxfee")
-    assert_equal(node.getmempoolinfo()['minrelaytxfee'], Decimal('0.00001000'))
-    assert_greater_than(node.getmempoolinfo()['mempoolminfee'], Decimal('0.00001000'))
+    assert_equal(node.getmempoolinfo()['minrelaytxfee'], minrelayfee)
+    assert_greater_than(node.getmempoolinfo()['mempoolminfee'], minrelayfee)
 
 def tx_in_orphanage(node, tx: CTransaction) -> bool:
     """Returns true if the transaction is in the orphanage."""
-    found = [o for o in node.getorphantxs(verbosity=1) if o["txid"] == tx.rehash() and o["wtxid"] == tx.getwtxid()]
+    found = [o for o in node.getorphantxs(verbosity=1) if o["txid"] == tx.txid_hex and o["wtxid"] == tx.wtxid_hex]
     return len(found) == 1
+
+def create_large_orphan():
+    """Create huge orphan transaction"""
+    tx = CTransaction()
+    # Nonexistent UTXO
+    tx.vin = [CTxIn(COutPoint(random.randrange(1 << 256), random.randrange(1, 100)))]
+    tx.wit.vtxinwit = [CTxInWitness()]
+    tx.wit.vtxinwit[0].scriptWitness.stack = [CScript(b'X' * 390000)]
+    tx.vout = [CTxOut(100, CScript([OP_RETURN, b'a' * 20]))]
+    return tx

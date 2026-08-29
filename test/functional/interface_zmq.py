@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2015-2022 The BitcoinII Core developers
+# Copyright (c) 2015-present The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test the ZMQ notification interface."""
@@ -114,7 +114,7 @@ class ZMQTest (BitcoinIITestFramework):
 
     def skip_test_if_missing_module(self):
         self.skip_if_no_py3_zmq()
-        self.skip_if_no_bitcoinIId_zmq()
+        self.skip_if_no_bitcoinII_d_zmq()
 
     def run_test(self):
         self.wallet = MiniWallet(self.nodes[0])
@@ -174,7 +174,7 @@ class ZMQTest (BitcoinIITestFramework):
 
         # set subscriber's desired timeout for the test
         for sub in subscribers:
-            sub.socket.set(zmq.RCVTIMEO, recv_timeout*1000)
+            sub.socket.set(zmq.RCVTIMEO, int(recv_timeout * self.options.timeout_factor * 1000))
 
         self.connect_nodes(0, 1)
         if sync_blocks:
@@ -212,15 +212,14 @@ class ZMQTest (BitcoinIITestFramework):
 
             # Should receive the coinbase raw transaction.
             tx = tx_from_hex(rawtx.receive().hex())
-            tx.calc_sha256()
-            assert_equal(tx.hash, txid.hex())
+            assert_equal(tx.txid_hex, txid.hex())
 
             # Should receive the generated raw block.
             hex = rawblock.receive()
             block = CBlock()
             block.deserialize(BytesIO(hex))
             assert block.is_valid()
-            assert_equal(block.vtx[0].hash, tx.hash)
+            assert_equal(block.vtx[0].txid_hex, tx.txid_hex)
             assert_equal(len(block.vtx), 1)
             assert_equal(genhashes[x], hash256_reversed(hex[:80]).hex())
 
@@ -425,7 +424,7 @@ class ZMQTest (BitcoinIITestFramework):
         block.solve()
         assert_equal(self.nodes[0].submitblock(block.serialize().hex()), None)
         tip = self.nodes[0].getbestblockhash()
-        assert_equal(int(tip, 16), block.sha256)
+        assert_equal(int(tip, 16), block.hash_int)
         orig_txid_2 = self.wallet.send_self_transfer(from_node=self.nodes[0])['txid']
 
         # Flush old notifications until evicted tx original entry

@@ -24,7 +24,7 @@ don't have test cases for.
 - The oldest supported Python version is specified in [doc/dependencies.md](/doc/dependencies.md).
   Consider using [pyenv](https://github.com/pyenv/pyenv), which checks [.python-version](/.python-version),
   to prevent accidentally introducing modern syntax from an unsupported Python version.
-  The CI linter job also checks this, but [possibly not in all cases](https://github.com/bitcoinII/bitcoinII/pull/14884#discussion_r239585126).
+  The CI linter job also checks this, but [possibly not in all cases](https://github.com/bitcoin/bitcoin/pull/14884#discussion_r239585126).
 - See [the python lint script](/test/lint/lint-python.py) that checks for violations that
   could lead to bugs and issues in the test code.
 - Use [type hints](https://docs.python.org/3/library/typing.html) in your code to improve code readability
@@ -104,10 +104,10 @@ over the network (`CBlock`, `CTransaction`, etc, along with the network-level
 wrappers for them, `msg_block`, `msg_tx`, etc).
 
 - P2P tests have two threads. One thread handles all network communication
-with the bitcoinIId(s) being tested in a callback-based event loop; the other
+with the bitcoinII-d(s) being tested in a callback-based event loop; the other
 implements the test logic.
 
-- `P2PConnection` is the class used to connect to a bitcoinIId.  `P2PInterface`
+- `P2PConnection` is the class used to connect to a bitcoinII-d.  `P2PInterface`
 contains the higher level logic for processing P2P payloads and connecting to
 the BitcoinII Core node application logic. For custom behaviour, subclass the
 P2PInterface object and override the callback methods.
@@ -145,7 +145,7 @@ The following are useful modules for test developers. They are located in
 [test/functional/test_framework/](test_framework).
 
 #### [authproxy.py](test_framework/authproxy.py)
-Taken from the [python-bitcoinIIrpc repository](https://github.com/jgarzik/python-bitcoinIIrpc).
+Taken from the [python-bitcoinrpc repository](https://github.com/jgarzik/python-bitcoinrpc).
 
 #### [test_framework.py](test_framework/test_framework.py)
 Base class for functional tests.
@@ -154,7 +154,7 @@ Base class for functional tests.
 Generally useful functions.
 
 #### [p2p.py](test_framework/p2p.py)
-Test objects for interacting with a bitcoinIId node over the p2p interface.
+Test objects for interacting with a bitcoinII-d node over the p2p interface.
 
 #### [script.py](test_framework/script.py)
 Utilities for manipulating transaction scripts (originally from python-bitcoinIIlib)
@@ -183,7 +183,7 @@ way is the use the `profile_with_perf` context manager, e.g.
 with node.profile_with_perf("send-big-msgs"):
     # Perform activity on the node you're interested in profiling, e.g.:
     for _ in range(10000):
-        node.p2ps[0].send_message(some_large_message)
+        node.p2ps[0].send_without_ping(some_large_message)
 ```
 
 To see useful textual output, run

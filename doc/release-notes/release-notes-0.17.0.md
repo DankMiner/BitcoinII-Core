@@ -1,13 +1,13 @@
 BitcoinII Core version 0.17.0 is now available from:
 
-  <https://bitcoincore.org/bin/bitcoinII-core-0.17.0/>
+  <https://bitcoincore.org/bin/bitcoin-core-0.17.0/>
 
 This is a new major version release, including new features, various bugfixes
 and performance improvements, as well as updated translations.
 
 Please report bugs using the issue tracker at GitHub:
 
-  <https://github.com/bitcoinII/bitcoinII/issues>
+  <https://github.com/bitcoin/bitcoin/issues>
 
 To receive security and update notifications, please subscribe to:
 
@@ -19,7 +19,7 @@ How to Upgrade
 If you are running an older version, shut it down. Wait until it has completely
 shut down (which might take a few minutes for older versions), then run the
 installer (on Windows) or just copy over `/Applications/BitcoinII-Qt` (on Mac)
-or `bitcoinIId`/`bitcoinII-qt` (on Linux).
+or `bitcoinII-d`/`bitcoinII-qt` (on Linux).
 
 If your node has a txindex, the txindex db will be migrated the first time you run 0.17.0 or newer, which may take up to a few hours. Your node will not be functional until this migration completes.
 
@@ -151,7 +151,7 @@ outside of sections.
 
 A new 'label' API has been introduced for the wallet. This is intended as a
 replacement for the deprecated 'account' API. The 'account' can continue to
-be used in V0.17 by starting bitcoinIId with the '-deprecatedrpc=accounts'
+be used in V0.17 by starting bitcoinII-d with the '-deprecatedrpc=accounts'
 argument, and will be fully removed in V0.18.
 
 The label RPC methods mirror the account functionality, with the following functional differences:
@@ -187,11 +187,11 @@ Here are the changes to RPC methods:
 BIP 174 Partially Signed BitcoinII Transactions support
 -----------------------------------------------------
 
-[BIP 174 PSBT](https://github.com/bitcoinII/bips/blob/master/bip-0174.mediawiki) is an interchange format for BitcoinII transactions that are not fully signed
+[BIP 174 PSBT](https://github.com/bitcoin/bips/blob/master/bip-0174.mediawiki) is an interchange format for Bitcoin transactions that are not fully signed
 yet, together with relevant metadata to help entities work towards signing it.
 It is intended to simplify workflows where multiple parties need to cooperate to
 produce a transaction. Examples include hardware wallets, multisig setups, and
-[CoinJoin](https://bitcoinIItalk.org/?topic=279249) transactions.
+[CoinJoin](https://bitcointalk.org/?topic=279249) transactions.
 
 ### Overall workflow
 
@@ -322,7 +322,7 @@ Low-level RPC changes
   `pubkeys`, `sigsrequired`, `pubkey`, `addresses`, `embedded`, `iscompressed`,
   `account`, `timestamp`, `hdkeypath`, `hdmasterkeyid`.
 - `signrawtransaction` is deprecated and will be fully removed in v0.18. To use
-  `signrawtransaction` in v0.17, restart bitcoinIId with
+  `signrawtransaction` in v0.17, restart bitcoinII-d with
   `-deprecatedrpc=signrawtransaction`. Projects should transition to using
   `signrawtransactionwithkey` and `signrawtransactionwithwallet` before
   upgrading to v0.18.
@@ -336,7 +336,7 @@ Other API changes
 
 - The log timestamp format is now ISO 8601 (e.g. "2018-02-28T12:34:56Z").
 
-- When running bitcoinIId with `-debug` but without `-daemon`, logging to stdout
+- When running bitcoinII-d with `-debug` but without `-daemon`, logging to stdout
   is now the default behavior. Setting `-printtoconsole=1` no longer implicitly
   disables logging to debug.log. Instead, logging to file can be explicitly disabled
   by setting `-debuglogfile=0`.
@@ -345,7 +345,7 @@ Transaction index changes
 -------------------------
 
 The transaction index is now built separately from the main node procedure,
-meaning the `-txindex` flag can be toggled without a full reindex. If bitcoinIId
+meaning the `-txindex` flag can be toggled without a full reindex. If bitcoinII-d
 is run with `-txindex` on a node that is already partially or fully synced
 without one, the transaction index will be built in the background and become
 available once caught up. When switching from running `-txindex` to running
@@ -578,7 +578,7 @@ Support for Python 2 has been discontinued for all test files and tools.
 - #12928 `ef006d9` Initialize non-static class members that were previously neither initialized where defined nor in constructor (practicalswift)
 - #13158 `81c533c` Improve sendcoinsdialog readability (marcoagner)
 - #11491 `40c34a0` Add proxy icon in statusbar (mess110)
-- #13264 `2a7c53b` Satoshi unit (GreatSock)
+- #13264 `2a7c53b` Satooshi unit (GreatSock)
 - #13097 `e545503` Support wallets loaded dynamically (promag)
 - #13284 `f8be434` fix visual "overflow" of amount input (brandonrninefive)
 - #13275 `a315b79` use `[default wallet]` as name for wallet with no name (jonasschnelli)
@@ -809,8 +809,8 @@ Support for Python 2 has been discontinued for all test files and tools.
 - #10694 `ae5bcc7` Remove redundant code in MutateTxSign(CMutableTransaction&, const std::string&) (practicalswift)
 - #12659 `3d16f58` Improve Fatal LevelDB Log Messages (eklitzke)
 - #12643 `0f0229d` util: Remove unused `sync_chain` (MarcoFalke)
-- #12102 `7fb8fb4` Apply hardening measures in bitcoinIId systemd service file (Flowdalic)
-- #12652 `55f490a` bitcoinII-cli: Provide a better error message when bitcoinIId is not running (practicalswift)
+- #12102 `7fb8fb4` Apply hardening measures in bitcoinII-d systemd service file (Flowdalic)
+- #12652 `55f490a` bitcoinII-cli: Provide a better error message when bitcoinII-d is not running (practicalswift)
 - #12630 `c290508` Provide useful error message if datadir is not writable (murrayn)
 - #11881 `624bee9` Remove Python2 support (jnewbery)
 - #12821 `082e26c` contrib: Remove unused import string (MarcoFalke)
@@ -831,7 +831,7 @@ Support for Python 2 has been discontinued for all test files and tools.
 - #13031 `826acc9` Fix for utiltime to compile with msvc (sipsorcery)
 - #13119 `81743b5` Remove script to clean up datadirs (MarcoFalke)
 - #12954 `5a66642` util: Refactor logging code into a global object (jimpo)
-- #12769 `35eb9d6` Add systemd service to bitcoinIId in debian package (ghost)
+- #12769 `35eb9d6` Add systemd service to bitcoinII-d in debian package (ghost)
 - #13146 `0bc980b` rpcauth: Make it possible to provide a custom password (laanwj)
 - #13148 `b62b437` logging: Fix potential use-after-free in logprintstr(…) (practicalswift)
 - #13214 `0612d96` Enable Travis checking for two Python linting rules we are currently not violating (practicalswift)
@@ -898,7 +898,7 @@ Support for Python 2 has been discontinued for all test files and tools.
 - #12800 `2d97611` Add note about our preference for scoped enumerations ("enum class") (practicalswift)
 - #12798 `174d016` Refer to witness reserved value as spec. in the BIP (MarcoFalke)
 - #12759 `d3908e2` Improve formatting of developer notes (eklitzke)
-- #12877 `2b54155` Use bitcoinIId in Tor documentation (knoxcard)
+- #12877 `2b54155` Use bitcoinII-d in Tor documentation (knoxcard)
 - #12896 `b15485e` Fix conflicting statements about initialization in developer notes (practicalswift)
 - #12850 `319991d` add qrencode to brew install instructions (buddilla)
 - #12007 `cd8e45b` Clarify the meaning of fee delta not being a fee rate in prioritisetransaction RPC (honzik666)
@@ -1102,4 +1102,4 @@ And to those that reported security issues:
 
 - awemany (for CVE-2018-17144, previously credited as "anonymous reporter")
 
-As well as everyone that helped translating on [Transifex](https://www.transifex.com/projects/p/bitcoinII/).
+As well as everyone that helped translating on [Transifex](https://www.transifex.com/projects/p/bitcoin/).
