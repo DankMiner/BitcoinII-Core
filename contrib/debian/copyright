@@ -11,11 +11,13 @@ Comment: The BitcoinII Core Developers encompasses all contributors to the
          project, listed in the release notes or the git log.
 
 Files: doc/coinbase-work-maturity-baseline.md
+       doc/coinbase-work-maturity-hashrate-tests.md
        doc/coinbase-work-maturity-validation.md
        doc/coinbase-work-maturity.md
        src/consensus/coinbase_maturity.cpp
        src/consensus/coinbase_maturity.h
        src/test/coinbase_maturity_tests.cpp
+       src/test/coinbase_maturity_hashrate_tests.cpp
        test/functional/feature_coinbase_work_maturity.py
        LICENSE-1MINER-BC2-MATURITY.md
        doc/coinbase-work-maturity-license-scope.md

@@ -9,6 +9,9 @@ experimental regtest rule requires both explicit options. The draft mainnet work
 threshold now targets age 8,580 at the hardest sustained legacy epoch difficulty;
 activation remains disabled. See the [baseline note](coinbase-work-maturity-baseline.md).
 
+For the subsequent 33 hashrate scenarios, expanded arithmetic checks, and wallet
+regression fix, see the [September 24 follow-up](coinbase-work-maturity-hashrate-tests.md).
+
 ## Source
 
 Based on the supplied `BitcoinII-Core-main.zip` (version 31.1.0 in CMake).
@@ -135,23 +138,30 @@ successfully. No node code change was required.
 These checks exercise local node behavior. They do not simulate production
 hashpower or establish resistance to rented-hash attacks.
 
-## Existing wallet test failure
+## Wallet test failure and subsequent fix
 
 `wallet_basic.py` failed at its `sendall` call (line 488), with a Debug lock
 assertion: `BlockUntilSyncedToCurrentChain()` was called while `cs_wallet` was
 already held.
 
-The relevant code is unchanged from the supplied archive:
+At the time of the initial test, the relevant code was unchanged from the
+supplied archive:
 
 - `src/wallet/rpc/spend.cpp:1452` acquires the wallet lock in `sendall`.
 - That scope calls `FinishTransaction` at line 1574.
 - `FinishTransaction` calls `BlockUntilSyncedToCurrentChain` at line 100, which
   requires the wallet lock not to be held.
 
-The baseline Git revision contains the same call sequence, and this patch does
-not modify `spend.cpp`. A separate unmodified-baseline binary was not built.
-This existing source-level lock defect needs its own fix and regression test;
-the full legacy wallet functional suite is not being reported as passing.
+The baseline Git revision contains the same call sequence. A separate
+unmodified-baseline binary was not built.
+
+The September 24 regression follow-up fixes this call sequence in `spend.cpp`.
+`sendall` releases its input-selection lock before synchronization, and
+`FinishTransaction` then holds the wallet lock through signing and commit.
+Both failing scripts passed afterward, along with five related functional
+scripts and thirteen relevant unit suites. See the
+[hashrate and regression report](coinbase-work-maturity-hashrate-tests.md) for
+the complete results and remaining limits.
 
 ## License and packaging update
 
@@ -174,8 +184,10 @@ for this licensing-only follow-up.
 
 ## Still needed before production
 
-The selected accumulated-work target needs economic simulation and review using
-BC2's real difficulty adjustment. Independent consensus review, pool/exchange
+The [hashrate follow-up](coinbase-work-maturity-hashrate-tests.md) exercises the
+selected work target using BC2's real difficulty-adjustment code and synthetic
+unmined headers. Adversarial and economic review, independent consensus review,
+pool/exchange
 integration, broader pruning/recovery testing, and production deployment planning
 remain outstanding. The maximum age intentionally permits spending without
 meeting the work target; the minimum age is a block count, not a time guarantee.

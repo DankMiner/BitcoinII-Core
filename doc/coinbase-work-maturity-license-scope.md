@@ -61,6 +61,14 @@ remain excluded.
 - `src/wallet/wallet.h`
 - `test/functional/test_runner.py`
 
+## Later test coverage
+
+Original material in `src/test/coinbase_maturity_hashrate_tests.cpp` and
+`doc/coinbase-work-maturity-hashrate-tests.md` is also distributed under the
+1Miner.net license. These files were added after the license change; they were
+not part of the earlier MIT feature commit. Later original test additions to
+`src/test/coinbase_maturity_tests.cpp` carry the same notice.
+
 ## Exclusions and prior grants
 
 Upstream copyrights and licenses are preserved. The scope excludes ShockWave,

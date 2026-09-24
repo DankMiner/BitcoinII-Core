@@ -12,8 +12,10 @@ See the [baseline calculation](coinbase-work-maturity-baseline.md) for the exact
 constant, historical reference, and expected behavior at other work rates. The
 selected threshold is fixed; future record difficulty does not change it.
 
-See [the validation report](coinbase-work-maturity-validation.md) for completed
-builds, passing tests, and the existing wallet test failure found during review.
+See [the validation report](coinbase-work-maturity-validation.md) for builds and
+local node checks. The [hashrate test report](coinbase-work-maturity-hashrate-tests.md)
+covers changing hashpower, rental scenarios, and the wallet fix found during
+regression testing.
 
 ## Rule
 

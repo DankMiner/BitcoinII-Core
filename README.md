@@ -42,6 +42,8 @@ BitcoinII-Specific Documentation
 The following documents describe significant BitcoinII-specific behavior:
 
 - [Parallel prevout fetching](doc/BitcoinII-Parallel-Prevout-Fetch.md)
+- [Work-based coinbase maturity proposal](doc/coinbase-work-maturity.md) (disabled by default)
+- [Maturity hashrate and regression tests](doc/coinbase-work-maturity-hashrate-tests.md)
 
 Build Dependencies
 ------------------

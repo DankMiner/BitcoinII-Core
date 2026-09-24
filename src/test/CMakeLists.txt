@@ -35,6 +35,7 @@ add_executable(test_bitcoinII
   chainstate_write_tests.cpp
   checkqueue_tests.cpp
   cluster_linearize_tests.cpp
+  coinbase_maturity_hashrate_tests.cpp
   coinbase_maturity_tests.cpp
   coins_tests.cpp
   coinscachepair_tests.cpp
@@ -225,5 +226,9 @@ function(add_all_test_targets)
 endfunction()
 
 add_all_test_targets()
+
+# The full unmined-header simulation is deliberately broad. Use an optimized
+# build for it; -LE extended keeps ordinary Debug test runs short.
+set_tests_properties(coinbase_maturity_hashrate_tests PROPERTIES LABELS "extended;hashrate")
 
 install_binary_component(test_bitcoinII INTERNAL)
