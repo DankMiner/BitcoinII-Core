@@ -98,6 +98,7 @@ static UniValue FinishTransaction(const std::shared_ptr<CWallet> pwallet, const 
     // Signing must target the actual next-block consensus domain, not a stale
     // wallet tip that happened to be processed before this RPC began.
     pwallet->BlockUntilSyncedToCurrentChain();
+    LOCK(pwallet->cs_wallet);
 
     bool can_anti_fee_snipe = !options.exists("locktime");
 
@@ -107,7 +108,6 @@ static UniValue FinishTransaction(const std::shared_ptr<CWallet> pwallet, const 
     }
 
     if (can_anti_fee_snipe) {
-        LOCK(pwallet->cs_wallet);
         FastRandomContext rng_fast;
         DiscourageFeeSniping(rawTx, rng_fast, pwallet->chain(), pwallet->GetLastBlockHash(), pwallet->GetLastBlockHeight());
     }
@@ -1449,7 +1449,7 @@ RPCHelpMan sendall()
             }
 
             CMutableTransaction rawTx{ConstructTransaction(options["inputs"], recipient_key_value_pairs, options["locktime"], rbf, coin_control.m_version)};
-            LOCK(pwallet->cs_wallet);
+            WAIT_LOCK(pwallet->cs_wallet, wallet_lock);
 
             CAmount total_input_value(0);
             bool send_max{options.exists("send_max") ? options["send_max"].get_bool() : false};
@@ -1571,6 +1571,9 @@ RPCHelpMan sendall()
                 }
             }
 
+            // Let queued wallet notifications run before synchronizing and
+            // signing against the current chain in FinishTransaction.
+            REVERSE_LOCK(wallet_lock, pwallet->cs_wallet);
             return FinishTransaction(pwallet, options, rawTx);
         }
     };
