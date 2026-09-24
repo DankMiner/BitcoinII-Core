@@ -42,6 +42,7 @@ struct TransactionStatus {
     /** @name Generated (mined) transactions
        @{*/
     int matures_in{0};
+    bool work_based_maturity{false};
     /**@}*/
 
     /** @name Reported status

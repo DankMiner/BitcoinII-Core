@@ -22,6 +22,7 @@ add_library(bitcoinIIkernel
   ../chain.cpp
   ../coins.cpp
   ../compressor.cpp
+  ../consensus/coinbase_maturity.cpp
   ../consensus/merkle.cpp
   ../consensus/tx_check.cpp
   ../consensus/tx_verify.cpp

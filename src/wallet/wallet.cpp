@@ -3328,6 +3328,24 @@ int CWallet::GetTxDepthInMainChain(const CWalletTx& wtx) const
     }
 }
 
+std::optional<interfaces::CoinbaseMaturity> CWallet::GetCoinbaseMaturity(const CWalletTx& wtx) const
+{
+    AssertLockHeld(cs_wallet);
+    const auto* conf{wtx.state<TxStateConfirmed>()};
+    if (!wtx.IsCoinBase() || !conf || !HaveChain() || m_last_block_processed_height < 0) return std::nullopt;
+
+    auto maturity{chain().getCoinbaseMaturity(conf->confirmed_block_hash, m_last_block_processed)};
+    if (maturity && !maturity->work_based) {
+        // Preserve the wallet's existing extra confirmation for legacy
+        // rewards. Activated rewards use the next-block consensus result.
+        const int remaining{std::max(0, COINBASE_MATURITY + 1 - GetTxDepthInMainChain(wtx))};
+        maturity->mature = remaining == 0;
+        maturity->blocks_to_minimum = remaining;
+        maturity->blocks_to_maximum = remaining;
+    }
+    return maturity;
+}
+
 int CWallet::GetTxBlocksToMaturity(const CWalletTx& wtx) const
 {
     AssertLockHeld(cs_wallet);
@@ -3335,9 +3353,13 @@ int CWallet::GetTxBlocksToMaturity(const CWalletTx& wtx) const
     if (!wtx.IsCoinBase()) {
         return 0;
     }
-    int chain_depth = GetTxDepthInMainChain(wtx);
-    assert(chain_depth >= 0); // coinbase tx should not be conflicted
-    return std::max(0, (COINBASE_MATURITY+1) - chain_depth);
+    if (!HaveChain() || m_last_block_processed_height < 0) return 1;
+    if (const auto maturity{GetCoinbaseMaturity(wtx)}) {
+        return maturity->mature ? 0 : std::max(1, maturity->blocks_to_maximum);
+    }
+    // Unknown or disconnected rewards must never become spendable merely
+    // because the wallet has advanced to a sufficiently high block height.
+    return std::max(1, COINBASE_MATURITY + 1 - GetTxDepthInMainChain(wtx));
 }
 
 bool CWallet::IsTxImmatureCoinBase(const CWalletTx& wtx) const

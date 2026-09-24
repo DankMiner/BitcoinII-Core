@@ -182,10 +182,14 @@ QString TransactionDesc::toHTML(interfaces::Node& node, interfaces::Wallet& wall
         for (const CTxOut& txout : wtx.tx->vout)
             nUnmatured += wallet.getCredit(txout);
         strHTML += "<b>" + tr("Credit") + ":</b> ";
-        if (status.is_in_main_chain)
-            strHTML += BitcoinIIUnits::formatHtmlWithUnit(unit, nUnmatured)+ " (" + tr("matures in %n more block(s)", "", status.blocks_to_maturity) + ")";
-        else
+        if (status.is_in_main_chain) {
+            const QString maturity_text{status.work_based_maturity
+                ? tr("matures in up to %n more block(s), depending on accumulated work", "", status.blocks_to_maturity)
+                : tr("matures in %n more block(s)", "", status.blocks_to_maturity)};
+            strHTML += BitcoinIIUnits::formatHtmlWithUnit(unit, nUnmatured) + " (" + maturity_text + ")";
+        } else {
             strHTML += "(" + tr("not accepted") + ")";
+        }
         strHTML += "<br>";
     }
     else if (nNet > 0)
@@ -307,8 +311,15 @@ QString TransactionDesc::toHTML(interfaces::Node& node, interfaces::Wallet& wall
 
     if (wtx.is_coinbase)
     {
-        quint32 numBlocksToMaturity = COINBASE_MATURITY +  1;
-        strHTML += "<br>" + tr("Generated coins must mature %1 blocks before they can be spent. When you generated this block, it was broadcast to the network to be added to the block chain. If it fails to get into the chain, its state will change to \"not accepted\" and it won't be spendable. This may occasionally happen if another node generates a block within a few seconds of yours.").arg(QString::number(numBlocksToMaturity)) + "<br>";
+        if (status.work_based_maturity) {
+            strHTML += "<br>" + tr("These generated coins become spendable after both the minimum block age and the required subsequent proof of work are reached, or at the maximum block age. The remaining block count is an upper bound, not an estimate of elapsed time. A chain reorganization can change maturity.") + "<br>";
+            if (status.blocks_to_minimum_maturity > 0) {
+                strHTML += tr("Minimum age reached in %n more block(s).", "", status.blocks_to_minimum_maturity) + "<br>";
+            }
+        } else {
+            quint32 numBlocksToMaturity = COINBASE_MATURITY +  1;
+            strHTML += "<br>" + tr("Generated coins must mature %1 blocks before they can be spent. When you generated this block, it was broadcast to the network to be added to the block chain. If it fails to get into the chain, its state will change to \"not accepted\" and it won't be spendable. This may occasionally happen if another node generates a block within a few seconds of yours.").arg(QString::number(numBlocksToMaturity)) + "<br>";
+        }
     }
 
     //

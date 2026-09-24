@@ -106,6 +106,7 @@ add_library(bitcoinII_common STATIC EXCLUDE_FROM_ALL
   common/system.cpp
   common/url.cpp
   compressor.cpp
+  consensus/coinbase_maturity.cpp
   core_io.cpp
   deploymentinfo.cpp
   external_signer.cpp

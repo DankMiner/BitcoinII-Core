@@ -117,6 +117,13 @@ struct Params {
      */
     int nShockWaveActivationHeight{std::numeric_limits<int>::max()};
 
+    /** Coinbase creation height activating work-based maturity; disabled by default. */
+    int nCoinbaseWorkMaturityActivationHeight{std::numeric_limits<int>::max()};
+    int nCoinbaseMaturityMin{4200};
+    int nCoinbaseMaturityMax{12960};
+    /** Fixed post-creation chainwork target; must be nonzero when activated. */
+    uint256 nCoinbaseMaturityWork{};
+
     /**
      * Height at which transaction signature hashes are domain-separated from
      * legacy BitcoinII. Disabled unless explicitly configured by chainparams.

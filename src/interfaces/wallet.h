@@ -401,6 +401,9 @@ struct WalletTxStatus
 {
     int block_height;
     int blocks_to_maturity;
+    //! Work-based maturity can occur sooner than blocks_to_maturity suggests.
+    bool work_based_maturity{false};
+    int blocks_to_minimum_maturity{0};
     int depth_in_main_chain;
     unsigned int time_received;
     uint32_t lock_time;

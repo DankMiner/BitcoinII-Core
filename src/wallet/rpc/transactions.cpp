@@ -439,8 +439,8 @@ RPCHelpMan listtransactions()
                             {RPCResult::Type::STR, "category", "The transaction category.\n"
                                 "\"send\"                  Transactions sent.\n"
                                 "\"receive\"               Non-coinbase transactions received.\n"
-                                "\"generate\"              Coinbase transactions received with more than 100 confirmations.\n"
-                                "\"immature\"              Coinbase transactions received with 100 or fewer confirmations.\n"
+                                "\"generate\"              Mature coinbase transactions received.\n"
+                                "\"immature\"              Coinbase transactions received that have not reached maturity.\n"
                                 "\"orphan\"                Orphaned coinbase transactions received."},
                             {RPCResult::Type::STR_AMOUNT, "amount", "The amount in " + CURRENCY_UNIT + ". This is negative for the 'send' category, and is positive\n"
                                 "for all other categories"},
@@ -548,8 +548,8 @@ RPCHelpMan listsinceblock()
                                 {RPCResult::Type::STR, "category", "The transaction category.\n"
                                     "\"send\"                  Transactions sent.\n"
                                     "\"receive\"               Non-coinbase transactions received.\n"
-                                    "\"generate\"              Coinbase transactions received with more than 100 confirmations.\n"
-                                    "\"immature\"              Coinbase transactions received with 100 or fewer confirmations.\n"
+                                    "\"generate\"              Mature coinbase transactions received.\n"
+                                    "\"immature\"              Coinbase transactions received that have not reached maturity.\n"
                                     "\"orphan\"                Orphaned coinbase transactions received."},
                                 {RPCResult::Type::STR_AMOUNT, "amount", "The amount in " + CURRENCY_UNIT + ". This is negative for the 'send' category, and is positive\n"
                                     "for all other categories"},
@@ -688,8 +688,8 @@ RPCHelpMan gettransaction()
                                 {RPCResult::Type::STR, "category", "The transaction category.\n"
                                     "\"send\"                  Transactions sent.\n"
                                     "\"receive\"               Non-coinbase transactions received.\n"
-                                    "\"generate\"              Coinbase transactions received with more than 100 confirmations.\n"
-                                    "\"immature\"              Coinbase transactions received with 100 or fewer confirmations.\n"
+                                    "\"generate\"              Mature coinbase transactions received.\n"
+                                    "\"immature\"              Coinbase transactions received that have not reached maturity.\n"
                                     "\"orphan\"                Orphaned coinbase transactions received."},
                                 {RPCResult::Type::STR_AMOUNT, "amount", "The amount in " + CURRENCY_UNIT},
                                 {RPCResult::Type::STR, "label", /*optional=*/true, "A comment for the address/transaction, if any"},
@@ -703,6 +703,15 @@ RPCHelpMan gettransaction()
                             }},
                         }},
                         {RPCResult::Type::STR_HEX, "hex", "Raw data for transaction"},
+                        {RPCResult::Type::OBJ, "coinbase_maturity", /*optional=*/true, "Maturity at lastprocessedblock. Only present for coinbase transactions confirmed on that branch.",
+                        {
+                            {RPCResult::Type::BOOL, "mature", "Whether the wallet can spend this reward under its maturity rule. This does not imply that any output remains unspent."},
+                            {RPCResult::Type::BOOL, "work_based", "Whether the reward uses work-based maturity. Legacy rewards retain the wallet's existing extra confirmation."},
+                            {RPCResult::Type::NUM, "blocks_to_minimum", "Additional blocks until the minimum age is reached; zero if already reached. For work-based rewards, eligibility is evaluated for a spend in the next block."},
+                            {RPCResult::Type::NUM, "blocks_to_maximum", "Additional blocks until the age cap is reached; zero if already reached. This is an upper bound, not a predicted unlock time, and may be positive for an already mature reward."},
+                            {RPCResult::Type::STR_HEX, "accumulated_work", "256-bit hexadecimal work accumulated after the reward's block through lastprocessedblock; zero for legacy rewards."},
+                            {RPCResult::Type::STR_HEX, "required_work", "256-bit hexadecimal work requirement; zero for legacy rewards."},
+                        }},
                         {RPCResult::Type::OBJ, "decoded", /*optional=*/true, "The decoded transaction (only present when `verbose` is passed)",
                         {
                             DecodeTxDoc(/*txid_field_doc=*/"The transaction id", /*wallet=*/true),
@@ -754,6 +763,17 @@ RPCHelpMan gettransaction()
     entry.pushKV("details", std::move(details));
 
     entry.pushKV("hex", EncodeHexTx(*wtx.tx));
+
+    if (const auto maturity{pwallet->GetCoinbaseMaturity(wtx)}) {
+        UniValue result(UniValue::VOBJ);
+        result.pushKV("mature", maturity->mature);
+        result.pushKV("work_based", maturity->work_based);
+        result.pushKV("blocks_to_minimum", maturity->blocks_to_minimum);
+        result.pushKV("blocks_to_maximum", maturity->blocks_to_maximum);
+        result.pushKV("accumulated_work", maturity->accumulated_work);
+        result.pushKV("required_work", maturity->required_work);
+        entry.pushKV("coinbase_maturity", std::move(result));
+    }
 
     if (verbose) {
         UniValue decoded(UniValue::VOBJ);

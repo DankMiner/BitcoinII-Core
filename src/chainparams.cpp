@@ -46,6 +46,24 @@ void ReadRegTestArgs(const ArgsManager& args, CChainParams::RegTestOptions& opti
     if (auto value = args.GetBoolArg("-fastprune")) options.fastprune = *value;
     if (HasTestOption(args, "bip94")) options.enforce_bip94 = true;
 
+    const auto maturity_heights{args.GetArgs("-testcoinbasematurityheight")};
+    const auto maturity_work{args.GetArgs("-testcoinbasematuritywork")};
+    if (!maturity_heights.empty() || !maturity_work.empty()) {
+        if (maturity_heights.size() != 1 || maturity_work.size() != 1) {
+            throw std::runtime_error("-testcoinbasematurityheight and -testcoinbasematuritywork must each be specified exactly once");
+        }
+        const auto height{ToIntegral<int>(maturity_heights.front())};
+        if (!height || *height < 0 || *height == std::numeric_limits<int>::max()) {
+            throw std::runtime_error("Invalid -testcoinbasematurityheight: expected a nonnegative height below INT_MAX");
+        }
+        const auto work{uint256::FromHex(maturity_work.front())};
+        if (!work || work->IsNull()) {
+            throw std::runtime_error("Invalid -testcoinbasematuritywork: expected exactly 64 hexadecimal digits and a nonzero value");
+        }
+        options.coinbase_maturity_height = *height;
+        options.coinbase_maturity_work = *work;
+    }
+
     for (const std::string& arg : args.GetArgs("-testactivationheight")) {
         const auto found{arg.find('@')};
         if (found == std::string::npos) {
@@ -116,6 +134,10 @@ const CChainParams &Params() {
 
 std::unique_ptr<const CChainParams> CreateChainParams(const ArgsManager& args, const ChainType chain)
 {
+    if (chain != ChainType::REGTEST &&
+        (args.IsArgSet("-testcoinbasematurityheight") || args.IsArgSet("-testcoinbasematuritywork"))) {
+        throw std::runtime_error("-testcoinbasematurityheight and -testcoinbasematuritywork are regtest-only");
+    }
     switch (chain) {
     case ChainType::MAIN:
         return CChainParams::Main();

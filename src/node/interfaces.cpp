@@ -8,6 +8,7 @@
 #include <chain.h>
 #include <chainparams.h>
 #include <common/args.h>
+#include <consensus/coinbase_maturity.h>
 #include <consensus/merkle.h>
 #include <consensus/validation.h>
 #include <deploymentstatus.h>
@@ -554,6 +555,22 @@ public:
     uint32_t getSighashForkId(int height) override
     {
         return chainman().GetConsensus().SighashForkId(height);
+    }
+    std::optional<interfaces::CoinbaseMaturity> getCoinbaseMaturity(const uint256& reward_block_hash, const uint256& tip_hash) override
+    {
+        LOCK(::cs_main);
+        const CBlockIndex* reward{chainman().m_blockman.LookupBlockIndex(reward_block_hash)};
+        const CBlockIndex* tip{chainman().m_blockman.LookupBlockIndex(tip_hash)};
+        if (!reward || !tip || tip->GetAncestor(reward->nHeight) != reward) return std::nullopt;
+        const auto maturity{Consensus::GetCoinbaseMaturity(reward->nHeight, *tip, chainman().GetConsensus())};
+        return interfaces::CoinbaseMaturity{
+            maturity.mature,
+            maturity.work_based,
+            maturity.blocks_to_minimum,
+            maturity.blocks_to_maximum,
+            maturity.accumulated_work.GetHex(),
+            maturity.required_work.GetHex(),
+        };
     }
     uint256 getBlockHash(int height) override
     {

@@ -10,11 +10,13 @@
 #include <vector>
 
 #include <addresstype.h>
+#include <chain.h>
 #include <interfaces/chain.h>
 #include <key_io.h>
 #include <node/blockstorage.h>
 #include <node/types.h>
 #include <policy/policy.h>
+#include <primitives/block.h>
 #include <rpc/server.h>
 #include <script/solver.h>
 #include <test/util/common.h>
@@ -88,6 +90,114 @@ BOOST_FIXTURE_TEST_CASE(update_non_range_descriptor, TestingSetup)
         // Wallet should update the non-range descriptor successfully
         BOOST_CHECK(wallet.AddWalletDescriptor(w_desc, provider, "", false));
     }
+}
+
+BOOST_FIXTURE_TEST_CASE(coinbase_maturity_without_chain, BasicTestingSetup)
+{
+    CWallet wallet(nullptr, "", CreateMockableWalletDatabase());
+    CMutableTransaction coinbase;
+    coinbase.vin.resize(1);
+    coinbase.vout.emplace_back(50 * COIN, CScript() << OP_TRUE);
+    CWalletTx reward{MakeTransactionRef(coinbase), TxStateConfirmed{GetRandHash(), 1, 0}};
+
+    LOCK(wallet.cs_wallet);
+    BOOST_CHECK(!wallet.HaveChain());
+    BOOST_CHECK(!wallet.GetCoinbaseMaturity(reward));
+    BOOST_CHECK(wallet.IsTxImmatureCoinBase(reward));
+    // A recorded height alone cannot establish work-based maturity without
+    // access to the corresponding chain snapshot.
+    wallet.SetLastBlockProcessed(200, uint256{});
+    BOOST_CHECK(!wallet.GetCoinbaseMaturity(reward));
+    BOOST_CHECK(wallet.IsTxImmatureCoinBase(reward));
+}
+
+struct WorkMaturityWalletSetup : TestingSetup {
+    WorkMaturityWalletSetup()
+        : TestingSetup{ChainType::REGTEST, TestOpts{.extra_args={
+              "-testcoinbasematurityheight=2",
+              "-testcoinbasematuritywork=0000000000000000000000000000000000000000000000000000000000002328"}}}
+    {
+    }
+};
+
+BOOST_FIXTURE_TEST_CASE(work_coinbase_maturity_snapshot, WorkMaturityWalletSetup)
+{
+    // Header-only indices are sufficient: maturity must use the wallet's
+    // explicit snapshot even while the node's active chain is elsewhere.
+    auto& chainman{*Assert(m_node.chainman)};
+    std::vector<CBlockIndex*> blocks;
+    CBlockIndex* other_branch;
+    {
+        LOCK(cs_main);
+        blocks.push_back(chainman.ActiveChain().Genesis());
+        for (int height{1}; height <= 4502; ++height) {
+            CBlockHeader header;
+            header.hashPrevBlock = blocks.back()->GetBlockHash();
+            header.nBits = 0x207fffff; // Two units of work per block.
+            header.nNonce = height;
+            blocks.push_back(chainman.m_blockman.AddToBlockIndex(header, chainman.m_best_header));
+        }
+        CBlockHeader header;
+        header.hashPrevBlock = blocks[1]->GetBlockHash();
+        header.nBits = 0x207fffff;
+        header.nNonce = 4503;
+        other_branch = chainman.m_blockman.AddToBlockIndex(header, chainman.m_best_header);
+    }
+
+    CWallet wallet(m_node.chain.get(), "", CreateMockableWalletDatabase());
+    CMutableTransaction coinbase;
+    coinbase.vin.resize(1);
+    coinbase.vout.emplace_back(50 * COIN, CScript() << OP_TRUE);
+    CWalletTx reward{MakeTransactionRef(coinbase), TxStateConfirmed{blocks[2]->GetBlockHash(), 2, 0}};
+    CWalletTx legacy{MakeTransactionRef(coinbase), TxStateConfirmed{blocks[1]->GetBlockHash(), 1, 0}};
+
+    LOCK(wallet.cs_wallet);
+    auto set_tip = [&](int height) EXCLUSIVE_LOCKS_REQUIRED(wallet.cs_wallet) {
+        wallet.SetLastBlockProcessed(height, blocks[height]->GetBlockHash());
+    };
+
+    set_tip(4200); // Next spending age is 4199, despite later known headers.
+    auto maturity{wallet.GetCoinbaseMaturity(reward)};
+    BOOST_REQUIRE(maturity);
+    BOOST_CHECK(maturity->work_based);
+    BOOST_CHECK(!maturity->mature);
+    BOOST_CHECK_EQUAL(maturity->blocks_to_minimum, 1);
+    BOOST_CHECK_EQUAL(maturity->blocks_to_maximum, 8761);
+    BOOST_CHECK_EQUAL(wallet.GetTxBlocksToMaturity(reward), 8761);
+
+    set_tip(4201); // Minimum reached, but accumulated work is still insufficient.
+    maturity = wallet.GetCoinbaseMaturity(reward);
+    BOOST_REQUIRE(maturity);
+    BOOST_CHECK_EQUAL(maturity->blocks_to_minimum, 0);
+    BOOST_CHECK(!maturity->mature);
+
+    set_tip(4501); // 4499 subsequent blocks contribute 8998 units, just below 9000.
+    BOOST_CHECK(wallet.IsTxImmatureCoinBase(reward));
+    set_tip(4502);
+    maturity = wallet.GetCoinbaseMaturity(reward);
+    BOOST_REQUIRE(maturity);
+    BOOST_CHECK(maturity->mature);
+    BOOST_CHECK_EQUAL(maturity->accumulated_work, maturity->required_work);
+    BOOST_CHECK_EQUAL(wallet.GetTxBlocksToMaturity(reward), 0);
+    set_tip(4501); // Disconnecting the threshold block relocks the reward.
+    BOOST_CHECK(wallet.IsTxImmatureCoinBase(reward));
+
+    set_tip(100);
+    BOOST_CHECK(wallet.IsTxImmatureCoinBase(legacy));
+    set_tip(101);
+    maturity = wallet.GetCoinbaseMaturity(legacy);
+    BOOST_REQUIRE(maturity);
+    BOOST_CHECK(!maturity->work_based);
+    BOOST_CHECK(maturity->mature);
+
+    // A confirmation from another branch must not inherit work from this tip.
+    reward.m_state = TxStateConfirmed{other_branch->GetBlockHash(), 2, 0};
+    set_tip(4502);
+    BOOST_CHECK(!wallet.GetCoinbaseMaturity(reward));
+    BOOST_CHECK(wallet.IsTxImmatureCoinBase(reward));
+    wallet.SetLastBlockProcessed(4502, GetRandHash());
+    BOOST_CHECK(!wallet.GetCoinbaseMaturity(legacy));
+    BOOST_CHECK(wallet.IsTxImmatureCoinBase(legacy));
 }
 
 BOOST_FIXTURE_TEST_CASE(scan_for_wallet_transactions, TestChain100Setup)

@@ -560,6 +560,10 @@ public:
      *  0 : is not a coinbase transaction, or is a mature coinbase transaction
      * >0 : is a coinbase transaction which matures in this many blocks
      */
+    //! Confirmed coinbase maturity at the wallet's processed chain tip.
+    std::optional<interfaces::CoinbaseMaturity> GetCoinbaseMaturity(const CWalletTx& wtx) const EXCLUSIVE_LOCKS_REQUIRED(cs_wallet);
+    //! Zero when spendable; for work-based rewards, an upper bound on blocks
+    //! remaining, not a prediction of the unlock height.
     int GetTxBlocksToMaturity(const CWalletTx& wtx) const EXCLUSIVE_LOCKS_REQUIRED(cs_wallet);
     bool IsTxImmatureCoinBase(const CWalletTx& wtx) const EXCLUSIVE_LOCKS_REQUIRED(cs_wallet);
 

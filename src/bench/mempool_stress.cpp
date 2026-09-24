@@ -3,6 +3,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <bench/bench.h>
+#include <chain.h>
 #include <consensus/amount.h>
 #include <policy/policy.h>
 #include <primitives/transaction.h>
@@ -201,10 +202,12 @@ static void MempoolCheck(benchmark::Bench& bench)
     LOCK2(cs_main, pool.cs);
     testing_setup->PopulateMempool(det_rand, 400, true);
     const CCoinsViewCache& coins_tip = testing_setup.get()->m_node.chainman->ActiveChainstate().CoinsTip();
+    // Keep this benchmark's artificial spending height on the legacy rule.
+    CBlockIndex prev_block;
+    prev_block.nHeight = 299;
 
     bench.run([&]() NO_THREAD_SAFETY_ANALYSIS {
-        // Bump up the spendheight so we don't hit premature coinbase spend errors.
-        pool.check(coins_tip, /*spendheight=*/300);
+        pool.check(coins_tip, prev_block, testing_setup->m_node.chainman->GetConsensus());
     });
 }
 

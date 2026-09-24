@@ -28,8 +28,10 @@
 #include <cstring>
 #include <initializer_list>
 #include <iterator>
+#include <limits>
 #include <map>
 #include <span>
+#include <stdexcept>
 #include <utility>
 
 using namespace util::hex_literals;
@@ -96,6 +98,10 @@ public:
         consensus.MinBIP9WarningHeight = 2306; // segwit activation height + miner confirmation window
         consensus.nDataRestrictionsHeight = 57750;
         consensus.nShockWaveActivationHeight = 57750;
+        // Draft maturity baseline: age 8,580 at the hardest sustained legacy
+        // epoch target (nBits 0x181cebcd). Credit 8,579 intervening blocks.
+        // Activation remains disabled until a production height is agreed.
+        consensus.nCoinbaseMaturityWork = uint256{"0000000000000000000000000000000000000000000128a279b84c5571b87bae"};
         consensus.nReplayProtectionHeight = 57750;
         consensus.nReplayProtectionForkId = 0x01324342U; // "BC2" + replay-domain version 1
         consensus.powLimit = uint256{"00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff"};
@@ -563,6 +569,17 @@ class CRegTestParams : public CChainParams
 public:
     explicit CRegTestParams(const RegTestOptions& opts)
     {
+        if (opts.coinbase_maturity_height.has_value() != opts.coinbase_maturity_work.has_value()) {
+            throw std::runtime_error("Coinbase maturity activation height and work must be specified together");
+        }
+        if (opts.coinbase_maturity_height) {
+            if (*opts.coinbase_maturity_height < 0 || *opts.coinbase_maturity_height == std::numeric_limits<int>::max() ||
+                opts.coinbase_maturity_work->IsNull()) {
+                throw std::runtime_error("Invalid coinbase maturity activation height or zero work target");
+            }
+            consensus.nCoinbaseWorkMaturityActivationHeight = *opts.coinbase_maturity_height;
+            consensus.nCoinbaseMaturityWork = *opts.coinbase_maturity_work;
+        }
         m_chain_type = ChainType::REGTEST;
         consensus.signet_blocks = false;
         consensus.signet_challenge.clear();

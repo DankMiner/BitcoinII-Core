@@ -46,6 +46,18 @@ namespace interfaces {
 class Handler;
 class Wallet;
 
+//! Coinbase eligibility for a specified chain snapshot. Work values use the
+//! same 256-bit hexadecimal encoding as the chainwork field in block RPCs.
+struct CoinbaseMaturity
+{
+    bool mature{false};
+    bool work_based{false};
+    int blocks_to_minimum{0};
+    int blocks_to_maximum{0};
+    std::string accumulated_work;
+    std::string required_work;
+};
+
 //! Helper for findBlock to selectively return pieces of block data. If block is
 //! found, data will be returned by setting specified output variables. If block
 //! is not found, output variables will keep their previous values.
@@ -127,6 +139,12 @@ public:
     //! Return the replay-protection signature-hash domain for a block height.
     //! Defaulting to zero keeps non-node/test implementations on legacy sighash rules.
     virtual uint32_t getSighashForkId(int height) { return 0; }
+
+    //! Return next-block coinbase eligibility on the branch ending at tip_hash.
+    //! Return nullopt if either block is unknown or the reward is not an
+    //! ancestor of that tip. Callers should use their own processed tip so
+    //! asynchronous chain notifications cannot mix different snapshots.
+    virtual std::optional<CoinbaseMaturity> getCoinbaseMaturity(const uint256& reward_block_hash, const uint256& tip_hash) = 0;
 
     //! Get block hash. Height must be valid or this function will abort.
     virtual uint256 getBlockHash(int height) = 0;

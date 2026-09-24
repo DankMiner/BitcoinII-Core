@@ -328,7 +328,11 @@ QString TransactionTableModel::formatTxStatus(const TransactionRecord *wtx) cons
         status = tr("Conflicted");
         break;
     case TransactionStatus::Immature:
-        status = tr("Immature (%1 confirmations, will be available after %2)").arg(wtx->status.depth).arg(wtx->status.depth + wtx->status.matures_in);
+        if (wtx->status.work_based_maturity) {
+            status = tr("Immature (%1 confirmations, up to %2 more blocks depending on accumulated work)").arg(wtx->status.depth).arg(wtx->status.matures_in);
+        } else {
+            status = tr("Immature (%1 confirmations, will be available after %2)").arg(wtx->status.depth).arg(wtx->status.depth + wtx->status.matures_in);
+        }
         break;
     case TransactionStatus::NotAccepted:
         status = tr("Generated but not accepted");
