@@ -117,10 +117,36 @@ https://github.com/bitcoin/bitcoin
 BitcoinII retains substantial Bitcoin Core code, documentation, testing
 infrastructure, and copyright attribution.
 
-## MIT License
+## Licensing
+
+This repository contains material under different licenses. Bitcoin Core-derived
+code retains its MIT license. Original work-based maturity contributions have
+separate 1Miner.net terms, and ShockWave has the separate terms below.
+
+### Work-based coinbase maturity
+
+Copyright (c) 2026 1Miner.net. The
+[1Miner.net BitcoinII Work-Based Maturity License](LICENSE-1MINER-BC2-MATURITY.md)
+permits use, modification, and distribution for BitcoinII at no charge, including
+mining, node operation, wallets, pools, exchanges, development, and testing.
+It does not authorize use of covered material on other production networks
+without written permission. See the
+[scope record](doc/coinbase-work-maturity-license-scope.md) for the exact
+contribution and exclusions.
+
+The earlier maturity commit `3dbafb5` was published with MIT notices. The new
+terms do not revoke rights granted by that earlier distribution. Upstream
+licenses and independently written implementations are unaffected.
+
+The maturity change is available for developer review and private regtest
+testing. Production activation is disabled. See the
+[proposal implementation](doc/coinbase-work-maturity.md) and
+[validation report](doc/coinbase-work-maturity-validation.md).
+
+### MIT License
 -------
 
-Large portions of BitcoinII is released under the terms of the MIT license, as inhereted from upstream Bitcoin Core.
+Large portions of BitcoinII are released under the MIT license, as inherited from upstream Bitcoin Core.
 
 See [COPYING](COPYING) for the full license text or:
 

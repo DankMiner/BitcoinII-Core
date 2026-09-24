@@ -44,6 +44,11 @@ function(add_windows_deploy_target)
       COMMAND ${CMAKE_STRIP} $<TARGET_FILE:bitcoinII-util> -o ${PROJECT_BINARY_DIR}/release/$<TARGET_FILE_NAME:bitcoinII-util>
       COMMAND ${CMAKE_STRIP} $<TARGET_FILE:test_bitcoinII> -o ${PROJECT_BINARY_DIR}/release/$<TARGET_FILE_NAME:test_bitcoinII>
       COMMAND ${MAKENSIS_EXECUTABLE} -V2 ${PROJECT_BINARY_DIR}/bitcoinII-win64-setup.nsi
+      DEPENDS
+        ${PROJECT_SOURCE_DIR}/COPYING
+        ${PROJECT_SOURCE_DIR}/README.md
+        ${PROJECT_SOURCE_DIR}/LICENSE-1MINER-BC2-MATURITY.md
+        ${PROJECT_SOURCE_DIR}/doc/coinbase-work-maturity-license-scope.md
       VERBATIM
     )
     add_custom_target(deploy DEPENDS ${PROJECT_BINARY_DIR}/bitcoinII-win64-setup.exe)
@@ -62,6 +67,12 @@ function(add_macos_deploy_target)
     file(CONFIGURE OUTPUT ${macos_app}/Contents/Resources/Base.lproj/InfoPlist.strings
       CONTENT "{ CFBundleDisplayName = \"@CLIENT_NAME@\"; CFBundleName = \"@CLIENT_NAME@\"; }"
     )
+    set(macos_license_resources)
+    foreach(license_file IN ITEMS COPYING README.md LICENSE-1MINER-BC2-MATURITY.md doc/coinbase-work-maturity-license-scope.md)
+      set(license_resource ${PROJECT_BINARY_DIR}/${macos_app}/Contents/Resources/${license_file})
+      configure_file(${PROJECT_SOURCE_DIR}/${license_file} ${license_resource} NO_SOURCE_PERMISSIONS COPYONLY)
+      list(APPEND macos_license_resources ${license_resource})
+    endforeach()
 
     add_custom_command(
       OUTPUT ${PROJECT_BINARY_DIR}/${macos_app}/Contents/MacOS/BitcoinII-Qt
@@ -77,7 +88,7 @@ function(add_macos_deploy_target)
       add_custom_command(
         OUTPUT ${PROJECT_BINARY_DIR}/${macos_zip}.zip
         COMMAND Python3::Interpreter ${PROJECT_SOURCE_DIR}/contrib/macdeploy/macdeployqtplus ${macos_app} -translations-dir=${QT_TRANSLATIONS_DIR} -zip=${macos_zip}
-        DEPENDS ${PROJECT_BINARY_DIR}/${macos_app}/Contents/MacOS/BitcoinII-Qt
+        DEPENDS ${PROJECT_BINARY_DIR}/${macos_app}/Contents/MacOS/BitcoinII-Qt ${macos_license_resources}
         VERBATIM
       )
       add_custom_target(deploydir
@@ -90,7 +101,7 @@ function(add_macos_deploy_target)
       add_custom_command(
         OUTPUT ${PROJECT_BINARY_DIR}/dist/${macos_app}/Contents/MacOS/BitcoinII-Qt
         COMMAND ${CMAKE_COMMAND} -E env OBJDUMP=${CMAKE_OBJDUMP} $<TARGET_FILE:Python3::Interpreter> ${PROJECT_SOURCE_DIR}/contrib/macdeploy/macdeployqtplus ${macos_app} -translations-dir=${QT_TRANSLATIONS_DIR}
-        DEPENDS ${PROJECT_BINARY_DIR}/${macos_app}/Contents/MacOS/BitcoinII-Qt
+        DEPENDS ${PROJECT_BINARY_DIR}/${macos_app}/Contents/MacOS/BitcoinII-Qt ${macos_license_resources}
         VERBATIM
       )
       add_custom_target(deploydir
@@ -107,6 +118,7 @@ function(add_macos_deploy_target)
           OUTPUT ${PROJECT_BINARY_DIR}/dist/${macos_zip}.zip
           WORKING_DIRECTORY dist
           COMMAND ${PROJECT_SOURCE_DIR}/cmake/script/macos_zip.sh ${ZIP_EXECUTABLE} ${macos_zip}.zip
+          DEPENDS ${PROJECT_BINARY_DIR}/dist/${macos_app}/Contents/MacOS/BitcoinII-Qt ${macos_license_resources}
           VERBATIM
         )
         add_custom_target(deploy

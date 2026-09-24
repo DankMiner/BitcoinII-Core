@@ -1,6 +1,5 @@
-// Copyright (c) 2026 The BitcoinII developers
-// Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2026 1Miner.net
+// Licensed under LICENSE-1MINER-BC2-MATURITY.md, including its prior-grant exception.
 
 #ifndef BITCOINII_CONSENSUS_COINBASE_MATURITY_H
 #define BITCOINII_CONSENSUS_COINBASE_MATURITY_H

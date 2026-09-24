@@ -2,6 +2,10 @@
 // Copyright (c) 2009-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+//
+// Original work-based maturity additions: Copyright (c) 2026 1Miner.net.
+// Those additions use LICENSE-1MINER-BC2-MATURITY.md, subject to prior grants.
+// Pre-existing material retains the license above; see doc/coinbase-work-maturity-license-scope.md.
 
 #include <wallet/wallet.h>
 

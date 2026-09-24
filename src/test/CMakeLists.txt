@@ -1,6 +1,10 @@
 # Copyright (c) 2023-present The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://opensource.org/license/mit/.
+#
+# Original work-based maturity additions: Copyright (c) 2026 1Miner.net.
+# Those additions use LICENSE-1MINER-BC2-MATURITY.md, subject to prior grants.
+# Pre-existing material retains the license above; see doc/coinbase-work-maturity-license-scope.md.
 
 # Do not use generator expressions in test sources because the
 # SOURCES property is processed to gather test suite macros.

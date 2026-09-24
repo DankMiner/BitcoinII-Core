@@ -75,8 +75,13 @@ Section -Main SEC0000
     File @abs_top_builddir@/release/@BITCOINII_GUI_NAME@@EXEEXT@
     File @abs_top_builddir@/release/@BITCOINII_WRAPPER_NAME@@EXEEXT@
     File /oname=COPYING.txt @abs_top_srcdir@/COPYING
+    File "@abs_top_srcdir@/COPYING"
+    File "@abs_top_srcdir@/README.md"
+    File "@abs_top_srcdir@/LICENSE-1MINER-BC2-MATURITY.md"
     File /oname=readme.txt @abs_top_srcdir@/doc/README_windows.txt
     File @abs_top_srcdir@/share/examples/bitcoinII.conf
+    SetOutPath "$INSTDIR\doc"
+    File "@abs_top_srcdir@/doc/coinbase-work-maturity-license-scope.md"
     SetOutPath $INSTDIR\share\rpcauth
     File @abs_top_srcdir@/share/rpcauth/*.*
     SetOutPath $INSTDIR\daemon
@@ -146,6 +151,11 @@ Section /o -un.Main UNSEC0000
     Delete /REBOOTOK $INSTDIR\@BITCOINII_WRAPPER_NAME@@EXEEXT@
     Delete /REBOOTOK $INSTDIR\@BITCOINII_GUI_NAME@@EXEEXT@
     Delete /REBOOTOK $INSTDIR\COPYING.txt
+    Delete /REBOOTOK "$INSTDIR\COPYING"
+    Delete /REBOOTOK "$INSTDIR\README.md"
+    Delete /REBOOTOK "$INSTDIR\LICENSE-1MINER-BC2-MATURITY.md"
+    Delete /REBOOTOK "$INSTDIR\doc\coinbase-work-maturity-license-scope.md"
+    RMDir /REBOOTOK "$INSTDIR\doc"
     Delete /REBOOTOK $INSTDIR\readme.txt
     Delete /REBOOTOK $INSTDIR\bitcoinII.conf
     RMDir /r /REBOOTOK $INSTDIR\share

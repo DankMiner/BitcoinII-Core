@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-# Copyright (c) 2026-present The BitcoinII Core developers
-# Distributed under the MIT software license, see the accompanying
-# file COPYING or http://www.opensource.org/licenses/mit-license.php.
+# Copyright (c) 2026 1Miner.net
+# Licensed under LICENSE-1MINER-BC2-MATURITY.md, including its prior-grant exception.
 """Exercise opt-in work-based coinbase maturity at the actual consensus bounds.
 
 Three disconnected regtest nodes use different work thresholds. This tests the

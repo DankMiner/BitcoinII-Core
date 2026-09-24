@@ -1,4 +1,7 @@
-# Prototype validation — 2026-09-23
+# Prototype validation — updated 2026-09-24 UTC
+
+Copyright (c) 2026 1Miner.net. See the
+[maturity license](../LICENSE-1MINER-BC2-MATURITY.md) and its prior-grant exception.
 
 This is a local, tested prototype of the 4,200–12,960-block proposal. Mainnet,
 testnet, signet, and ordinary regtest retain the existing maturity rule. The
@@ -91,6 +94,47 @@ To reproduce the dedicated functional test after building:
 python3 build/test/functional/test_runner.py feature_coinbase_work_maturity.py
 ```
 
+## Continued local checks
+
+The eight focused unit suites and the dedicated maturity functional test were
+rerun against the final feature source in commit
+`3dbafb568d73458406dd8b821c4815648c2e4233`; both passed (21.61 seconds and
+169 seconds, respectively). The earlier Qt and legacy functional results above
+remain separate runs.
+
+Further checks completed on September 23 local time (September 24 UTC) using
+two disconnected regtest nodes and the real 4,200/12,960 age limits. One used
+`W=17,158`, which places the midpoint at age 8,580 with regtest work. The other
+used the exact proposed mainnet work constant and reached the maximum-age path.
+
+Both nodes passed these checks:
+
+- Disconnect a confirmed reward spend and return it and its child to the mempool.
+- Roll back below maturity and evict both transactions.
+- Restart while immature and preserve wallet status and premature-spend rejection.
+- Restore the chain and the confirmed spend.
+- Create a fee-only reward containing 0.001 BC2 with zero credited work at birth.
+- Add 500 blocks, credit exactly 1,000 subsequent work units, and keep that reward
+  immature at age 501.
+- Rebuild chainstate from stored blocks, preserve the chain tip, work, wallet
+  maturity, and confirmations, and pass `verifychain 4 0`.
+
+A separate copy of the midpoint node also passed an actual pruning test. Blocks
+through height 8,580 were removed; the height-2 reward's block body was unavailable
+while its header remained. Its unspent output retained maturity with 17,736 work
+against the 17,158 requirement, including after restart. The signed spend was
+accepted and confirmed at height 8,871, and survived a second restart. This covers
+one pruned-history spending and restart scenario, not every pruning or recovery
+failure mode.
+
+The first fee-only test script incorrectly expected the top-level
+`gettransaction.amount` to include immature credit. Checking the decoded output
+instead confirmed the correct 0.001 BC2 amount; the complete sequence was rerun
+successfully. No node code change was required.
+
+These checks exercise local node behavior. They do not simulate production
+hashpower or establish resistance to rented-hash attacks.
+
 ## Existing wallet test failure
 
 `wallet_basic.py` failed at its `sendall` call (line 488), with a Debug lock
@@ -109,11 +153,30 @@ not modify `spend.cpp`. A separate unmodified-baseline binary was not built.
 This existing source-level lock defect needs its own fix and regression test;
 the full legacy wallet functional suite is not being reported as passing.
 
+## License and packaging update
+
+The licensing follow-up changes feature-file comments, documentation, the
+runtime license display, and packaging notices. A comparison against the feature
+commit confirmed no executable maturity, wallet, mempool, or test logic changed.
+The daemon, CLI, and Qt executable were incrementally rebuilt for the runtime
+notice, and their version output was checked.
+
+The normal Linux CMake configuration passed. A staged daemon-component install
+included the upstream MIT notice, README with the ShockWave notice, 1Miner.net
+license, and scope record. The installed daemon displayed the updated terms.
+Separate CMake checks verified the component install and macOS resource layout,
+including matching license-file contents. All seven edited manpages rendered
+without new diagnostics, and the Debian license copy matched the root document.
+
+The Windows installer and a complete macOS package were not built or tested.
+No binary release was published. The consensus tests above were not repeated
+for this licensing-only follow-up.
+
 ## Still needed before production
 
 The selected accumulated-work target needs economic simulation and review using
 BC2's real difficulty adjustment. Independent consensus review, pool/exchange
-integration, pruned-node recovery testing, and production deployment planning
+integration, broader pruning/recovery testing, and production deployment planning
 remain outstanding. The maximum age intentionally permits spending without
 meeting the work target; the minimum age is a block count, not a time guarantee.
 

@@ -1,5 +1,8 @@
 # Work-based coinbase maturity (draft prototype)
 
+Copyright (c) 2026 1Miner.net. See the
+[maturity license](../LICENSE-1MINER-BC2-MATURITY.md) and its prior-grant exception.
+
 This prototype implements the proposed 4,200–12,960-block maturity range. It is
 disabled on mainnet and every other network by default. The draft mainnet work
 threshold targets age 8,580 at the hardest sustained legacy epoch difficulty.

@@ -101,6 +101,10 @@ std::string LicenseInfo()
            "\n" +
            "\n" +
            _("This is experimental software.") + "\n" +
-           strprintf(_("Distributed under the MIT software license, see the accompanying file %s or %s"), "COPYING", "<https://opensource.org/license/MIT>").translated +
+           strprintf(_("Bitcoin Core-derived portions are distributed under the MIT software license, see the accompanying file %s or %s"), "COPYING", "<https://opensource.org/license/MIT>").translated +
+           "\n" +
+           _("Original work-based maturity contributions: Copyright (C) 2026 1Miner.net. See LICENSE-1MINER-BC2-MATURITY.md for BitcoinII-only terms and the prior-grant exception.") +
+           "\n" +
+           _("Other components have separate terms; see README.md for the ShockWave license.") +
            "\n";
 }

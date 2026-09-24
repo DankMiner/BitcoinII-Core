@@ -10,6 +10,63 @@ License: Expat
 Comment: The BitcoinII Core Developers encompasses all contributors to the
          project, listed in the release notes or the git log.
 
+Files: doc/coinbase-work-maturity-baseline.md
+       doc/coinbase-work-maturity-validation.md
+       doc/coinbase-work-maturity.md
+       src/consensus/coinbase_maturity.cpp
+       src/consensus/coinbase_maturity.h
+       src/test/coinbase_maturity_tests.cpp
+       test/functional/feature_coinbase_work_maturity.py
+       LICENSE-1MINER-BC2-MATURITY.md
+       doc/coinbase-work-maturity-license-scope.md
+Copyright: 2026, 1Miner.net (original work-based maturity material)
+License: 1Miner-BC2-Maturity
+Comment: The scope and exclusions are recorded in
+         doc/coinbase-work-maturity-license-scope.md. The original feature
+         commit was distributed with MIT notices; these terms do not revoke
+         permissions previously granted under MIT or another license.
+
+Files: src/CMakeLists.txt
+       src/bench/mempool_stress.cpp
+       src/chainparams.cpp
+       src/chainparamsbase.cpp
+       src/consensus/params.h
+       src/consensus/tx_verify.cpp
+       src/consensus/tx_verify.h
+       src/interfaces/chain.h
+       src/interfaces/wallet.h
+       src/kernel/CMakeLists.txt
+       src/kernel/chainparams.cpp
+       src/kernel/chainparams.h
+       src/node/interfaces.cpp
+       src/qt/transactiondesc.cpp
+       src/qt/transactionrecord.cpp
+       src/qt/transactionrecord.h
+       src/qt/transactiontablemodel.cpp
+       src/test/CMakeLists.txt
+       src/test/fuzz/coins_view.cpp
+       src/test/fuzz/package_eval.cpp
+       src/test/fuzz/tx_pool.cpp
+       src/test/transaction_tests.cpp
+       src/txmempool.cpp
+       src/txmempool.h
+       src/validation.cpp
+       src/wallet/interfaces.cpp
+       src/wallet/rpc/transactions.cpp
+       src/wallet/test/wallet_tests.cpp
+       src/wallet/wallet.cpp
+       src/wallet/wallet.h
+       test/functional/test_runner.py
+Copyright: 2009-2026, Bitcoin Core Developers and the respective upstream authors
+           2026, 1Miner.net (original work-based maturity additions only)
+License: Expat and 1Miner-BC2-Maturity
+Comment: Existing material retains its original MIT terms and notices.
+         The 1Miner.net terms cover only the original maturity contributions
+         identified in doc/coinbase-work-maturity-license-scope.md, subject
+         to the earlier-license exception. Unchanged code, copied upstream
+         material, removed lines, and material not subject to copyright are
+         excluded from the restricted scope.
+
 Files: debian/*
 Copyright: 2010-2011, Jonas Smedegaard <dr@jones.dk>
            2011, Matt Corallo <matt@bluematt.me>
@@ -134,3 +191,80 @@ License: Apache-2.0
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.
+
+License: 1Miner-BC2-Maturity
+ # 1Miner.net BitcoinII Work-Based Maturity License
+ .
+ Version 1.0
+ .
+ Copyright (c) 2026 1Miner.net. All rights reserved, except as granted below or
+ under an applicable earlier license.
+ .
+ ## Scope
+ .
+ This license applies only to original work-based coinbase maturity material in
+ which 1Miner.net holds the applicable rights (the "Covered Work"). The
+ [scope record](doc/coinbase-work-maturity-license-scope.md) identifies that
+ material. It does not license the whole BitcoinII repository.
+ .
+ Pre-existing Bitcoin, Bitcoin Core, BitcoinII, and third-party material retains
+ its own copyright and license terms. The MIT license in [COPYING](COPYING) and
+ the separate ShockWave license in [README.md](README.md) remain in effect for
+ their respective material. No ownership of that material is claimed here.
+ .
+ ## Free use on BitcoinII
+ .
+ Subject to these terms, 1Miner.net grants a non-exclusive, royalty-free license
+ to inspect, copy, compile, run, modify, and distribute the Covered Work, in source
+ or binary form, solely for the BitcoinII (BC2) network.
+ .
+ Permitted uses include operating BitcoinII nodes, mining, pools, wallets,
+ exchanges, and other services for BitcoinII, including commercial operation.
+ BitcoinII development, security review, technical research, and testing are also
+ permitted, including BitcoinII test networks and private regression-test chains
+ used to develop or evaluate BitcoinII. These permissions do not require payment
+ to 1Miner.net.
+ .
+ Redistributions must include this license, the scope record, and the applicable
+ copyright and third-party notices. Modifications must be identified as such.
+ Recipients receive the same permissions directly from 1Miner.net; distributors
+ may not grant broader rights in the Covered Work under this license.
+ .
+ ## Other networks
+ .
+ This license does not permit incorporating, deploying, porting, or otherwise
+ using the Covered Work, including modifications or substantial copied portions,
+ for a different cryptocurrency or production blockchain network. Such use
+ requires prior written permission from 1Miner.net, unless it is independently
+ authorized by another applicable license or by law.
+ .
+ Renaming another network BitcoinII does not bring it within this permission.
+ The development and testing permission does not authorize launching a separate
+ coin or production network.
+ .
+ These restrictions concern the Covered Work. They do not claim ownership of
+ mathematical rules, publicly known facts, or independently written implementations
+ that do not copy protected material. No trademark rights or endorsement are
+ granted. This is a restricted source-available license, not an open-source license.
+ .
+ ## Earlier distributions
+ .
+ Commit `3dbafb568d73458406dd8b821c4815648c2e4233` was already publicly
+ distributed with MIT notices for the maturity code. This license does not revoke,
+ replace, or narrow permissions previously granted under MIT or another license.
+ Anyone relying on a valid earlier grant retains the rights provided by that
+ grant, subject to its terms. Publishing this license does not make all uses of
+ the earlier version on other networks unauthorized.
+ .
+ This license states the terms offered for distributions bearing this notice and
+ future original contributions expressly placed under it, subject to those
+ existing rights. It does not automatically cover future contributions owned by
+ others.
+ .
+ ## Warranty and liability
+ .
+ To the fullest extent allowed by law, the Covered Work is supplied without
+ warranties or guarantees of any kind. 1Miner.net and its contributors accept no
+ liability for claims, losses, or damages arising from the Covered Work or its use.
+ .
+ For permission outside these terms, contact 1Miner.net at support@1miner.net.

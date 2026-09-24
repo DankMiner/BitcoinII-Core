@@ -1,5 +1,8 @@
 # Work maturity baseline
 
+Copyright (c) 2026 1Miner.net. See the
+[maturity license](../LICENSE-1MINER-BC2-MATURITY.md) and its prior-grant exception.
+
 The proposed baseline is the hardest sustained epoch found in the chain study,
 with maturity centered at **8,580 blocks**. The minimum remains **4,200 blocks**
 and the maximum remains **12,960 blocks**.
