@@ -13,6 +13,7 @@ from test_framework.messages import (
     CTxIn,
     CTxInWitness,
     CTxOut,
+    ser_compact_size,
     sha256,
 )
 from test_framework.script import (
@@ -135,8 +136,9 @@ def script_to_p2sh_p2wsh_script(script):
     return script_to_p2sh_script(p2shscript)
 
 def bulk_vout(tx, target_vsize):
-    if target_vsize < tx.get_vsize():
-        raise RuntimeError(f"target_vsize {target_vsize} is less than transaction virtual size {tx.get_vsize()}")
+    current_vsize = tx.get_vsize()
+    if target_vsize < current_vsize:
+        raise RuntimeError(f"target_vsize {target_vsize} is less than transaction virtual size {current_vsize}")
 
     # BitcoinII limits OP_RETURN payload size, so use ordinary P2WSH
     # outputs for bulk padding. Keep the existing small OP_RETURN output
@@ -144,24 +146,32 @@ def bulk_vout(tx, target_vsize):
     padding_spk = CScript([OP_0, b'\x01' * 32])
     padding_value = 10_000
     tail_output = tx.vout[-1]
+    padding_vsize = len(CTxOut(nValue=padding_value, scriptPubKey=padding_spk).serialize())
+    output_count = len(tx.vout)
+    count_size = len(ser_compact_size(output_count))
+    available_vbytes = target_vsize - current_vsize
+    padding_count = available_vbytes // padding_vsize
 
-    while True:
-        if tx.vout[0].nValue < padding_value:
-            raise RuntimeError("insufficient output value for transaction padding")
+    # Outputs add whole non-witness bytes, so their vsize contribution is
+    # exact even when the original transaction has fractional witness weight.
+    # Account for the larger CompactSize prefix before allocating outputs.
+    def added_vsize(count):
+        return count * padding_vsize + len(ser_compact_size(output_count + count)) - count_size
 
-        tx.vout[0].nValue -= padding_value
-        tx.vout.append(CTxOut(nValue=padding_value, scriptPubKey=padding_spk))
+    while added_vsize(padding_count) > available_vbytes:
+        padding_count -= 1
 
-        if tx.get_vsize() > target_vsize:
-            tx.vout.pop()
-            tx.vout[0].nValue += padding_value
-            break
+    padding_amount = padding_count * padding_value
+    if tx.vout[0].nValue < padding_amount:
+        raise RuntimeError("insufficient output value for transaction padding")
 
-    # A P2WSH output adds 43 vbytes normally (45 when the CompactSize
-    # output count grows), so the remaining padding always fits within
-    # a small BitcoinII-compatible OP_RETURN.
-    remaining_vbytes = target_vsize - tx.get_vsize()
-    assert 0 <= remaining_vbytes <= 44
+    tx.vout[0].nValue -= padding_amount
+    tx.vout.extend(CTxOut(nValue=padding_value, scriptPubKey=padding_spk) for _ in range(padding_count))
+
+    # The final gap is smaller than one more P2WSH output (including any
+    # count-prefix growth), and fits in a small BitcoinII OP_RETURN output.
+    remaining_vbytes = available_vbytes - added_vsize(padding_count)
+    assert 0 <= remaining_vbytes < added_vsize(padding_count + 1) - added_vsize(padding_count)
 
     tail_output.scriptPubKey = CScript(
         [OP_RETURN] + [OP_1] * remaining_vbytes
@@ -232,6 +242,56 @@ def build_malleated_tx_package(*, parent: CTransaction, rebalance_parent_output_
 
 
 class TestFrameworkScriptUtil(unittest.TestCase):
+    def test_bulk_vout_compact_size(self):
+        for witness_size in (None, 1, 2, 3, 4):
+            for output_count, extra_vbytes, padding_count, tail_size in (
+                (2, 0, 0, 0), (2, 1, 0, 1), (2, 42, 0, 42),
+                (2, 43, 1, 0), (2, 44, 1, 1),
+                (251, 85, 1, 42), (251, 86, 1, 43),
+                (251, 87, 1, 44), (251, 88, 2, 0),
+                (252, 42, 0, 42), (252, 43, 0, 43),
+                (252, 44, 0, 44), (252, 45, 1, 0),
+                (253, 43, 1, 0),
+            ):
+                with self.subTest(witness_size=witness_size, output_count=output_count, extra_vbytes=extra_vbytes):
+                    tx = CTransaction()
+                    tx.vin = [CTxIn(COutPoint(1, 0))]
+                    tx.vout = [CTxOut(10_000, CScript([OP_TRUE])) for _ in range(output_count)]
+                    tx.vout[0].nValue = 100_000
+                    tx.vout[-1] = CTxOut(0, CScript([OP_RETURN]))
+                    if witness_size is not None:
+                        witness = CTxInWitness()
+                        witness.scriptWitness.stack = [bytes(witness_size)]
+                        tx.wit.vtxinwit = [witness]
+                    target_vsize = tx.get_vsize() + extra_vbytes
+                    expected = deepcopy(tx)
+                    expected.vout[0].nValue -= padding_count * 10_000
+                    expected.vout[-1].scriptPubKey = CScript([OP_RETURN] + [OP_1] * tail_size)
+                    expected.vout.extend(CTxOut(10_000, CScript([OP_0, b'\x01' * 32])) for _ in range(padding_count))
+                    bulk_vout(tx, target_vsize)
+                    self.assertEqual(tx.serialize(), expected.serialize())
+                    self.assertEqual(tx.get_vsize(), target_vsize)
+
+    def test_bulk_vout_funding(self):
+        tx = CTransaction()
+        tx.vin = [CTxIn(COutPoint(1, 0))]
+        tx.vout = [CTxOut(10_000, CScript([OP_TRUE])), CTxOut(0, CScript([OP_RETURN]))]
+        original = tx.serialize()
+        target_vsize = tx.get_vsize()
+        with self.assertRaisesRegex(RuntimeError, "less than transaction virtual size"):
+            bulk_vout(tx, target_vsize - 1)
+        self.assertEqual(tx.serialize(), original)
+        with self.assertRaisesRegex(RuntimeError, "insufficient output value"):
+            bulk_vout(tx, target_vsize + 86)
+        self.assertEqual(tx.serialize(), original)
+
+        # The discarded probe output in the old loop needed funds even when
+        # all actual padding outputs could be funded exactly.
+        bulk_vout(tx, target_vsize + 43)
+        self.assertEqual(tx.vout[0].nValue, 0)
+        self.assertEqual(sum(output.nValue for output in tx.vout), 10_000)
+        self.assertEqual(tx.get_vsize(), target_vsize + 43)
+
     def test_multisig(self):
         fake_pubkey = bytes([0]*33)
         # check correct encoding of P2MS script with n,k <= 16
